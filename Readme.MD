@@ -4,9 +4,9 @@
 
 - [ ] Setup environment
 - [ ] Write tests
-- [ ] Implement `/pidorules` command
-- [ ] Implement `/pidoreg` command
-- [ ] Implement `/pidorstats` command
-- [ ] Implement `/pidorall` command
-- [ ] Implement `/pidorme` command
+- [x] Implement `/pidorules` command
+- [x] Implement `/pidoreg` command
+- [x] Implement `/pidorstats` command
+- [x] Implement `/pidorall` command
+- [x] Implement `/pidorme` command
 - [ ] Setup autodeploy
