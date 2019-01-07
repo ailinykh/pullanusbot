@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"math/rand"
 	"os"
 	"time"
 
@@ -12,8 +11,6 @@ import (
 )
 
 func main() {
-	rand.Seed(time.Now().UTC().UnixNano())
-
 	token := os.Getenv("BOT_TOKEN")
 
 	if token == "" {

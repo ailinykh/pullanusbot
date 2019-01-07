@@ -13,7 +13,7 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-// Faggot struct
+// Faggot struct for game result serialization
 type faggot struct {
 	Day      string `json:"day"`
 	UserID   int    `json:"user_id"`
@@ -73,6 +73,8 @@ func reg(bot *tb.Bot, m *tb.Message) {
 func play(bot *tb.Bot, m *tb.Message) {
 	log.Println("Playing faggot of the day!")
 
+	rand.Seed(time.Now().UTC().UnixNano())
+
 	game := loadGame(m.Chat)
 	players := loadPlayers(m.Chat)
 
@@ -81,11 +83,8 @@ func play(bot *tb.Bot, m *tb.Message) {
 
 	if len(players) == 0 {
 		log.Println("No players!")
-		var str strings.Builder
-		str.WriteString("@")
-		str.WriteString(m.Sender.Username)
-		phrase := fmt.Sprintf(i18n("no_players"), str.String())
-		bot.Send(m.Chat, phrase, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+		f := faggot{Username: m.Sender.Username}
+		bot.Send(m.Chat, fmt.Sprintf(i18n("no_players"), f.mention()), &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 		return
 	} else if len(players) == 1 {
 		bot.Send(m.Chat, i18n("not_enough_players"))
@@ -110,10 +109,8 @@ func play(bot *tb.Bot, m *tb.Message) {
 		log.Printf("using template: %s", template)
 
 		if i == 3 {
-			var str strings.Builder
-			str.WriteString("@")
-			str.WriteString(winner.Username)
-			phrase = fmt.Sprintf(phrase, str.String())
+			f := faggot{Username: winner.Username}
+			phrase = fmt.Sprintf(phrase, f.mention())
 		}
 
 		bot.Send(m.Chat, phrase, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
