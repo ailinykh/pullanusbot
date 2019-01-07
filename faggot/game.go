@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -22,6 +23,13 @@ type Game struct {
 
 // NewGame creates Game for particular bot
 func NewGame(bot *tb.Bot) Game {
+	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
+		err = os.MkdirAll(dataDir, os.ModePerm)
+		if err != nil {
+			log.Fatalf("Can't create directory: %s", dataDir)
+		}
+	}
+
 	return Game{bot}
 }
 
@@ -80,7 +88,7 @@ func (g *Game) saveEntries(chatID int64, entries []*Entry) {
 }
 
 func (g *Game) loadPlayers(chatID int64) []*Player {
-	filename := fmt.Sprintf("data/players%d.json", chatID)
+	filename := path.Join(dataDir, fmt.Sprintf("players%d.json", chatID))
 
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		g.savePlayers(chatID, []*Player{})
@@ -101,7 +109,7 @@ func (g *Game) loadPlayers(chatID int64) []*Player {
 }
 
 func (g *Game) savePlayers(chatID int64, players []*Player) {
-	filename := fmt.Sprintf("data/players%d.json", chatID)
+	filename := path.Join(dataDir, fmt.Sprintf("players%d.json", chatID))
 	json, err := json.MarshalIndent(players, "", "  ")
 
 	if err != nil {
@@ -115,8 +123,13 @@ func (g *Game) savePlayers(chatID int64, players []*Player) {
 	}
 }
 
+var replyTo = func(bot *tb.Bot, m *tb.Message, text string) {
+	bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+}
+
 func (g *Game) reply(m *tb.Message, text string) {
-	g.bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+	replyTo(g.bot, m, text)
+	// g.bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 }
 
 func (g *Game) rules(m *tb.Message) {
