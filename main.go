@@ -30,7 +30,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	faggot.Setup(bot)
+	game := faggot.NewGame(bot)
+	game.Start()
 
 	bot.Start()
 }
