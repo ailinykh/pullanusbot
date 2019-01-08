@@ -30,6 +30,8 @@ func NewGame(bot *tb.Bot) Game {
 		}
 	}
 
+	log.Print("Game started")
+
 	return Game{bot}
 }
 
