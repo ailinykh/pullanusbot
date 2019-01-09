@@ -102,13 +102,13 @@ func (g *Game) loadPlayers(chatID int64) []*Player {
 	data, err := ioutil.ReadFile(filename)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, chatID)
 	}
 
 	var players []*Player
 	err = json.Unmarshal(data, &players)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, chatID)
 	}
 	return players
 }
@@ -120,13 +120,13 @@ func (g *Game) savePlayers(chatID int64, players []*Player) {
 	json, err := json.MarshalIndent(players, "", "  ")
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, chatID)
 	}
 
 	err = ioutil.WriteFile(filename, json, 0644)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, chatID)
 	}
 
 	log.Printf("Players saved (%d)", chatID)
@@ -151,10 +151,13 @@ func (g *Game) reg(m *tb.Message) {
 		return
 	}
 
+	log.Printf("Registering new player (%d)", m.Chat.ID)
+
 	players := g.loadPlayers(m.Chat.ID)
 
 	for _, p := range players {
 		if p.ID == m.Sender.ID {
+			log.Printf("Player already in game! (%d, %d)", m.Sender.ID, m.Chat.ID)
 			g.reply(m, i18n("already_in_game"))
 			return
 		}
@@ -163,6 +166,7 @@ func (g *Game) reg(m *tb.Message) {
 	players = append(players, &Player{User: m.Sender})
 	g.savePlayers(m.Chat.ID, players)
 
+	log.Printf("Player added to game (%d, %d)", m.Sender.ID, m.Chat.ID)
 	g.reply(m, i18n("added_to_game"))
 }
 
@@ -172,7 +176,7 @@ func (g *Game) play(m *tb.Message) {
 		return
 	}
 
-	log.Println("POTD: Playing pidor of the day!")
+	log.Printf("POTD: Playing pidor of the day! (%d)", m.Chat.ID)
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
@@ -183,19 +187,19 @@ func (g *Game) play(m *tb.Message) {
 	day := time.Now().In(loc).Format("2006-01-02")
 
 	if len(players) == 0 {
-		log.Println("POTD: No players!")
+		log.Printf("POTD: No players! (%d)", m.Chat.ID)
 		player := Player{User: m.Sender}
 		g.reply(m, fmt.Sprintf(i18n("no_players"), player.mention()))
 		return
 	} else if len(players) == 1 {
-		log.Println("POTD: Not enough players!")
+		log.Printf("POTD: Not enough players! (%d)", m.Chat.ID)
 		g.reply(m, i18n("not_enough_players"))
 		return
 	}
 
 	for _, entry := range entries {
 		if entry.Day == day {
-			log.Println("POTD: Already known!")
+			log.Printf("POTD: Already known! (%d)", m.Chat.ID)
 			phrase := fmt.Sprintf(i18n("winner_known"), entry.Username)
 			g.reply(m, phrase)
 			return
@@ -203,12 +207,12 @@ func (g *Game) play(m *tb.Message) {
 	}
 
 	winner := players[rand.Intn(len(players))]
-	log.Printf("POTD: Pidor of the day is %s!", winner.Username)
+	log.Printf("POTD: Pidor of the day is %s! (%d)", winner.Username, m.Chat.ID)
 
 	for i := 0; i <= 3; i++ {
 		template := fmt.Sprintf("faggot_game_%d_%d", i, rand.Intn(5))
 		phrase := i18n(template)
-		log.Printf("POTD: using template: %s", template)
+		log.Printf("POTD: using template: %s (%d)", template, m.Chat.ID)
 
 		if i == 3 {
 			phrase = fmt.Sprintf(phrase, winner.mention())
