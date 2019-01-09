@@ -14,13 +14,13 @@ import (
 )
 
 func restoreReplyTo() {
-	replyTo = func(bot *tb.Bot, m *tb.Message, text string) {
+	replyTo = func(bot *tb.Bot, m *Message, text string) {
 		bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 	}
 }
 
-func getPrivateMessage() *tb.Message {
-	var m *tb.Message
+func getPrivateMessage() *Message {
+	var m *Message
 	err := json.Unmarshal([]byte(`{
 		"message_id": 1488,
 		"from": {
@@ -44,8 +44,8 @@ func getPrivateMessage() *tb.Message {
 	return m
 }
 
-func getGroupMessage() *tb.Message {
-	var m *tb.Message
+func getGroupMessage() *Message {
+	var m *Message
 	err := json.Unmarshal([]byte(`{
 		"message_id": 1488,
 		"from": {
@@ -86,7 +86,7 @@ func randStringRunes(n int) string {
 func TestRulesCommang(t *testing.T) {
 	bot, _ := tb.NewBot(tb.Settings{})
 	game := NewGame(bot)
-	replyTo = func(bot *tb.Bot, m *tb.Message, text string) {
+	replyTo = func(bot *tb.Bot, m *Message, text string) {
 		if !strings.Contains(text, "Правила игры") {
 			t.Errorf("Text must contain rules but got: %s", text)
 		}
@@ -94,7 +94,7 @@ func TestRulesCommang(t *testing.T) {
 
 	defer restoreReplyTo()
 
-	game.rules(&tb.Message{})
+	game.rules(&Message{})
 }
 
 func TestRegCommang(t *testing.T) {
@@ -110,7 +110,7 @@ func TestRegCommang(t *testing.T) {
 
 	// It should respond only in groups
 	m := getPrivateMessage()
-	replyTo = func(bot *tb.Bot, m *tb.Message, text string) {
+	replyTo = func(bot *tb.Bot, m *Message, text string) {
 		if !strings.Contains(text, "команда недоступна в личных чатах") {
 			t.Error("/reg command must respond only in groups")
 		}
@@ -118,7 +118,7 @@ func TestRegCommang(t *testing.T) {
 	game.reg(m)
 
 	m = getGroupMessage()
-	replyTo = func(bot *tb.Bot, m *tb.Message, text string) {
+	replyTo = func(bot *tb.Bot, m *Message, text string) {
 		if !strings.Contains(text, "Ты в игре") {
 			t.Error("/reg command must add player to game")
 		}
@@ -126,7 +126,7 @@ func TestRegCommang(t *testing.T) {
 	game.reg(m)
 
 	m = getGroupMessage()
-	replyTo = func(bot *tb.Bot, m *tb.Message, text string) {
+	replyTo = func(bot *tb.Bot, m *Message, text string) {
 		if !strings.Contains(text, "Ты уже в игре") {
 			t.Error("/reg command must deny player duplicating")
 		}
