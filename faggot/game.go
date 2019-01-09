@@ -24,6 +24,7 @@ type Game struct {
 // NewGame creates Game for particular bot
 func NewGame(bot *tb.Bot) Game {
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
+		log.Printf("Directory not exist! Creating directory: %s", dataDir)
 		err = os.MkdirAll(dataDir, os.ModePerm)
 		if err != nil {
 			log.Fatalf("Can't create directory: %s", dataDir)
@@ -41,9 +42,12 @@ func (g *Game) Start() {
 	g.bot.Handle("/pidorall", g.all)
 	g.bot.Handle("/pidorstats", g.stats)
 	g.bot.Handle("/pidorme", g.me)
+
+	log.Println("Game started")
 }
 
 func (g *Game) loadEntries(chatID int64) []*Entry {
+	log.Printf("Loading game (%d)", chatID)
 	filename := fmt.Sprintf("data/game%d.json", chatID)
 
 	// if err := os.Remove(filename); err != nil {
@@ -69,7 +73,7 @@ func (g *Game) loadEntries(chatID int64) []*Entry {
 }
 
 func (g *Game) saveEntries(chatID int64, entries []*Entry) {
-	log.Printf("Saving game (%d)", len(entries))
+	log.Printf("Saving game (%d, %d)", chatID, len(entries))
 
 	filename := fmt.Sprintf("data/game%d.json", chatID)
 	json, err := json.MarshalIndent(entries, "", "  ")
@@ -83,11 +87,12 @@ func (g *Game) saveEntries(chatID int64, entries []*Entry) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	log.Println("Game saved")
+	log.Printf("Game saved (%d)", chatID)
 }
 
 func (g *Game) loadPlayers(chatID int64) []*Player {
+	log.Printf("Loading players (%d)", chatID)
+
 	filename := path.Join(dataDir, fmt.Sprintf("players%d.json", chatID))
 
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
@@ -109,6 +114,8 @@ func (g *Game) loadPlayers(chatID int64) []*Player {
 }
 
 func (g *Game) savePlayers(chatID int64, players []*Player) {
+	log.Printf("Saving players (%d, %d)", chatID, len(players))
+
 	filename := path.Join(dataDir, fmt.Sprintf("players%d.json", chatID))
 	json, err := json.MarshalIndent(players, "", "  ")
 
@@ -121,6 +128,8 @@ func (g *Game) savePlayers(chatID int64, players []*Player) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	log.Printf("Players saved (%d)", chatID)
 }
 
 var replyTo = func(bot *tb.Bot, m *tb.Message, text string) {
@@ -163,7 +172,7 @@ func (g *Game) play(m *tb.Message) {
 		return
 	}
 
-	log.Println("Playing faggot of the day!")
+	log.Println("POTD: Playing pidor of the day!")
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
@@ -174,19 +183,19 @@ func (g *Game) play(m *tb.Message) {
 	day := time.Now().In(loc).Format("2006-01-02")
 
 	if len(players) == 0 {
-		log.Println("No players!")
+		log.Println("POTD: No players!")
 		player := Player{User: m.Sender}
 		g.reply(m, fmt.Sprintf(i18n("no_players"), player.mention()))
 		return
 	} else if len(players) == 1 {
-		log.Println("Not enough players!")
+		log.Println("POTD: Not enough players!")
 		g.reply(m, i18n("not_enough_players"))
 		return
 	}
 
 	for _, entry := range entries {
 		if entry.Day == day {
-			log.Println("Already known!")
+			log.Println("POTD: Already known!")
 			phrase := fmt.Sprintf(i18n("winner_known"), entry.Username)
 			g.reply(m, phrase)
 			return
@@ -194,12 +203,12 @@ func (g *Game) play(m *tb.Message) {
 	}
 
 	winner := players[rand.Intn(len(players))]
-	log.Printf("Faggot of the day is %s!", winner.Username)
+	log.Printf("POTD: Pidor of the day is %s!", winner.Username)
 
 	for i := 0; i <= 3; i++ {
 		template := fmt.Sprintf("faggot_game_%d_%d", i, rand.Intn(5))
 		phrase := i18n(template)
-		log.Printf("using template: %s", template)
+		log.Printf("POTD: using template: %s", template)
 
 		if i == 3 {
 			phrase = fmt.Sprintf(phrase, winner.mention())
