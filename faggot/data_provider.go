@@ -13,7 +13,7 @@ var dataDir = "data"
 var mtxs = map[string]*sync.Mutex{}
 
 // One more mutex to prevent concurrent map writes
-var mutex = sync.Mutex{}
+var mutex sync.Mutex
 
 // DataProvider safe reads and writes to files
 type DataProvider struct {
