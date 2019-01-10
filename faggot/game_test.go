@@ -91,16 +91,16 @@ func TestRulesCommang(t *testing.T) {
 			t.Errorf("Text must contain rules but got: %s", text)
 		}
 	}
-
 	defer restoreReplyTo()
 
 	game.rules(&Message{})
 }
 
 func TestRegCommang(t *testing.T) {
-	bot, _ := tb.NewBot(tb.Settings{})
 	dataDir = path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
 	t.Logf("Using data directory: %s", dataDir)
+
+	bot, _ := tb.NewBot(tb.Settings{})
 	game := NewGame(bot)
 
 	defer restoreReplyTo()
