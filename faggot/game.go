@@ -22,6 +22,7 @@ type Game struct {
 	bot *tb.Bot
 }
 
+// Message wrapper over tb.Message
 type Message struct {
 	*tb.Message
 	mtx sync.Mutex
@@ -63,6 +64,7 @@ func (g *Game) loadEntries(m *Message) []*Entry {
 
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
+	log.Printf("%d Loading game Mutex unlocked", m.Chat.ID)
 
 	filename := fmt.Sprintf("data/game%d.json", m.Chat.ID)
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
@@ -81,6 +83,7 @@ func (g *Game) loadEntries(m *Message) []*Entry {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("%d Game loaded", m.Chat.ID)
 	return game
 }
 
@@ -89,6 +92,7 @@ func (g *Game) saveEntries(m *Message, entries []*Entry) {
 
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
+	log.Printf("%d Saving game Mutex unlocked", m.Chat.ID)
 
 	filename := fmt.Sprintf("data/game%d.json", m.Chat.ID)
 	json, err := json.MarshalIndent(entries, "", "  ")
@@ -111,6 +115,7 @@ func (g *Game) loadPlayers(m *Message) []*Player {
 
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
+	log.Printf("%d Loading players Mutex unlocked", m.Chat.ID)
 
 	filename := path.Join(dataDir, fmt.Sprintf("players%d.json", m.Chat.ID))
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
@@ -129,6 +134,7 @@ func (g *Game) loadPlayers(m *Message) []*Player {
 	if err != nil {
 		log.Fatal(err, m.Chat.ID)
 	}
+	log.Printf("%d Players loaded", m.Chat.ID)
 	return players
 }
 
@@ -137,6 +143,7 @@ func (g *Game) savePlayers(m *Message, players []*Player) {
 
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
+	log.Printf("%d Save players Mutex unlocked", m.Chat.ID)
 
 	filename := path.Join(dataDir, fmt.Sprintf("players%d.json", m.Chat.ID))
 	json, err := json.MarshalIndent(players, "", "  ")
@@ -179,7 +186,7 @@ func (g *Game) reg(m *Message) {
 
 	for _, p := range players {
 		if p.ID == m.Sender.ID {
-			log.Printf("%d Player already in game! (%d)", m.Sender.ID, m.Chat.ID)
+			log.Printf("%d Player already in game! (%d)", m.Chat.ID, m.Sender.ID)
 			g.reply(m, i18n("already_in_game"))
 			return
 		}
