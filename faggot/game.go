@@ -3,29 +3,25 @@ package faggot
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
-	"path"
 	"strings"
-	"sync"
 	"time"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-var dataDir = "data"
-
 // Game POTD structure
 type Game struct {
 	bot *tb.Bot
+	dp  *DataProvider
 }
 
 // Message wrapper over tb.Message
 type Message struct {
 	*tb.Message
-	mtx sync.Mutex
+	// mtx *sync.Mutex
 }
 
 // NewGame creates Game for particular bot
@@ -38,7 +34,7 @@ func NewGame(bot *tb.Bot) Game {
 		}
 	}
 
-	return Game{bot}
+	return Game{bot, &DataProvider{}}
 }
 
 // Start function initialize all nesessary command handlers
@@ -55,110 +51,69 @@ func (g *Game) Start() {
 
 func (g *Game) handle(f func(*Message)) func(*tb.Message) {
 	return func(m *tb.Message) {
+		// f(&Message{Message: m, mtx: &sync.Mutex{}})
 		f(&Message{Message: m})
 	}
 }
 
 func (g *Game) loadEntries(m *Message) []*Entry {
-	log.Printf("%d Loading game", m.Chat.ID)
+	log.Printf("%d LOAD: Loading game", m.Chat.ID)
 
-	m.mtx.Lock()
-	defer m.mtx.Unlock()
-	log.Printf("%d Loading game Mutex unlocked", m.Chat.ID)
-
-	filename := fmt.Sprintf("data/game%d.json", m.Chat.ID)
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		log.Printf("%d Entries file not found! Trying to create...", m.Chat.ID)
-		ioutil.WriteFile(filename, []byte("[]"), 0644)
-	}
-
-	data, err := ioutil.ReadFile(filename)
+	filename := fmt.Sprintf("game%d.json", m.Chat.ID)
+	data := g.dp.loadJSON(filename)
+	var entries []*Entry
+	err := json.Unmarshal(data, &entries)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, m.Chat.ID)
 	}
 
-	var game []*Entry
-	err = json.Unmarshal(data, &game)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("%d Game loaded", m.Chat.ID)
-	return game
+	log.Printf("%d LOAD: Game loaded (%d)", m.Chat.ID, len(entries))
+	return entries
 }
 
 func (g *Game) saveEntries(m *Message, entries []*Entry) {
-	log.Printf("%d Saving game (%d)", m.Chat.ID, len(entries))
+	log.Printf("%d SAVE: Saving game (%d)", m.Chat.ID, len(entries))
 
-	m.mtx.Lock()
-	defer m.mtx.Unlock()
-	log.Printf("%d Saving game Mutex unlocked", m.Chat.ID)
-
-	filename := fmt.Sprintf("data/game%d.json", m.Chat.ID)
+	filename := fmt.Sprintf("game%d.json", m.Chat.ID)
 	json, err := json.MarshalIndent(entries, "", "  ")
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, m.Chat.ID)
 	}
 
-	err = ioutil.WriteFile(filename, json, 0644)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Printf("%d Game saved", m.Chat.ID)
+	g.dp.saveJSON(filename, json)
+	log.Printf("%d SAVE: Game saved (%d)", m.Chat.ID, len(entries))
 }
 
 func (g *Game) loadPlayers(m *Message) []*Player {
-	log.Printf("%d Loading players", m.Chat.ID)
+	log.Printf("%d LOAD: Loading players", m.Chat.ID)
 
-	m.mtx.Lock()
-	defer m.mtx.Unlock()
-	log.Printf("%d Loading players Mutex unlocked", m.Chat.ID)
-
-	filename := path.Join(dataDir, fmt.Sprintf("players%d.json", m.Chat.ID))
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		log.Printf("%d Players file not found! Trying to create...", m.Chat.ID)
-		ioutil.WriteFile(filename, []byte("[]"), 0644)
-	}
-
-	data, err := ioutil.ReadFile(filename)
-
-	if err != nil {
-		log.Fatal(err, m.Chat.ID)
-	}
-
+	filename := fmt.Sprintf("players%d.json", m.Chat.ID)
+	data := g.dp.loadJSON(filename)
 	var players []*Player
-	err = json.Unmarshal(data, &players)
+	err := json.Unmarshal(data, &players)
+
 	if err != nil {
 		log.Fatal(err, m.Chat.ID)
 	}
-	log.Printf("%d Players loaded", m.Chat.ID)
+
+	log.Printf("%d LOAD: Players loaded (%d)", m.Chat.ID, len(players))
 	return players
 }
 
 func (g *Game) savePlayers(m *Message, players []*Player) {
-	log.Printf("%d Saving players (%d)", m.Chat.ID, len(players))
+	log.Printf("%d SAVE: Saving players (%d)", m.Chat.ID, len(players))
 
-	m.mtx.Lock()
-	defer m.mtx.Unlock()
-	log.Printf("%d Save players Mutex unlocked", m.Chat.ID)
-
-	filename := path.Join(dataDir, fmt.Sprintf("players%d.json", m.Chat.ID))
+	filename := fmt.Sprintf("players%d.json", m.Chat.ID)
 	json, err := json.MarshalIndent(players, "", "  ")
 
 	if err != nil {
 		log.Fatal(err, m.Chat.ID)
 	}
 
-	err = ioutil.WriteFile(filename, json, 0644)
-
-	if err != nil {
-		log.Fatal(err, m.Chat.ID)
-	}
-
-	log.Printf("%d Players saved", m.Chat.ID)
+	g.dp.saveJSON(filename, json)
+	log.Printf("%d SAVE: Players saved (%d)", m.Chat.ID, len(players))
 }
 
 var replyTo = func(bot *tb.Bot, m *Message, text string) {
@@ -170,23 +125,25 @@ func (g *Game) reply(m *Message, text string) {
 	// g.bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 }
 
+// Print game rules
 func (g *Game) rules(m *Message) {
 	g.reply(m, i18n("rules"))
 }
 
+// Register new player
 func (g *Game) reg(m *Message) {
 	if m.Private() {
 		g.reply(m, i18n("not_available_for_private"))
 		return
 	}
 
-	log.Printf("%d Registering new player", m.Chat.ID)
+	log.Printf("%d REG:  Registering new player", m.Chat.ID)
 
 	players := g.loadPlayers(m)
 
 	for _, p := range players {
 		if p.ID == m.Sender.ID {
-			log.Printf("%d Player already in game! (%d)", m.Chat.ID, m.Sender.ID)
+			log.Printf("%d REG:  Player already in game! (%d)", m.Chat.ID, m.Sender.ID)
 			g.reply(m, i18n("already_in_game"))
 			return
 		}
@@ -195,10 +152,11 @@ func (g *Game) reg(m *Message) {
 	players = append(players, &Player{User: m.Sender})
 	g.savePlayers(m, players)
 
-	log.Printf("%d Player added to game (%d)", m.Chat.ID, m.Sender.ID)
+	log.Printf("%d REG:  Player added to game (%d)", m.Chat.ID, m.Sender.ID)
 	g.reply(m, i18n("added_to_game"))
 }
 
+// Play POTD game
 func (g *Game) play(m *Message) {
 	if m.Private() {
 		g.reply(m, i18n("not_available_for_private"))
@@ -257,6 +215,7 @@ func (g *Game) play(m *Message) {
 	g.saveEntries(m, entries)
 }
 
+// Statistics for all time
 func (g *Game) all(m *Message) {
 	if m.Private() {
 		g.reply(m, i18n("not_available_for_private"))
@@ -285,6 +244,7 @@ func (g *Game) all(m *Message) {
 	g.reply(m, strings.Join(s, "\n"))
 }
 
+// Current year statistics
 func (g *Game) stats(m *Message) {
 	if m.Private() {
 		g.reply(m, i18n("not_available_for_private"))
@@ -312,7 +272,7 @@ func (g *Game) stats(m *Message) {
 		if t.After(currentYear) && t.Before(nextYear) {
 			players[entry.Username]++
 		} else {
-			log.Printf("%s is not this year!", t)
+			log.Printf("%d STATS: %s is not this year!", m.Chat.ID, t)
 		}
 	}
 
@@ -326,6 +286,7 @@ func (g *Game) stats(m *Message) {
 	g.reply(m, strings.Join(s, "\n"))
 }
 
+// Personal stat
 func (g *Game) me(m *Message) {
 	if m.Private() {
 		g.reply(m, i18n("not_available_for_private"))
