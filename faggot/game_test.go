@@ -26,7 +26,7 @@ func getPrivateMessage() *Message {
 		"from": {
 			"first_name": "Adolf",
 			"last_name": "Hitler",
-			"username": "ahitler",
+			"username": "hitler",
 			"id": 1488
 		},
 		"chat": {
@@ -35,7 +35,7 @@ func getPrivateMessage() *Message {
 			"title": "Private chat",
 			"first_name": "Adolf",
 			"last_name": "Hitler",
-			"username": "ahitler"
+			"username": "hitler"
 		}
 	}`), &m)
 	if err != nil {
@@ -51,7 +51,7 @@ func getGroupMessage() *Message {
 		"from": {
 			"first_name": "Adolf",
 			"last_name": "Hitler",
-			"username": "ahitler",
+			"username": "hitler",
 			"id": 1488
 		},
 		"chat": {
@@ -60,7 +60,7 @@ func getGroupMessage() *Message {
 			"title": "Group chat",
 			"first_name": "Adolf",
 			"last_name": "Hitler",
-			"username": "ahitler"
+			"username": "hitler"
 		}
 	}`), &m)
 	if err != nil {
@@ -483,4 +483,177 @@ func TestAllCommandRespondsWithAllTimeStat(t *testing.T) {
 		}
 	}
 	faggot.all(m)
+}
+func TestStatsCommandRespondsOnlyInGroupChat(t *testing.T) {
+	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
+	t.Logf("Using data directory: %s", workingDir)
+
+	bot, _ := tb.NewBot(tb.Settings{})
+	faggot := NewGame(bot)
+	faggot.dp = NewDataProvider(workingDir)
+
+	defer restoreReplyTo()
+	defer func() {
+		os.RemoveAll(workingDir)
+	}()
+
+	// It should respond only in groups
+	m := getPrivateMessage()
+	replyTo = func(bot *tb.Bot, m *Message, text string) {
+		if !strings.Contains(text, "команда недоступна в личных чатах") {
+			t.Log(text)
+			t.Error("/stats command must respond only in groups")
+		}
+	}
+	faggot.stats(m)
+}
+
+func TestAllCommandRespondsWithCurrentYearStat(t *testing.T) {
+	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
+	t.Logf("Using data directory: %s", workingDir)
+
+	bot, _ := tb.NewBot(tb.Settings{})
+	faggot := NewGame(bot)
+	faggot.dp = NewDataProvider(workingDir)
+
+	defer restoreReplyTo()
+	defer func() {
+		os.RemoveAll(workingDir)
+	}()
+
+	dataMock := []byte(`{
+		"players": [
+		  {
+			"id": 1488,
+			"first_name": "Adolf",
+			"last_name": "Hitler",
+			"username": "adolf",
+			"language_code": "en"
+		  },
+		  {
+			"id": 1489,
+			"first_name": "Joseph",
+			"last_name": "Goebbels",
+			"username": "goebbels",
+			"language_code": "en"
+		  }
+		],
+		"entries": [
+		  {
+			"day": "2019-01-10",
+			"user_id": 1488,
+			"username": "hitler"
+		  },
+		  {
+			"day": "2019-01-09",
+			"user_id": 1488,
+			"username": "hitler"
+		  },
+		  {
+			"day": "2018-12-31",
+			"user_id": 1488,
+			"username": "hitler"
+		  }
+		]
+	  }`)
+	var game *Game
+	json.Unmarshal(dataMock, &game)
+
+	m := getGroupMessage()
+	faggot.saveGame(m, game)
+
+	replyTo = func(bot *tb.Bot, m *Message, text string) {
+		if !strings.Contains(text, "за текущий год") {
+			t.Log(text)
+			t.Error("/all command must respond with all time statistic")
+		}
+	}
+	faggot.stats(m)
+}
+
+func TestMeCommandRespondsOnlyInGroupChat(t *testing.T) {
+	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
+	t.Logf("Using data directory: %s", workingDir)
+
+	bot, _ := tb.NewBot(tb.Settings{})
+	faggot := NewGame(bot)
+	faggot.dp = NewDataProvider(workingDir)
+
+	defer restoreReplyTo()
+	defer func() {
+		os.RemoveAll(workingDir)
+	}()
+
+	// It should respond only in groups
+	m := getPrivateMessage()
+	replyTo = func(bot *tb.Bot, m *Message, text string) {
+		if !strings.Contains(text, "команда недоступна в личных чатах") {
+			t.Log(text)
+			t.Error("/stats command must respond only in groups")
+		}
+	}
+	faggot.me(m)
+}
+
+func TestMeCommandRespondsWithPersonalStat(t *testing.T) {
+	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
+	t.Logf("Using data directory: %s", workingDir)
+
+	bot, _ := tb.NewBot(tb.Settings{})
+	faggot := NewGame(bot)
+	faggot.dp = NewDataProvider(workingDir)
+
+	defer restoreReplyTo()
+	defer func() {
+		os.RemoveAll(workingDir)
+	}()
+
+	dataMock := []byte(`{
+		"players": [
+		  {
+			"id": 1488,
+			"first_name": "Adolf",
+			"last_name": "Hitler",
+			"username": "adolf",
+			"language_code": "en"
+		  },
+		  {
+			"id": 1489,
+			"first_name": "Joseph",
+			"last_name": "Goebbels",
+			"username": "goebbels",
+			"language_code": "en"
+		  }
+		],
+		"entries": [
+		  {
+			"day": "2019-01-10",
+			"user_id": 1488,
+			"username": "hitler"
+		  },
+		  {
+			"day": "2019-01-09",
+			"user_id": 1488,
+			"username": "hitler"
+		  },
+		  {
+			"day": "2018-12-31",
+			"user_id": 1488,
+			"username": "hitler"
+		  }
+		]
+	  }`)
+	var game *Game
+	json.Unmarshal(dataMock, &game)
+
+	m := getGroupMessage()
+	faggot.saveGame(m, game)
+
+	replyTo = func(bot *tb.Bot, m *Message, text string) {
+		if !strings.Contains(text, "3 раз") {
+			t.Log(text)
+			t.Error("/all command must respond with all time statistic")
+		}
+	}
+	faggot.me(m)
 }
