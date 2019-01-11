@@ -6,6 +6,7 @@ jobs:
     working_directory: /go/src/github.com/ailinykh/pullanusbot
     steps:
       - checkout
+      - run: go get -u gopkg.in/tucnak/telebot.v2
       - run:
           name: run tests
           command: go test -race -v ./faggot
