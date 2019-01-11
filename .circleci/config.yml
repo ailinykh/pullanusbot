@@ -1,4 +1,5 @@
 version: 2
 jobs:
   test:
-    - run: go test -race -v ./faggot
+    steps:
+      - run: go test -race -v ./faggot

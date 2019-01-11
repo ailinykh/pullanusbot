@@ -17,7 +17,7 @@ func TestDataProvider(t *testing.T) {
 
 	dp := NewDataProvider(workingDir)
 	out := make(chan int, 10)
-	count := 100
+	count := 10
 
 	for i := 0; i < count; i++ {
 		go func(out chan int, i int) {
@@ -29,17 +29,30 @@ func TestDataProvider(t *testing.T) {
 		}(out, i)
 	}
 
-	go func() {
-		time.Sleep(1 * time.Second)
-		close(out)
-	}()
+	// go func() {
+	// 	time.Sleep(2 * time.Second)
+	// 	close(out)
+	// }()
+
+	// var arr []int
+	// for i := range out {
+	// 	arr = append(arr, i)
+	// }
 
 	var arr []int
-	for i := range out {
-		arr = append(arr, i)
+	var running = true
+
+	for running {
+		select {
+		case i := <-out:
+			arr = append(arr, i)
+		case <-time.After(1 * time.Second):
+			close(out)
+			running = false
+		}
 	}
 
 	if len(arr) < count {
-		t.Error("Not all files created")
+		t.Errorf("Not all files created (%d)", len(arr))
 	}
 }

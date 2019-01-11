@@ -44,9 +44,13 @@ func (d *DataProvider) saveJSON(filename string, data []byte) {
 	if !ok {
 		mutexMap[filename] = &sync.Mutex{}
 	}
-	mutex.Unlock()
 	mutexMap[filename].Lock()
-	defer mutexMap[filename].Unlock()
+	mutex.Unlock()
+	defer func() {
+		mutex.Lock()
+		mutexMap[filename].Unlock()
+		mutex.Unlock()
+	}()
 
 	regexp := regexp.MustCompile(`[-\d]+`)
 	prefix := regexp.FindString(filename)
@@ -68,9 +72,13 @@ func (d *DataProvider) loadJSON(filename string) []byte {
 	if !ok {
 		mutexMap[filename] = &sync.Mutex{}
 	}
-	mutex.Unlock()
 	mutexMap[filename].Lock()
-	defer mutexMap[filename].Unlock()
+	mutex.Unlock()
+	defer func() {
+		mutex.Lock()
+		mutexMap[filename].Unlock()
+		mutex.Unlock()
+	}()
 
 	regexp := regexp.MustCompile(`[-\d]+`)
 	prefix := regexp.FindString(filename)
