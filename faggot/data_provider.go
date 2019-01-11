@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-var mtxs = map[string]*sync.Mutex{}
+var mutexMap = map[string]*sync.Mutex{}
 
 // One more mutex to prevent concurrent map writes
 var mutex sync.Mutex
@@ -40,13 +40,13 @@ func NewDataProvider(args ...string) *DataProvider {
 
 func (d *DataProvider) saveJSON(filename string, data []byte) {
 	mutex.Lock()
-	_, ok := mtxs[filename]
+	_, ok := mutexMap[filename]
 	if !ok {
-		mtxs[filename] = &sync.Mutex{}
+		mutexMap[filename] = &sync.Mutex{}
 	}
 	mutex.Unlock()
-	mtxs[filename].Lock()
-	defer mtxs[filename].Unlock()
+	mutexMap[filename].Lock()
+	defer mutexMap[filename].Unlock()
 
 	regexp := regexp.MustCompile(`[-\d]+`)
 	prefix := regexp.FindString(filename)
@@ -64,13 +64,13 @@ func (d *DataProvider) saveJSON(filename string, data []byte) {
 
 func (d *DataProvider) loadJSON(filename string) []byte {
 	mutex.Lock()
-	_, ok := mtxs[filename]
+	_, ok := mutexMap[filename]
 	if !ok {
-		mtxs[filename] = &sync.Mutex{}
+		mutexMap[filename] = &sync.Mutex{}
 	}
 	mutex.Unlock()
-	mtxs[filename].Lock()
-	defer mtxs[filename].Unlock()
+	mutexMap[filename].Lock()
+	defer mutexMap[filename].Unlock()
 
 	regexp := regexp.MustCompile(`[-\d]+`)
 	prefix := regexp.FindString(filename)
