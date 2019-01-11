@@ -97,15 +97,16 @@ func TestRulesCommang(t *testing.T) {
 }
 
 func TestRegCommang(t *testing.T) {
-	dataDir = path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", dataDir)
+	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
+	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
 	game := NewGame(bot)
+	game.dp = NewDataProvider(workingDir)
 
 	defer restoreReplyTo()
 	defer func() {
-		os.RemoveAll(dataDir)
+		os.RemoveAll(workingDir)
 	}()
 
 	// It should respond only in groups

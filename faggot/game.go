@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"os"
 	"strings"
 	"time"
 
@@ -32,14 +31,6 @@ type Message struct {
 
 // NewGame creates Game for particular bot
 func NewGame(bot *tb.Bot) Faggot {
-	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
-		log.Printf("Directory not exist! Creating directory: %s", dataDir)
-		err = os.MkdirAll(dataDir, os.ModePerm)
-		if err != nil {
-			log.Fatalf("Can't create directory: %s", dataDir)
-		}
-	}
-
 	return Faggot{bot, &DataProvider{}}
 }
 
