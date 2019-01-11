@@ -1,0 +1,4 @@
+version: 2
+jobs:
+  test:
+    - run: go test -race -v ./faggot
