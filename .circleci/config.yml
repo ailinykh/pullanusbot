@@ -3,5 +3,9 @@ jobs:
   build:
     docker:
       - image: circleci/golang
+    working_directory: /go/src/github.com/ailinykh/pullanusbot
     steps:
-      - run: go test -race -v ./faggot
+      - checkout
+      - run:
+          name: run tests
+          command: go test -race -v ./faggot
