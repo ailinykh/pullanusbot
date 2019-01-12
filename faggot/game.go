@@ -172,7 +172,13 @@ func (f *Faggot) play(m *Message) {
 	log.Printf("%d POTD: Pidor of the day is %s!", m.Chat.ID, winner.Username)
 
 	for i := 0; i <= 3; i++ {
-		template := fmt.Sprintf("faggot_game_%d_%d", i, rand.Intn(5))
+		templates := []string{}
+		for key := range ru {
+			if strings.HasPrefix(key, fmt.Sprintf("faggot_game_%d", i)) {
+				templates = append(templates, key)
+			}
+		}
+		template := templates[rand.Intn(len(templates))]
 		phrase := i18n(template)
 		log.Printf("%d POTD: using template: %s", m.Chat.ID, template)
 
