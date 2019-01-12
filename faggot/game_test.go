@@ -404,6 +404,31 @@ func TestAllCommandRespondsOnlyInGroupChat(t *testing.T) {
 	faggot.all(m)
 }
 
+func TestAllCommandNotRespondingWhenNoGames(t *testing.T) {
+	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
+	t.Logf("Using data directory: %s", workingDir)
+
+	bot, _ := tb.NewBot(tb.Settings{})
+	faggot := NewGame(bot)
+	faggot.dp = NewDataProvider(workingDir)
+
+	defer restoreReplyTo()
+	defer os.RemoveAll(workingDir)
+
+	m := getGroupMessage()
+	replied := false
+	replyTo = func(bot *tb.Bot, m *Message, text string) {
+		t.Log(text)
+		replied = true
+	}
+
+	faggot.all(m)
+
+	if replied {
+		t.Error("/all command must not respond if no any game results presents")
+	}
+}
+
 func TestAllCommandRespondsWithAllTimeStat(t *testing.T) {
 	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
 	t.Logf("Using data directory: %s", workingDir)
@@ -484,6 +509,31 @@ func TestStatsCommandRespondsOnlyInGroupChat(t *testing.T) {
 		}
 	}
 	faggot.stats(m)
+}
+
+func TestStatsCommandNotRespondingWhenNoGames(t *testing.T) {
+	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
+	t.Logf("Using data directory: %s", workingDir)
+
+	bot, _ := tb.NewBot(tb.Settings{})
+	faggot := NewGame(bot)
+	faggot.dp = NewDataProvider(workingDir)
+
+	defer restoreReplyTo()
+	defer os.RemoveAll(workingDir)
+
+	m := getGroupMessage()
+	replied := false
+	replyTo = func(bot *tb.Bot, m *Message, text string) {
+		t.Log(text)
+		replied = true
+	}
+
+	faggot.stats(m)
+
+	if replied {
+		t.Error("/stats command must not respond if no any game results presents")
+	}
 }
 
 func TestAllCommandRespondsWithCurrentYearStat(t *testing.T) {
