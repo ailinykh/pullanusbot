@@ -106,9 +106,7 @@ func TestRegCommandRespondsOnlyInGroupChat(t *testing.T) {
 	faggot.dp = NewDataProvider(workingDir)
 
 	defer restoreReplyTo()
-	defer func() {
-		os.RemoveAll(workingDir)
-	}()
+	defer os.RemoveAll(workingDir)
 
 	// It should respond only in groups
 	m := getPrivateMessage()
@@ -130,9 +128,7 @@ func TestRegCommandAddsPlayerInGame(t *testing.T) {
 	faggot.dp = NewDataProvider(workingDir)
 
 	defer restoreReplyTo()
-	defer func() {
-		os.RemoveAll(workingDir)
-	}()
+	defer os.RemoveAll(workingDir)
 
 	// Add new player to game
 	m := getGroupMessage()
@@ -164,9 +160,7 @@ func TestRegCommandAddsEachPlayerOnlyOnce(t *testing.T) {
 	faggot.dp = NewDataProvider(workingDir)
 
 	defer restoreReplyTo()
-	defer func() {
-		os.RemoveAll(workingDir)
-	}()
+	defer os.RemoveAll(workingDir)
 
 	dataMock := []byte(`{
 		"players": [
@@ -210,9 +204,7 @@ func TestPlayCommandRespondsOnlyInGroupChat(t *testing.T) {
 	faggot.dp = NewDataProvider(workingDir)
 
 	defer restoreReplyTo()
-	defer func() {
-		os.RemoveAll(workingDir)
-	}()
+	defer os.RemoveAll(workingDir)
 
 	// It should respond only in groups
 	m := getPrivateMessage()
@@ -234,9 +226,7 @@ func TestPlayCommandRespondsNoPlayers(t *testing.T) {
 	faggot.dp = NewDataProvider(workingDir)
 
 	defer restoreReplyTo()
-	defer func() {
-		os.RemoveAll(workingDir)
-	}()
+	defer os.RemoveAll(workingDir)
 
 	m := getGroupMessage()
 	replyTo = func(bot *tb.Bot, m *Message, text string) {
@@ -257,9 +247,7 @@ func TestPlayCommandRespondsNotEnoughPlayers(t *testing.T) {
 	faggot.dp = NewDataProvider(workingDir)
 
 	defer restoreReplyTo()
-	defer func() {
-		os.RemoveAll(workingDir)
-	}()
+	defer os.RemoveAll(workingDir)
 
 	dataMock := []byte(`{
 		"players": [
@@ -297,9 +285,7 @@ func TestPlayCommandRespondsWinnerAlreadyKnown(t *testing.T) {
 	faggot.dp = NewDataProvider(workingDir)
 
 	defer restoreReplyTo()
-	defer func() {
-		os.RemoveAll(workingDir)
-	}()
+	defer os.RemoveAll(workingDir)
 
 	dataMock := []byte(`{
 		"players": [
@@ -349,9 +335,7 @@ func TestPlayCommandLaunchGameAndRespondWinner(t *testing.T) {
 	faggot.dp = NewDataProvider(workingDir)
 
 	defer restoreReplyTo()
-	defer func() {
-		os.RemoveAll(workingDir)
-	}()
+	defer os.RemoveAll(workingDir)
 
 	dataMock := []byte(`{
 		"players": [
@@ -407,9 +391,7 @@ func TestAllCommandRespondsOnlyInGroupChat(t *testing.T) {
 	faggot.dp = NewDataProvider(workingDir)
 
 	defer restoreReplyTo()
-	defer func() {
-		os.RemoveAll(workingDir)
-	}()
+	defer os.RemoveAll(workingDir)
 
 	// It should respond only in groups
 	m := getPrivateMessage()
@@ -431,9 +413,7 @@ func TestAllCommandRespondsWithAllTimeStat(t *testing.T) {
 	faggot.dp = NewDataProvider(workingDir)
 
 	defer restoreReplyTo()
-	defer func() {
-		os.RemoveAll(workingDir)
-	}()
+	defer os.RemoveAll(workingDir)
 
 	dataMock := []byte(`{
 		"players": [
@@ -493,9 +473,7 @@ func TestStatsCommandRespondsOnlyInGroupChat(t *testing.T) {
 	faggot.dp = NewDataProvider(workingDir)
 
 	defer restoreReplyTo()
-	defer func() {
-		os.RemoveAll(workingDir)
-	}()
+	defer os.RemoveAll(workingDir)
 
 	// It should respond only in groups
 	m := getPrivateMessage()
@@ -517,9 +495,7 @@ func TestAllCommandRespondsWithCurrentYearStat(t *testing.T) {
 	faggot.dp = NewDataProvider(workingDir)
 
 	defer restoreReplyTo()
-	defer func() {
-		os.RemoveAll(workingDir)
-	}()
+	defer os.RemoveAll(workingDir)
 
 	dataMock := []byte(`{
 		"players": [
@@ -580,9 +556,7 @@ func TestMeCommandRespondsOnlyInGroupChat(t *testing.T) {
 	faggot.dp = NewDataProvider(workingDir)
 
 	defer restoreReplyTo()
-	defer func() {
-		os.RemoveAll(workingDir)
-	}()
+	defer os.RemoveAll(workingDir)
 
 	// It should respond only in groups
 	m := getPrivateMessage()
@@ -604,9 +578,7 @@ func TestMeCommandRespondsWithPersonalStat(t *testing.T) {
 	faggot.dp = NewDataProvider(workingDir)
 
 	defer restoreReplyTo()
-	defer func() {
-		os.RemoveAll(workingDir)
-	}()
+	defer os.RemoveAll(workingDir)
 
 	dataMock := []byte(`{
 		"players": [

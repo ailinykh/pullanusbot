@@ -68,9 +68,7 @@ func TestDataProviderLoadsJson(t *testing.T) {
 /*
 func TestDataProvider(t *testing.T) {
 	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	defer func() {
-		os.RemoveAll(workingDir)
-	}()
+	defer os.RemoveAll(workingDir)
 	t.Logf("Using data directory: %s", workingDir)
 
 	dp := NewDataProvider(workingDir)
