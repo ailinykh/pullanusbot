@@ -31,7 +31,7 @@ type Message struct {
 
 // NewGame creates Game for particular bot
 func NewGame(bot *tb.Bot) Faggot {
-	return Faggot{bot, &DataProvider{}}
+	return Faggot{bot: bot, dp: NewDataProvider()}
 }
 
 // Start function initialize all nesessary command handlers
@@ -152,12 +152,21 @@ func (f *Faggot) play(m *Message) {
 
 	for _, entry := range game.Entries {
 		if entry.Day == day {
-			log.Printf("%d POTD: Already known!", m.Chat.ID)
-			phrase := fmt.Sprintf(i18n("winner_known"), entry.Username)
-			f.reply(m, phrase)
+			if entry.Username != "" {
+				log.Printf("%d POTD: Already known!", m.Chat.ID)
+				phrase := fmt.Sprintf(i18n("winner_known"), entry.Username)
+				f.reply(m, phrase)
+				return
+			}
+			log.Printf("%d PODT: Game in progress! Do nothing!", m.Chat.ID)
 			return
 		}
 	}
+
+	// Save current day to prevent multiple gameplay
+	game.Entries = append(game.Entries, &Entry{day, 0, ""})
+	f.saveGame(m, game)
+	game.Entries = game.Entries[:len(game.Entries)-1] // remove last element to append it later
 
 	winner := game.Players[rand.Intn(len(game.Players))]
 	log.Printf("%d POTD: Pidor of the day is %s!", m.Chat.ID, winner.Username)

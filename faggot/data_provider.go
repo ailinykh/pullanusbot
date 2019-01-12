@@ -35,6 +35,8 @@ func NewDataProvider(args ...string) *DataProvider {
 		}
 	}
 
+	log.Printf("DATA: Using directory: %s", dp.WorkingDir)
+
 	return &dp
 }
 
