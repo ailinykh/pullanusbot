@@ -9,9 +9,7 @@ import (
 	"sync"
 )
 
-var mutexMap = map[string]*sync.Mutex{}
-
-// One more mutex to prevent concurrent map writes
+// Mutex to prevent concurrent file reading/writing
 var mutex sync.Mutex
 
 // DataProvider safe reads and writes to files
@@ -42,21 +40,11 @@ func NewDataProvider(args ...string) *DataProvider {
 
 func (d *DataProvider) saveJSON(filename string, data []byte) {
 	mutex.Lock()
-	_, ok := mutexMap[filename]
-	if !ok {
-		mutexMap[filename] = &sync.Mutex{}
-	}
-	mutexMap[filename].Lock()
-	mutex.Unlock()
-	defer func() {
-		mutex.Lock()
-		mutexMap[filename].Unlock()
-		mutex.Unlock()
-	}()
+	defer mutex.Unlock()
 
 	regexp := regexp.MustCompile(`[-\d]+`)
 	prefix := regexp.FindString(filename)
-	log.Printf("%s DATA: Saving game Mutex unlocked (%s)", prefix, filename)
+	log.Printf("%s DATA: Saving file (%s)", prefix, filename)
 
 	file := path.Join(d.WorkingDir, filename)
 	err := ioutil.WriteFile(file, data, 0644)
@@ -65,26 +53,16 @@ func (d *DataProvider) saveJSON(filename string, data []byte) {
 		log.Fatal(err)
 	}
 
-	log.Printf("%s DATA: JSON saved (%s)", prefix, filename)
+	log.Printf("%s DATA: File saved (%s)", prefix, filename)
 }
 
 func (d *DataProvider) loadJSON(filename string) []byte {
 	mutex.Lock()
-	_, ok := mutexMap[filename]
-	if !ok {
-		mutexMap[filename] = &sync.Mutex{}
-	}
-	mutexMap[filename].Lock()
-	mutex.Unlock()
-	defer func() {
-		mutex.Lock()
-		mutexMap[filename].Unlock()
-		mutex.Unlock()
-	}()
+	defer mutex.Unlock()
 
 	regexp := regexp.MustCompile(`[-\d]+`)
 	prefix := regexp.FindString(filename)
-	log.Printf("%s DATA: Loading json Mutex unlocked (%s)", prefix, filename)
+	log.Printf("%s DATA: Loading file (%s)", prefix, filename)
 
 	file := path.Join(d.WorkingDir, filename)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
@@ -98,6 +76,6 @@ func (d *DataProvider) loadJSON(filename string) []byte {
 		log.Fatal(err)
 	}
 
-	log.Printf("%s DATA: JSON loaded (%s)", prefix, filename)
+	log.Printf("%s DATA: File loaded (%s)", prefix, filename)
 	return data
 }
