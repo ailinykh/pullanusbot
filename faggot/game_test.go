@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -303,22 +304,31 @@ func TestPlayCommandNotRespondsIfGameInProgress(t *testing.T) {
 	var game *Game
 	json.Unmarshal(dataMock, &game)
 
-	loc, _ := time.LoadLocation("Europe/Zurich")
-	day := time.Now().In(loc).Format("2006-01-02")
-	entry := Entry{Day: day, UserID: 0, Username: ""}
-	game.Entries = append(game.Entries, &entry)
 	m := getGroupMessage()
 	faggot.saveGame(m, game)
 
-	replied := false
+	var wg sync.WaitGroup
+	var mutex sync.Mutex // remove it when reply to chan
+
+	replyCount := 0
 	replyTo = func(bot *tb.Bot, m *Message, text string) {
 		t.Log(text)
-		replied = true
+		mutex.Lock()
+		replyCount++
+		mutex.Unlock()
 	}
 
-	faggot.play(m)
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func() {
+			faggot.play(m)
+			wg.Done()
+		}()
+	}
 
-	if replied {
+	wg.Wait()
+
+	if replyCount > 4 {
 		t.Error("/play command must not respond if game in progress")
 	}
 }

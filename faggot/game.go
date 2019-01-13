@@ -123,6 +123,9 @@ func (f *Faggot) reg(m *Message) {
 	f.reply(m, i18n("added_to_game"))
 }
 
+// Active games sync
+var activeGames = ConcurrentSlice{}
+
 // Play POTD game
 func (f *Faggot) play(m *Message) {
 	if m.Private() {
@@ -152,21 +155,19 @@ func (f *Faggot) play(m *Message) {
 
 	for _, entry := range game.Entries {
 		if entry.Day == day {
-			if entry.Username != "" {
-				log.Printf("%d POTD: Already known!", m.Chat.ID)
-				phrase := fmt.Sprintf(i18n("winner_known"), entry.Username)
-				f.reply(m, phrase)
-				return
-			}
-			log.Printf("%d PODT: Game in progress! Do nothing!", m.Chat.ID)
+			log.Printf("%d POTD: Already known!", m.Chat.ID)
+			phrase := fmt.Sprintf(i18n("winner_known"), entry.Username)
+			f.reply(m, phrase)
 			return
 		}
 	}
 
-	// Save current day to prevent multiple gameplay
-	game.Entries = append(game.Entries, &Entry{day, 0, ""})
-	f.saveGame(m, game)
-	game.Entries = game.Entries[:len(game.Entries)-1] // remove last element to append it later
+	if activeGames.Index(m.Chat.ID) > -1 {
+		log.Printf("%d PODT: Game in progress! Do nothing!", m.Chat.ID)
+		return
+	}
+
+	activeGames.Add(m.Chat.ID)
 
 	winner := game.Players[rand.Intn(len(game.Players))]
 	log.Printf("%d POTD: Pidor of the day is %s!", m.Chat.ID, winner.Username)
@@ -194,6 +195,8 @@ func (f *Faggot) play(m *Message) {
 
 	game.Entries = append(game.Entries, &Entry{day, winner.ID, winner.Username})
 	f.saveGame(m, game)
+
+	activeGames.Remove(m.Chat.ID)
 }
 
 // Statistics for all time
