@@ -255,8 +255,6 @@ func (f *Faggot) stats(m *Message) {
 
 		if t.After(currentYear) && t.Before(nextYear) {
 			stats.Increment(entry.Username)
-		} else {
-			log.Printf("%d STATS: %s is not this year!", m.Chat.ID, t)
 		}
 	}
 
