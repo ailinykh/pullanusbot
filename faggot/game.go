@@ -208,7 +208,7 @@ func (f *Faggot) all(m *Message) {
 	}
 
 	s := []string{i18n("faggot_all_top"), ""}
-	players := map[string]int{}
+	stats := Statistics{}
 	game := f.loadGame(m)
 
 	if len(game.Entries) == 0 {
@@ -216,13 +216,12 @@ func (f *Faggot) all(m *Message) {
 	}
 
 	for _, entry := range game.Entries {
-		players[entry.Username]++
+		stats.Increment(entry.Username)
 	}
 
-	n := 0
-	for player, count := range players {
-		n++
-		s = append(s, fmt.Sprintf(i18n("faggot_all_entry"), n, player, count))
+	sort.Sort(sort.Reverse(stats))
+	for i, stat := range stats.stat {
+		s = append(s, fmt.Sprintf(i18n("faggot_all_entry"), i+1, stat.Player, stat.Count))
 	}
 
 	s = append(s, "", fmt.Sprintf(i18n("faggot_all_bottom"), len(game.Players)))
