@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	// "github.com/ailinykh/pullanusbot/faggot"
-	"./faggot"
+	"github.com/ailinykh/pullanusbot/faggot"
+	// "./faggot"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
