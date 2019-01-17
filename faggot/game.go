@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"sort"
 	"strings"
 	"time"
 
@@ -236,7 +237,7 @@ func (f *Faggot) stats(m *Message) {
 	}
 
 	s := []string{i18n("faggot_stats_top"), ""}
-	players := map[string]int{}
+	stats := Statistics{}
 	game := f.loadGame(m)
 	loc, _ := time.LoadLocation("Europe/Zurich")
 	currentYear := time.Date(time.Now().Year(), time.January, 1, 0, 0, 0, 0, loc)
@@ -254,16 +255,15 @@ func (f *Faggot) stats(m *Message) {
 		}
 
 		if t.After(currentYear) && t.Before(nextYear) {
-			players[entry.Username]++
+			stats.Increment(entry.Username)
 		} else {
 			log.Printf("%d STATS: %s is not this year!", m.Chat.ID, t)
 		}
 	}
 
-	n := 0
-	for player, count := range players {
-		n++
-		s = append(s, fmt.Sprintf(i18n("faggot_stats_entry"), n, player, count))
+	sort.Sort(sort.Reverse(stats))
+	for i, stat := range stats.stat {
+		s = append(s, fmt.Sprintf(i18n("faggot_stats_entry"), i+1, stat.Player, stat.Count))
 	}
 
 	s = append(s, "", fmt.Sprintf(i18n("faggot_stats_bottom"), len(game.Players)))

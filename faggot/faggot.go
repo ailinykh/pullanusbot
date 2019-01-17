@@ -12,6 +12,13 @@ type Player struct {
 	*tb.User
 }
 
+func (p *Player) mention() string {
+	var str strings.Builder
+	str.WriteString("@")
+	str.WriteString(p.Username)
+	return str.String()
+}
+
 // Entry struct for game result serialization
 type Entry struct {
 	Day      string `json:"day"`
@@ -19,11 +26,43 @@ type Entry struct {
 	Username string `json:"username"`
 }
 
-func (p *Player) mention() string {
-	var str strings.Builder
-	str.WriteString("@")
-	str.WriteString(p.Username)
-	return str.String()
+// Statistics is a game statistics structure
+type Statistics struct {
+	stat []PlayerStat
+}
+type PlayerStat struct {
+	Player string
+	Count  int
+}
+
+func (s *Statistics) Increment(player string) {
+	if s.stat == nil {
+		s.stat = []PlayerStat{}
+	}
+	found := false
+	for i, stat := range s.stat {
+		if stat.Player == player {
+			found = true
+			s.stat[i].Count++
+		}
+	}
+	if !found {
+		s.stat = append(s.stat, PlayerStat{Player: player, Count: 1})
+	}
+}
+
+func (s Statistics) Len() int {
+	return len(s.stat)
+}
+
+func (s Statistics) Less(i, j int) bool {
+	return s.stat[i].Count < s.stat[j].Count
+}
+
+func (s Statistics) Swap(i, j int) {
+	foo := s.stat[i]
+	s.stat[i] = s.stat[j]
+	s.stat[j] = foo
 }
 
 // ConcurrentSlice is a thread safe integer store
