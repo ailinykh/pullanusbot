@@ -38,55 +38,39 @@ func NewFaggotGame(bot IBot) Faggot {
 
 // Start function initialize all nesessary command handlers
 func (f *Faggot) Start() {
-	f.bot.Handle("/pidorules", f.handle(f.rules))
-	f.bot.Handle("/pidoreg", f.handle(f.reg))
-	f.bot.Handle("/pidor", f.handle(f.play))
-	f.bot.Handle("/pidorall", f.handle(f.all))
-	f.bot.Handle("/pidorstats", f.handle(f.stats))
-	f.bot.Handle("/pidorme", f.handle(f.me))
+	f.bot.Handle("/pidorules", f.rules)
+	f.bot.Handle("/pidoreg", f.reg)
+	f.bot.Handle("/pidor", f.play)
+	f.bot.Handle("/pidorall", f.all)
+	f.bot.Handle("/pidorstats", f.stats)
+	f.bot.Handle("/pidorme", f.me)
 
 	log.Println("Game started")
 }
 
-func (f *Faggot) handle(fun func(*tb.Message)) func(*tb.Message) {
-	return func(m *tb.Message) {
-		fun(m)
-	}
-}
-
-func (f *Faggot) loadGame(m *tb.Message) *FaggotGame {
-	log.Printf("%d LOAD: Loading game", m.Chat.ID)
-
+func (f *Faggot) loadGame(m *tb.Message) (*FaggotGame, error) {
 	filename := fmt.Sprintf("faggot%d.json", m.Chat.ID)
 	data, err := f.dp.loadJSON(filename)
 
 	if err != nil {
-		log.Fatal(err, m.Chat.ID)
+		return nil, err
 	}
 
 	var game FaggotGame
 	err = json.Unmarshal(data, &game)
 
 	if err != nil {
-		log.Fatal(err, m.Chat.ID)
+		return nil, err
 	}
 
-	log.Printf("%d LOAD: Game loaded (%d)", m.Chat.ID, len(game.Players))
-	return &game
+	return &game, nil
 }
 
-func (f *Faggot) saveGame(m *tb.Message, game *FaggotGame) {
-	log.Printf("%d SAVE: Saving game (%d)", m.Chat.ID, len(game.Players))
-
+func (f *Faggot) saveGame(m *tb.Message, game *FaggotGame) error {
 	filename := fmt.Sprintf("faggot%d.json", m.Chat.ID)
-	json, err := json.MarshalIndent(game, "", "  ")
+	json, _ := json.MarshalIndent(game, "", "  ")
 
-	if err != nil {
-		log.Fatal(err, m.Chat.ID)
-	}
-
-	success := f.dp.saveJSON(filename, json)
-	log.Printf("%d SAVE: Game saved (%d) %v", m.Chat.ID, len(game.Players), success)
+	return f.dp.saveJSON(filename, json)
 }
 
 var replyTo = func(bot IBot, m *tb.Message, text string) {
@@ -112,7 +96,7 @@ func (f *Faggot) reg(m *tb.Message) {
 
 	log.Printf("%d REG:  Registering new player", m.Chat.ID)
 
-	game := f.loadGame(m)
+	game, _ := f.loadGame(m)
 
 	for _, p := range game.Players {
 		if p.ID == m.Sender.ID {
@@ -143,7 +127,7 @@ func (f *Faggot) play(m *tb.Message) {
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	game := f.loadGame(m)
+	game, _ := f.loadGame(m)
 
 	loc, _ := time.LoadLocation("Europe/Zurich")
 	day := time.Now().In(loc).Format("2006-01-02")
@@ -214,7 +198,7 @@ func (f *Faggot) all(m *tb.Message) {
 
 	s := []string{i18n("faggot_all_top"), ""}
 	stats := FaggotStat{}
-	game := f.loadGame(m)
+	game, _ := f.loadGame(m)
 
 	if len(game.Entries) == 0 {
 		return
@@ -242,7 +226,7 @@ func (f *Faggot) stats(m *tb.Message) {
 
 	s := []string{i18n("faggot_stats_top"), ""}
 	stats := FaggotStat{}
-	game := f.loadGame(m)
+	game, _ := f.loadGame(m)
 	loc, _ := time.LoadLocation("Europe/Zurich")
 	currentYear := time.Date(time.Now().Year(), time.January, 1, 0, 0, 0, 0, loc)
 	nextYear := time.Date(time.Now().Year()+1, time.January, 1, 0, 0, 0, 0, loc)
@@ -252,11 +236,7 @@ func (f *Faggot) stats(m *tb.Message) {
 	}
 
 	for _, entry := range game.Entries {
-		t, err := time.Parse("2006-01-02", entry.Day)
-
-		if err != nil {
-			log.Println(err)
-		}
+		t, _ := time.Parse("2006-01-02", entry.Day)
 
 		if t.After(currentYear) && t.Before(nextYear) {
 			stats.Increment(entry.Username)
@@ -279,7 +259,7 @@ func (f *Faggot) me(m *tb.Message) {
 		return
 	}
 
-	game := f.loadGame(m)
+	game, _ := f.loadGame(m)
 	player := FaggotPlayer{User: m.Sender}
 	n := 0
 

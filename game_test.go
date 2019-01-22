@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"path"
@@ -114,6 +115,38 @@ func TestStartCommand(t *testing.T) {
 	}
 }
 
+func TestLoadGame(t *testing.T) {
+	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
+	t.Logf("Using data directory: %s", workingDir)
+	defer os.RemoveAll(workingDir)
+
+	bot, _ := tb.NewBot(tb.Settings{})
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
+
+	// JSON invalid
+	file := path.Join(workingDir, "faggot-1488.json")
+	data := []byte(`{wrong json}`)
+	ioutil.WriteFile(file, data, 0644)
+
+	m := getGroupMessage()
+	_, err := faggot.loadGame(m)
+
+	if !strings.Contains(err.Error(), "invalid character") {
+		t.Error("Load game must return error if JSON not valid")
+	}
+
+	// Can't read file
+	os.Remove(file)
+	data = []byte(`{"correct": "json"}`)
+	ioutil.WriteFile(file, data, 0200)
+	_, err = faggot.loadGame(m)
+
+	if !strings.Contains(err.Error(), "permission denied") {
+		t.Error("Load game must return error if can't read file")
+	}
+}
+
 func TestRulesCommand(t *testing.T) {
 	bot, _ := tb.NewBot(tb.Settings{})
 	faggot := NewFaggotGame(bot)
@@ -172,7 +205,7 @@ func TestRegCommandAddsPlayerInGame(t *testing.T) {
 	faggot.reg(m)
 
 	// Check player added sucessfully
-	game := faggot.loadGame(m)
+	game, _ := faggot.loadGame(m)
 	for _, p := range game.Players {
 		if p.ID == m.Sender.ID {
 			return
@@ -220,7 +253,7 @@ func TestRegCommandAddsEachPlayerOnlyOnce(t *testing.T) {
 	faggot.reg(m)
 
 	// Check player not added twice
-	game = faggot.loadGame(m)
+	game, _ = faggot.loadGame(m)
 	if len(game.Players) > 1 {
 		t.Error("Player addet to game twice!")
 	}
@@ -469,7 +502,7 @@ func TestPlayCommandLaunchGameAndRespondWinner(t *testing.T) {
 		t.Errorf("/play command must respond multiple times (got %d)", replyToCallTimes)
 	}
 
-	game = faggot.loadGame(m)
+	game, _ = faggot.loadGame(m)
 
 	if len(game.Entries) != 1 {
 		t.Error("/play command must play game")
