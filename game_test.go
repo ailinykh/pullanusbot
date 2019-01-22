@@ -106,6 +106,12 @@ func TestStartCommand(t *testing.T) {
 	if bot.handleCalledTimes == 0 {
 		t.Error("faggot.Start() does not call's bot.Handler method")
 	}
+
+	replyTo(bot, &tb.Message{}, "some text")
+
+	if bot.sendCalledTimes == 0 {
+		t.Error("replyTo does not call's bot.Send method")
+	}
 }
 
 func TestRulesCommand(t *testing.T) {
