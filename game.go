@@ -12,9 +12,14 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
+type IBot interface {
+	Handle(interface{}, interface{})
+	Send(tb.Recipient, interface{}, ...interface{}) (*tb.Message, error)
+}
+
 // Faggot structure
 type Faggot struct {
-	bot *tb.Bot
+	bot IBot
 	dp  *DataProvider
 }
 
@@ -24,14 +29,8 @@ type FaggotGame struct {
 	Entries []*FaggotEntry  `json:"entries"`
 }
 
-// Message wrapper over tb.Message
-type Message struct {
-	*tb.Message
-	// mtx *sync.Mutex
-}
-
 // NewFaggotGame creates FaggotGame for particular bot
-func NewFaggotGame(bot *tb.Bot) Faggot {
+func NewFaggotGame(bot IBot) Faggot {
 	return Faggot{bot: bot, dp: NewDataProvider()}
 }
 
@@ -47,14 +46,13 @@ func (f *Faggot) Start() {
 	log.Println("Game started")
 }
 
-func (f *Faggot) handle(fun func(*Message)) func(*tb.Message) {
+func (f *Faggot) handle(fun func(*tb.Message)) func(*tb.Message) {
 	return func(m *tb.Message) {
-		// f(&Message{Message: m, mtx: &sync.Mutex{}})
-		fun(&Message{Message: m})
+		fun(m)
 	}
 }
 
-func (f *Faggot) loadGame(m *Message) *FaggotGame {
+func (f *Faggot) loadGame(m *tb.Message) *FaggotGame {
 	log.Printf("%d LOAD: Loading game", m.Chat.ID)
 
 	filename := fmt.Sprintf("faggot%d.json", m.Chat.ID)
@@ -70,7 +68,7 @@ func (f *Faggot) loadGame(m *Message) *FaggotGame {
 	return &game
 }
 
-func (f *Faggot) saveGame(m *Message, game *FaggotGame) {
+func (f *Faggot) saveGame(m *tb.Message, game *FaggotGame) {
 	log.Printf("%d SAVE: Saving game (%d)", m.Chat.ID, len(game.Players))
 
 	filename := fmt.Sprintf("faggot%d.json", m.Chat.ID)
@@ -84,22 +82,22 @@ func (f *Faggot) saveGame(m *Message, game *FaggotGame) {
 	log.Printf("%d SAVE: Game saved (%d)", m.Chat.ID, len(game.Players))
 }
 
-var replyTo = func(bot *tb.Bot, m *Message, text string) {
+var replyTo = func(bot IBot, m *tb.Message, text string) {
 	bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 }
 
-func (f *Faggot) reply(m *Message, text string) {
+func (f *Faggot) reply(m *tb.Message, text string) {
 	replyTo(f.bot, m, text)
 	// f.bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 }
 
 // Print game rules
-func (f *Faggot) rules(m *Message) {
+func (f *Faggot) rules(m *tb.Message) {
 	f.reply(m, i18n("rules"))
 }
 
 // Register new player
-func (f *Faggot) reg(m *Message) {
+func (f *Faggot) reg(m *tb.Message) {
 	if m.Private() {
 		f.reply(m, i18n("not_available_for_private"))
 		return
@@ -128,7 +126,7 @@ func (f *Faggot) reg(m *Message) {
 var activeGames = ConcurrentSlice{}
 
 // Play POTD game
-func (f *Faggot) play(m *Message) {
+func (f *Faggot) play(m *tb.Message) {
 	if m.Private() {
 		f.reply(m, i18n("not_available_for_private"))
 		return
@@ -201,7 +199,7 @@ func (f *Faggot) play(m *Message) {
 }
 
 // Statistics for all time
-func (f *Faggot) all(m *Message) {
+func (f *Faggot) all(m *tb.Message) {
 	if m.Private() {
 		f.reply(m, i18n("not_available_for_private"))
 		return
@@ -229,7 +227,7 @@ func (f *Faggot) all(m *Message) {
 }
 
 // Current year statistics
-func (f *Faggot) stats(m *Message) {
+func (f *Faggot) stats(m *tb.Message) {
 	if m.Private() {
 		f.reply(m, i18n("not_available_for_private"))
 		return
@@ -268,7 +266,7 @@ func (f *Faggot) stats(m *Message) {
 }
 
 // Personal stat
-func (f *Faggot) me(m *Message) {
+func (f *Faggot) me(m *tb.Message) {
 	if m.Private() {
 		f.reply(m, i18n("not_available_for_private"))
 		return

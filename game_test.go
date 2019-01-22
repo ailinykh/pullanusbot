@@ -15,13 +15,13 @@ import (
 )
 
 func restoreReplyTo() {
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 	}
 }
 
-func getPrivateMessage() *Message {
-	var m *Message
+func getPrivateMessage() *tb.Message {
+	var m *tb.Message
 	err := json.Unmarshal([]byte(`{
 		"message_id": 1488,
 		"from": {
@@ -45,8 +45,8 @@ func getPrivateMessage() *Message {
 	return m
 }
 
-func getGroupMessage() *Message {
-	var m *Message
+func getGroupMessage() *tb.Message {
+	var m *tb.Message
 	err := json.Unmarshal([]byte(`{
 		"message_id": 1488,
 		"from": {
@@ -84,10 +84,34 @@ func randStringRunes(n int) string {
 	return string(b)
 }
 
+type FakeBot struct {
+	handleCalledTimes int
+	sendCalledTimes   int
+}
+
+func (fb *FakeBot) Handle(endpoint interface{}, handler interface{}) {
+	fb.handleCalledTimes++
+}
+
+func (fb *FakeBot) Send(to tb.Recipient, what interface{}, options ...interface{}) (*tb.Message, error) {
+	fb.sendCalledTimes++
+	return nil, nil
+}
+
+func TestStartCommand(t *testing.T) {
+	bot := &FakeBot{}
+	faggot := NewFaggotGame(bot)
+	faggot.Start()
+
+	if bot.handleCalledTimes == 0 {
+		t.Error("faggot.Start() does not call's bot.Handler method")
+	}
+}
+
 func TestRulesCommand(t *testing.T) {
 	bot, _ := tb.NewBot(tb.Settings{})
 	faggot := NewFaggotGame(bot)
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "Правила игры") {
 			t.Log(text)
 			t.Error("/rules command must respond rules")
@@ -95,7 +119,7 @@ func TestRulesCommand(t *testing.T) {
 	}
 	defer restoreReplyTo()
 
-	faggot.rules(&Message{})
+	faggot.rules(&tb.Message{})
 }
 
 func TestRegCommandRespondsOnlyInGroupChat(t *testing.T) {
@@ -110,7 +134,7 @@ func TestRegCommandRespondsOnlyInGroupChat(t *testing.T) {
 
 	// It should respond only in groups
 	m := getPrivateMessage()
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "команда недоступна в личных чатах") {
 			t.Log(text)
 			t.Error("/reg command must respond only in groups")
@@ -131,7 +155,7 @@ func TestRegCommandAddsPlayerInGame(t *testing.T) {
 
 	// Add new player to game
 	m := getGroupMessage()
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "Ты в игре") {
 			t.Log(text)
 			t.Error("/reg command must add player to game")
@@ -178,7 +202,7 @@ func TestRegCommandAddsEachPlayerOnlyOnce(t *testing.T) {
 	m := getGroupMessage()
 	faggot.saveGame(m, game)
 
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "Ты уже в игре") {
 			t.Log(text)
 			t.Error("/reg command must deny player duplicating")
@@ -205,7 +229,7 @@ func TestPlayCommandRespondsOnlyInGroupChat(t *testing.T) {
 
 	// It should respond only in groups
 	m := getPrivateMessage()
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "команда недоступна в личных чатах") {
 			t.Log(text)
 			t.Error("/play command must respond only in groups")
@@ -225,7 +249,7 @@ func TestPlayCommandRespondsNoPlayers(t *testing.T) {
 	defer os.RemoveAll(workingDir)
 
 	m := getGroupMessage()
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "Зарегистрированных в игру еще нет") {
 			t.Log(text)
 			t.Error("/play command must respond no players")
@@ -262,7 +286,7 @@ func TestPlayCommandRespondsNotEnoughPlayers(t *testing.T) {
 	m := getGroupMessage()
 	faggot.saveGame(m, game)
 
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "Нужно как минимум два игрока") {
 			t.Log(text)
 			t.Error("/play command must respond not enough players")
@@ -311,7 +335,7 @@ func TestPlayCommandNotRespondsIfGameInProgress(t *testing.T) {
 	var mutex sync.Mutex // remove it when reply to chan
 
 	replyCount := 0
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		t.Log(text)
 		mutex.Lock()
 		replyCount++
@@ -373,7 +397,7 @@ func TestPlayCommandRespondsWinnerAlreadyKnown(t *testing.T) {
 	m := getGroupMessage()
 	faggot.saveGame(m, game)
 
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "по результатам сегодняшнего розыгрыша") {
 			t.Log(text)
 			t.Error("/play command must respond winner already known")
@@ -419,7 +443,7 @@ func TestPlayCommandLaunchGameAndRespondWinner(t *testing.T) {
 	faggot.saveGame(m, game)
 
 	replyToCallTimes := 0
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		replyToCallTimes++
 	}
 
@@ -449,7 +473,7 @@ func TestAllCommandRespondsOnlyInGroupChat(t *testing.T) {
 
 	// It should respond only in groups
 	m := getPrivateMessage()
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "команда недоступна в личных чатах") {
 			t.Log(text)
 			t.Error("/all command must respond only in groups")
@@ -470,7 +494,7 @@ func TestAllCommandNotRespondingWhenNoGames(t *testing.T) {
 
 	m := getGroupMessage()
 	replied := false
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		t.Log(text)
 		replied = true
 	}
@@ -533,7 +557,7 @@ func TestAllCommandRespondsWithAllTimeStat(t *testing.T) {
 	m := getGroupMessage()
 	faggot.saveGame(m, game)
 
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "за всё время") {
 			t.Log(text)
 			t.Error("/all command must respond with all time statistic")
@@ -553,7 +577,7 @@ func TestStatsCommandRespondsOnlyInGroupChat(t *testing.T) {
 
 	// It should respond only in groups
 	m := getPrivateMessage()
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "команда недоступна в личных чатах") {
 			t.Log(text)
 			t.Error("/stats command must respond only in groups")
@@ -574,7 +598,7 @@ func TestStatsCommandNotRespondingWhenNoGames(t *testing.T) {
 
 	m := getGroupMessage()
 	replied := false
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		t.Log(text)
 		replied = true
 	}
@@ -637,7 +661,7 @@ func TestAllCommandRespondsWithCurrentYearStat(t *testing.T) {
 	m := getGroupMessage()
 	faggot.saveGame(m, game)
 
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "за текущий год") {
 			t.Log(text)
 			t.Error("/all command must respond with all time statistic")
@@ -658,7 +682,7 @@ func TestMeCommandRespondsOnlyInGroupChat(t *testing.T) {
 
 	// It should respond only in groups
 	m := getPrivateMessage()
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "команда недоступна в личных чатах") {
 			t.Log(text)
 			t.Error("/stats command must respond only in groups")
@@ -718,7 +742,7 @@ func TestMeCommandRespondsWithPersonalStat(t *testing.T) {
 	m := getGroupMessage()
 	faggot.saveGame(m, game)
 
-	replyTo = func(bot *tb.Bot, m *Message, text string) {
+	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "3 раз") {
 			t.Log(text)
 			t.Error("/all command must respond with all time statistic")
