@@ -11,7 +11,7 @@ import (
 func main() {
 	logfile, err := os.OpenFile("data/log.txt", os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
-		log.Fatalf("error opening file: %v", err)
+		log.Printf("error opening file: %v", err)
 	}
 	defer logfile.Close()
 
@@ -20,7 +20,8 @@ func main() {
 	token := os.Getenv("BOT_TOKEN")
 
 	if token == "" {
-		log.Fatal("BOT_TOKEN not set")
+		log.Println("BOT_TOKEN not set")
+		return
 	}
 
 	poller := tb.NewMiddlewarePoller(&tb.LongPoller{Timeout: 10 * time.Second}, func(upd *tb.Update) bool {
@@ -33,7 +34,8 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
 	game := NewFaggotGame(bot)
