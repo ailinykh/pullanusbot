@@ -1,4 +1,4 @@
-package faggot
+package main
 
 import (
 	"fmt"

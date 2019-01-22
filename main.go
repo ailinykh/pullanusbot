@@ -5,9 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/ailinykh/pullanusbot/faggot"
-	// "./faggot"
-
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -39,7 +36,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	game := faggot.NewGame(bot)
+	game := NewFaggotGame(bot)
 	game.Start()
 
 	bot.Start()

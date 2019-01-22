@@ -1,4 +1,4 @@
-package faggot
+package main
 
 import (
 	"encoding/json"
@@ -18,10 +18,10 @@ type Faggot struct {
 	dp  *DataProvider
 }
 
-// Game struct represent game info for specific chat
-type Game struct {
-	Players []*Player `json:"players"`
-	Entries []*Entry  `json:"entries"`
+// FaggotGame struct represent game info for specific chat
+type FaggotGame struct {
+	Players []*FaggotPlayer `json:"players"`
+	Entries []*FaggotEntry  `json:"entries"`
 }
 
 // Message wrapper over tb.Message
@@ -30,8 +30,8 @@ type Message struct {
 	// mtx *sync.Mutex
 }
 
-// NewGame creates Game for particular bot
-func NewGame(bot *tb.Bot) Faggot {
+// NewFaggotGame creates FaggotGame for particular bot
+func NewFaggotGame(bot *tb.Bot) Faggot {
 	return Faggot{bot: bot, dp: NewDataProvider()}
 }
 
@@ -54,12 +54,12 @@ func (f *Faggot) handle(fun func(*Message)) func(*tb.Message) {
 	}
 }
 
-func (f *Faggot) loadGame(m *Message) *Game {
+func (f *Faggot) loadGame(m *Message) *FaggotGame {
 	log.Printf("%d LOAD: Loading game", m.Chat.ID)
 
 	filename := fmt.Sprintf("faggot%d.json", m.Chat.ID)
 	data := f.dp.loadJSON(filename)
-	var game Game
+	var game FaggotGame
 	err := json.Unmarshal(data, &game)
 
 	if err != nil {
@@ -70,7 +70,7 @@ func (f *Faggot) loadGame(m *Message) *Game {
 	return &game
 }
 
-func (f *Faggot) saveGame(m *Message, game *Game) {
+func (f *Faggot) saveGame(m *Message, game *FaggotGame) {
 	log.Printf("%d SAVE: Saving game (%d)", m.Chat.ID, len(game.Players))
 
 	filename := fmt.Sprintf("faggot%d.json", m.Chat.ID)
@@ -117,7 +117,7 @@ func (f *Faggot) reg(m *Message) {
 		}
 	}
 
-	game.Players = append(game.Players, &Player{User: m.Sender})
+	game.Players = append(game.Players, &FaggotPlayer{User: m.Sender})
 	f.saveGame(m, game)
 
 	log.Printf("%d REG:  Player added to game (%d)", m.Chat.ID, m.Sender.ID)
@@ -145,7 +145,7 @@ func (f *Faggot) play(m *Message) {
 
 	if len(game.Players) == 0 {
 		log.Printf("%d POTD: No players!", m.Chat.ID)
-		player := Player{User: m.Sender}
+		player := FaggotPlayer{User: m.Sender}
 		f.reply(m, fmt.Sprintf(i18n("no_players"), player.mention()))
 		return
 	} else if len(game.Players) == 1 {
@@ -194,7 +194,7 @@ func (f *Faggot) play(m *Message) {
 		time.Sleep(time.Duration(r) * time.Second)
 	}
 
-	game.Entries = append(game.Entries, &Entry{day, winner.ID, winner.Username})
+	game.Entries = append(game.Entries, &FaggotEntry{day, winner.ID, winner.Username})
 	f.saveGame(m, game)
 
 	activeGames.Remove(m.Chat.ID)
@@ -208,7 +208,7 @@ func (f *Faggot) all(m *Message) {
 	}
 
 	s := []string{i18n("faggot_all_top"), ""}
-	stats := Statistics{}
+	stats := FaggotStat{}
 	game := f.loadGame(m)
 
 	if len(game.Entries) == 0 {
@@ -236,7 +236,7 @@ func (f *Faggot) stats(m *Message) {
 	}
 
 	s := []string{i18n("faggot_stats_top"), ""}
-	stats := Statistics{}
+	stats := FaggotStat{}
 	game := f.loadGame(m)
 	loc, _ := time.LoadLocation("Europe/Zurich")
 	currentYear := time.Date(time.Now().Year(), time.January, 1, 0, 0, 0, 0, loc)
@@ -275,7 +275,7 @@ func (f *Faggot) me(m *Message) {
 	}
 
 	game := f.loadGame(m)
-	player := Player{User: m.Sender}
+	player := FaggotPlayer{User: m.Sender}
 	n := 0
 
 	for _, entry := range game.Entries {

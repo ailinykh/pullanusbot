@@ -1,4 +1,4 @@
-package faggot
+package main
 
 import (
 	"encoding/json"
@@ -86,7 +86,7 @@ func randStringRunes(n int) string {
 
 func TestRulesCommand(t *testing.T) {
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := NewGame(bot)
+	faggot := NewFaggotGame(bot)
 	replyTo = func(bot *tb.Bot, m *Message, text string) {
 		if !strings.Contains(text, "Правила игры") {
 			t.Log(text)
@@ -173,7 +173,7 @@ func TestRegCommandAddsEachPlayerOnlyOnce(t *testing.T) {
 		"entries": [
 		]
 	  }`)
-	var game *Game
+	var game *FaggotGame
 	json.Unmarshal(dataMock, &game)
 	m := getGroupMessage()
 	faggot.saveGame(m, game)
@@ -257,7 +257,7 @@ func TestPlayCommandRespondsNotEnoughPlayers(t *testing.T) {
 		"entries": [
 		]
 	  }`)
-	var game *Game
+	var game *FaggotGame
 	json.Unmarshal(dataMock, &game)
 	m := getGroupMessage()
 	faggot.saveGame(m, game)
@@ -301,7 +301,7 @@ func TestPlayCommandNotRespondsIfGameInProgress(t *testing.T) {
 		"entries": [
 		]
 	  }`)
-	var game *Game
+	var game *FaggotGame
 	json.Unmarshal(dataMock, &game)
 
 	m := getGroupMessage()
@@ -363,12 +363,12 @@ func TestPlayCommandRespondsWinnerAlreadyKnown(t *testing.T) {
 		"entries": [
 		]
 	  }`)
-	var game *Game
+	var game *FaggotGame
 	json.Unmarshal(dataMock, &game)
 
 	loc, _ := time.LoadLocation("Europe/Zurich")
 	day := time.Now().In(loc).Format("2006-01-02")
-	entry := Entry{Day: day, UserID: game.Players[1].ID, Username: game.Players[1].Username}
+	entry := FaggotEntry{Day: day, UserID: game.Players[1].ID, Username: game.Players[1].Username}
 	game.Entries = append(game.Entries, &entry)
 	m := getGroupMessage()
 	faggot.saveGame(m, game)
@@ -412,7 +412,7 @@ func TestPlayCommandLaunchGameAndRespondWinner(t *testing.T) {
 		"entries": [
 		]
 	  }`)
-	var game *Game
+	var game *FaggotGame
 	json.Unmarshal(dataMock, &game)
 
 	m := getGroupMessage()
@@ -527,7 +527,7 @@ func TestAllCommandRespondsWithAllTimeStat(t *testing.T) {
 		  }
 		]
 	  }`)
-	var game *Game
+	var game *FaggotGame
 	json.Unmarshal(dataMock, &game)
 
 	m := getGroupMessage()
@@ -631,7 +631,7 @@ func TestAllCommandRespondsWithCurrentYearStat(t *testing.T) {
 		  }
 		]
 	  }`)
-	var game *Game
+	var game *FaggotGame
 	json.Unmarshal(dataMock, &game)
 
 	m := getGroupMessage()
@@ -712,7 +712,7 @@ func TestMeCommandRespondsWithPersonalStat(t *testing.T) {
 		  }
 		]
 	  }`)
-	var game *Game
+	var game *FaggotGame
 	json.Unmarshal(dataMock, &game)
 
 	m := getGroupMessage()

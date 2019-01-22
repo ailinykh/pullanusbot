@@ -1,10 +1,10 @@
-package faggot
+package main
 
 import "testing"
 
-func TestStatistics(t *testing.T) {
+func TestFaggotStat(t *testing.T) {
 
-	stats := Statistics{}
+	stats := FaggotStat{}
 
 	stats.Increment("player1")
 	stats.Increment("player1")

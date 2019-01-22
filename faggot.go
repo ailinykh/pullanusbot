@@ -1,4 +1,4 @@
-package faggot
+package main
 
 import (
 	"strings"
@@ -7,37 +7,40 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-// Player struct for serialization
-type Player struct {
+// FaggotPlayer struct for serialization
+type FaggotPlayer struct {
 	*tb.User
 }
 
-func (p *Player) mention() string {
+func (p *FaggotPlayer) mention() string {
 	var str strings.Builder
 	str.WriteString("@")
 	str.WriteString(p.Username)
 	return str.String()
 }
 
-// Entry struct for game result serialization
-type Entry struct {
+// FaggotEntry struct for game result serialization
+type FaggotEntry struct {
 	Day      string `json:"day"`
 	UserID   int    `json:"user_id"`
 	Username string `json:"username"`
 }
 
-// Statistics is a game statistics structure
-type Statistics struct {
-	stat []PlayerStat
+// FaggotStat is a game statistics structure
+type FaggotStat struct {
+	stat []FaggotPlayerStat
 }
-type PlayerStat struct {
+
+// FaggotPlayerStat just a simple stat representation
+type FaggotPlayerStat struct {
 	Player string
 	Count  int
 }
 
-func (s *Statistics) Increment(player string) {
+// Increment stat for given player name. Creates if not exists
+func (s *FaggotStat) Increment(player string) {
 	if s.stat == nil {
-		s.stat = []PlayerStat{}
+		s.stat = []FaggotPlayerStat{}
 	}
 	found := false
 	for i, stat := range s.stat {
@@ -47,19 +50,19 @@ func (s *Statistics) Increment(player string) {
 		}
 	}
 	if !found {
-		s.stat = append(s.stat, PlayerStat{Player: player, Count: 1})
+		s.stat = append(s.stat, FaggotPlayerStat{Player: player, Count: 1})
 	}
 }
 
-func (s Statistics) Len() int {
+func (s FaggotStat) Len() int {
 	return len(s.stat)
 }
 
-func (s Statistics) Less(i, j int) bool {
+func (s FaggotStat) Less(i, j int) bool {
 	return s.stat[i].Count < s.stat[j].Count
 }
 
-func (s Statistics) Swap(i, j int) {
+func (s FaggotStat) Swap(i, j int) {
 	foo := s.stat[i]
 	s.stat[i] = s.stat[j]
 	s.stat[j] = foo
