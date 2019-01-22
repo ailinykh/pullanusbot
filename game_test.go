@@ -133,7 +133,8 @@ func TestRegCommandRespondsOnlyInGroupChat(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)
@@ -154,7 +155,8 @@ func TestRegCommandAddsPlayerInGame(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)
@@ -185,7 +187,8 @@ func TestRegCommandAddsEachPlayerOnlyOnce(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)
@@ -228,7 +231,8 @@ func TestPlayCommandRespondsOnlyInGroupChat(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)
@@ -249,7 +253,8 @@ func TestPlayCommandRespondsNoPlayers(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)
@@ -269,7 +274,8 @@ func TestPlayCommandRespondsNotEnoughPlayers(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)
@@ -306,7 +312,8 @@ func TestPlayCommandNotRespondsIfGameInProgress(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)
@@ -368,7 +375,8 @@ func TestPlayCommandRespondsWinnerAlreadyKnown(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)
@@ -417,7 +425,8 @@ func TestPlayCommandLaunchGameAndRespondWinner(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)
@@ -472,7 +481,8 @@ func TestAllCommandRespondsOnlyInGroupChat(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)
@@ -493,7 +503,8 @@ func TestAllCommandNotRespondingWhenNoGames(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)
@@ -517,7 +528,8 @@ func TestAllCommandRespondsWithAllTimeStat(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)
@@ -576,7 +588,8 @@ func TestStatsCommandRespondsOnlyInGroupChat(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)
@@ -597,7 +610,8 @@ func TestStatsCommandNotRespondingWhenNoGames(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)
@@ -621,7 +635,8 @@ func TestAllCommandRespondsWithCurrentYearStat(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)
@@ -681,7 +696,8 @@ func TestMeCommandRespondsOnlyInGroupChat(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)
@@ -702,7 +718,8 @@ func TestMeCommandRespondsWithPersonalStat(t *testing.T) {
 	t.Logf("Using data directory: %s", workingDir)
 
 	bot, _ := tb.NewBot(tb.Settings{})
-	faggot := Faggot{bot: bot, dp: NewDataProvider(workingDir)}
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
 
 	defer restoreReplyTo()
 	defer os.RemoveAll(workingDir)

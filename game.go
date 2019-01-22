@@ -12,6 +12,7 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
+// IBot is a generic interface for testing
 type IBot interface {
 	Handle(interface{}, interface{})
 	Send(tb.Recipient, interface{}, ...interface{}) (*tb.Message, error)
@@ -31,7 +32,8 @@ type FaggotGame struct {
 
 // NewFaggotGame creates FaggotGame for particular bot
 func NewFaggotGame(bot IBot) Faggot {
-	return Faggot{bot: bot, dp: NewDataProvider()}
+	dp, _ := NewDataProvider()
+	return Faggot{bot: bot, dp: dp}
 }
 
 // Start function initialize all nesessary command handlers
@@ -56,9 +58,14 @@ func (f *Faggot) loadGame(m *tb.Message) *FaggotGame {
 	log.Printf("%d LOAD: Loading game", m.Chat.ID)
 
 	filename := fmt.Sprintf("faggot%d.json", m.Chat.ID)
-	data := f.dp.loadJSON(filename)
+	data, err := f.dp.loadJSON(filename)
+
+	if err != nil {
+		log.Fatal(err, m.Chat.ID)
+	}
+
 	var game FaggotGame
-	err := json.Unmarshal(data, &game)
+	err = json.Unmarshal(data, &game)
 
 	if err != nil {
 		log.Fatal(err, m.Chat.ID)
@@ -78,8 +85,8 @@ func (f *Faggot) saveGame(m *tb.Message, game *FaggotGame) {
 		log.Fatal(err, m.Chat.ID)
 	}
 
-	f.dp.saveJSON(filename, json)
-	log.Printf("%d SAVE: Game saved (%d)", m.Chat.ID, len(game.Players))
+	success := f.dp.saveJSON(filename, json)
+	log.Printf("%d SAVE: Game saved (%d) %v", m.Chat.ID, len(game.Players), success)
 }
 
 var replyTo = func(bot IBot, m *tb.Message, text string) {

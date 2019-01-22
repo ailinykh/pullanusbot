@@ -18,7 +18,7 @@ type DataProvider struct {
 }
 
 // NewDataProvider func is a DataProvider constructor
-func NewDataProvider(args ...string) *DataProvider {
+func NewDataProvider(args ...string) (*DataProvider, error) {
 	dp := DataProvider{WorkingDir: "data"}
 
 	if len(args) > 0 {
@@ -29,40 +29,30 @@ func NewDataProvider(args ...string) *DataProvider {
 		log.Printf("DATA: Directory not exist! Creating directory: %s", dp.WorkingDir)
 		err = os.MkdirAll(dp.WorkingDir, os.ModePerm)
 		if err != nil {
-			log.Fatalf("DATA: Can't create directory: %s", dp.WorkingDir)
+			log.Printf("DATA: Can't create directory: %s", dp.WorkingDir)
+			return nil, err
 		}
 	}
 
 	log.Printf("DATA: Using directory: %s", dp.WorkingDir)
 
-	return &dp
+	return &dp, nil
 }
 
-func (d *DataProvider) saveJSON(filename string, data []byte) {
+func (d *DataProvider) saveJSON(filename string, data []byte) error {
 	mutex.Lock()
 	defer mutex.Unlock()
-
-	regexp := regexp.MustCompile(`[-\d]+`)
-	prefix := regexp.FindString(filename)
-	log.Printf("%s DATA: Saving file (%s)", prefix, filename)
 
 	file := path.Join(d.WorkingDir, filename)
-	err := ioutil.WriteFile(file, data, 0644)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Printf("%s DATA: File saved (%s)", prefix, filename)
+	return ioutil.WriteFile(file, data, 0644)
 }
 
-func (d *DataProvider) loadJSON(filename string) []byte {
+func (d *DataProvider) loadJSON(filename string) ([]byte, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	regexp := regexp.MustCompile(`[-\d]+`)
 	prefix := regexp.FindString(filename)
-	log.Printf("%s DATA: Loading file (%s)", prefix, filename)
 
 	file := path.Join(d.WorkingDir, filename)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
@@ -70,12 +60,5 @@ func (d *DataProvider) loadJSON(filename string) []byte {
 		ioutil.WriteFile(file, []byte("{}"), 0644)
 	}
 
-	data, err := ioutil.ReadFile(file)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Printf("%s DATA: File loaded (%s)", prefix, filename)
-	return data
+	return ioutil.ReadFile(file)
 }

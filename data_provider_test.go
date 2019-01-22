@@ -8,6 +8,14 @@ import (
 	"testing"
 )
 
+func TestDataProviderCreatesDirectory(t *testing.T) {
+	dp, _ := NewDataProvider("/data_provider")
+
+	if dp != nil {
+		t.Error("DataProvider should be nil")
+	}
+}
+
 func TestDataProviderSavesJson(t *testing.T) {
 	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
 	defer os.RemoveAll(workingDir)
@@ -15,7 +23,7 @@ func TestDataProviderSavesJson(t *testing.T) {
 
 	filename := "test_file.json"
 	file := path.Join(workingDir, filename)
-	dp := NewDataProvider(workingDir)
+	dp, _ := NewDataProvider(workingDir)
 	dataMock := []byte(`{
 			"players": [],
 			"entries": []
@@ -42,14 +50,14 @@ func TestDataProviderLoadsJson(t *testing.T) {
 
 	filename := "test_file.json"
 	file := path.Join(workingDir, filename)
-	dp := NewDataProvider(workingDir)
+	dp, _ := NewDataProvider(workingDir)
 	dataMock := []byte(`{
 			"players": [],
 			"entries": []
 		}`)
 	ioutil.WriteFile(file, dataMock, 0644)
 
-	data := dp.loadJSON(filename)
+	data, _ := dp.loadJSON(filename)
 
 	if string(data) != string(dataMock) {
 		t.Log(data)
