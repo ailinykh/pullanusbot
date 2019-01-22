@@ -26,3 +26,7 @@ jobs:
       - run:
           name: Publish coverage stats
           command: bash <(curl -s https://codecov.io/bash)
+      - run:
+          name: Deploy app to Digital Ocean Server via Docker
+          command: |
+            ssh -o StrictHostKeyChecking=no root@proxy.ailinykh.com "/bin/bash ./pullanusbot/deploy_app.sh $TAG"
