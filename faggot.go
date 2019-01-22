@@ -13,10 +13,7 @@ type FaggotPlayer struct {
 }
 
 func (p *FaggotPlayer) mention() string {
-	var str strings.Builder
-	str.WriteString("@")
-	str.WriteString(p.Username)
-	return str.String()
+	return strings.Join([]string{"@", p.Username}, "")
 }
 
 // FaggotEntry struct for game result serialization
