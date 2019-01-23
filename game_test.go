@@ -806,3 +806,24 @@ func TestMeCommandRespondsWithPersonalStat(t *testing.T) {
 	}
 	faggot.me(m)
 }
+
+func TestProxyCommandRespondsWithProxyInfo(t *testing.T) {
+	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
+	t.Logf("Using data directory: %s", workingDir)
+
+	bot, _ := tb.NewBot(tb.Settings{})
+	dp, _ := NewDataProvider(workingDir)
+	faggot := Faggot{bot: bot, dp: dp}
+
+	defer restoreReplyTo()
+	defer os.RemoveAll(workingDir)
+
+	m := getGroupMessage()
+	replyTo = func(bot IBot, m *tb.Message, text string) {
+		if !strings.Contains(text, "secret") {
+			t.Log(text)
+			t.Error("/proxy command must respond with proxy information")
+		}
+	}
+	faggot.proxy(m)
+}

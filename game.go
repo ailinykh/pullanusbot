@@ -45,6 +45,8 @@ func (f *Faggot) Start() {
 	f.bot.Handle("/pidorstats", f.stats)
 	f.bot.Handle("/pidorme", f.me)
 
+	f.bot.Handle("/proxy", f.proxy)
+
 	log.Println("Game started")
 }
 
@@ -270,4 +272,8 @@ func (f *Faggot) me(m *tb.Message) {
 	}
 
 	f.reply(m, fmt.Sprintf(i18n("faggot_me"), player.mention(), n))
+}
+
+func (f *Faggot) proxy(m *tb.Message) {
+	f.reply(m, "tg://proxy?server=proxy.ailinykh.com&port=443&secret=dd71ce3b5bf1b7015dc62a76dc244c5aec")
 }
