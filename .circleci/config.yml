@@ -3,6 +3,8 @@ jobs:
   build:
     docker:
       - image: circleci/golang
+    environment:
+      - DEP_VERSION: 0.5.0
     working_directory: /go/src/github.com/ailinykh/pullanusbot
     steps:
       - checkout
