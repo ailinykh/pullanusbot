@@ -15,11 +15,11 @@ jobs:
     steps:
       - checkout
       - run: |
-        if [ ! -d vendor ]; then
-          curl -L -s https://github.com/golang/dep/releases/download/v${DEP_VERSION}/dep-linux-amd64 -o /go/bin/dep
-          chmod +x /go/bin/dep
-          /go/bin/dep ensure
-        fi
+          if [ ! -d vendor ]; then
+            curl -L -s https://github.com/golang/dep/releases/download/v${DEP_VERSION}/dep-linux-amd64 -o /go/bin/dep
+            chmod +x /go/bin/dep
+            /go/bin/dep ensure
+          fi
 
   test:
     executor: my-executor
