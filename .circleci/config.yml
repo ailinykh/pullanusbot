@@ -10,35 +10,32 @@ executors:
     working_directory: /go/src/github.com/ailinykh/pullanusbot
 
 jobs:
-  - setup:
+  setup:
     executor: my-executor
     steps:
       - checkout
-      - run:
-          command: |
-            if [ ! -d vendor ]; then
-              curl -L -s https://github.com/golang/dep/releases/download/v${DEP_VERSION}/dep-linux-amd64 -o /go/bin/dep
-              chmod +x /go/bin/dep
-              /go/bin/dep ensure
-            fi
+      - run: |
+        if [ ! -d vendor ]; then
+          curl -L -s https://github.com/golang/dep/releases/download/v${DEP_VERSION}/dep-linux-amd64 -o /go/bin/dep
+          chmod +x /go/bin/dep
+          /go/bin/dep ensure
+        fi
 
-  - test:
+  test:
     executor: my-executor
     requires:
       - setup
     steps:
-      run:  
-        command: go test -race -v -coverprofile=coverage.txt -covermode=atomic
+      - run: go test -race -v -coverprofile=coverage.txt -covermode=atomic
 
-  - coverage:
+  coverage:
     executor: my-executor
     requires:
       - test
     steps:
-      run:
-        command: bash <(curl -s https://codecov.io/bash)
+      - run: bash <(curl -s https://codecov.io/bash)
 
-  - build:
+  build:
     executor: my-executor
     requires:
       - test
@@ -46,8 +43,7 @@ jobs:
       only:
         - master
     steps:
-      - run:
-        command: |
+      - run: |
           docker build -t ailinykh/$IMAGE_NAME:$TAG .
           echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
           docker push ailinykh/$IMAGE_NAME:$TAG
@@ -56,7 +52,7 @@ jobs:
         paths:
           - vendor
     
-  - deploy:
+  deploy:
     executor: my-executor
     requires:
       - build
