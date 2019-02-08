@@ -33,6 +33,8 @@ jobs:
 
   build:
     executor: my-executor
+    branches:
+      only: master
     steps:
       - run: |
           docker build -t ailinykh/$IMAGE_NAME:$TAG .
@@ -45,28 +47,9 @@ jobs:
     
   deploy:
     executor: my-executor
+    branches:
+      only: master
     steps:
       - run:
           name: Deploy app to Digital Ocean Server via Docker
           command: ssh -o StrictHostKeyChecking=no root@proxy.ailinykh.com "/bin/bash ./pullanusbot/deploy_app.sh $TAG"
-
-workflows:
-  version: 2
-  build_and_deploy:
-    jobs:
-      - setup
-      - test:
-          requires:
-            - setup
-      - coverage:
-          requires:
-            - test
-      - build:
-          requires:
-            - test
-          filters:
-            branches:
-              only: master
-      - deploy:
-          requires:
-            - build
