@@ -39,9 +39,9 @@ jobs:
           echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
           docker push ailinykh/$IMAGE_NAME:$TAG
       - save_cache:
-        key: gopkg-{{ .Branch }}-{{ checksum "Gopkg.lock" }}
-        paths:
-          - vendor
+          key: gopkg-{{ .Branch }}-{{ checksum "Gopkg.lock" }}
+          paths:
+            - vendor
     
   deploy:
     executor: my-executor
