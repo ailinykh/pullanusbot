@@ -47,8 +47,8 @@ jobs:
     executor: my-executor
     steps:
       - run:
-        name: Deploy app to Digital Ocean Server via Docker
-        command: ssh -o StrictHostKeyChecking=no root@proxy.ailinykh.com "/bin/bash ./pullanusbot/deploy_app.sh $TAG"
+          name: Deploy app to Digital Ocean Server via Docker
+          command: ssh -o StrictHostKeyChecking=no root@proxy.ailinykh.com "/bin/bash ./pullanusbot/deploy_app.sh $TAG"
 
 workflows:
   version: 2
@@ -56,8 +56,8 @@ workflows:
     jobs:
       - setup
       - test:
-        requires:
-          - setup
+          requires:
+            - setup
       - coverage:
           requires:
           - test
@@ -68,14 +68,14 @@ workflows:
     jobs:
       - setup
       - test:
-        requires:
-          - setup
+          requires:
+            - setup
       - coverage:
           requires:
           - test
       - build:
-        requires:
-          - test
+          requires:
+            - test
       - deploy:
-        requires:
-          - build
+          requires:
+            - build
