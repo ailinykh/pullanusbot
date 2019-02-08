@@ -1,6 +1,6 @@
-version: 2.1
-executors:
-  my-executor:
+version: 2.0
+jobs:
+  build_and_deploy:
     docker:
       - image: circleci/golang
     environment:
@@ -8,48 +8,33 @@ executors:
       - IMAGE_NAME: pullanusbot
       - TAG: 0.1.{{ .BuildNum }}
     working_directory: /go/src/github.com/ailinykh/pullanusbot
-
-jobs:
-  setup:
-    executor: my-executor
     steps:
-      - checkout
-      - run: |
-          if [ ! -d vendor ]; then
-            curl -L -s https://github.com/golang/dep/releases/download/v${DEP_VERSION}/dep-linux-amd64 -o /go/bin/dep
-            chmod +x /go/bin/dep
-            /go/bin/dep ensure
-          fi
-
-  test:
-    executor: my-executor
-    steps:
-      - run: go test -race -v -coverprofile=coverage.txt -covermode=atomic
-
-  coverage:
-    executor: my-executor
-    steps:
-      - run: bash <(curl -s https://codecov.io/bash)
-
-  build:
-    executor: my-executor
-    branches:
-      only: master
-    steps:
-      - run: |
-          docker build -t ailinykh/$IMAGE_NAME:$TAG .
-          echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
-          docker push ailinykh/$IMAGE_NAME:$TAG
-      - save_cache:
-          key: gopkg-{{ .Branch }}-{{ checksum "Gopkg.lock" }}
-          paths:
-            - vendor
-    
-  deploy:
-    executor: my-executor
-    branches:
-      only: master
-    steps:
+      - checout
+      - run:
+          name: Setup environment
+          command: |
+            if [ ! -d vendor ]; then
+              curl -L -s https://github.com/golang/dep/releases/download/v${DEP_VERSION}/dep-linux-amd64 -o /go/bin/dep
+              chmod +x /go/bin/dep
+              /go/bin/dep ensure
+            fi
+      - run:
+          name: Run tests
+          command: go test -race -v -coverprofile=coverage.txt -covermode=atomic
+      - run:
+          name: Push coverage results
+          command: bash <(curl -s https://codecov.io/bash)
+      - run:
+          name: Build docker image
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              docker build -t ailinykh/$IMAGE_NAME:$TAG .
+              echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
+              docker push ailinykh/$IMAGE_NAME:$TAG
+            fi
       - run:
           name: Deploy app to Digital Ocean Server via Docker
-          command: ssh -o StrictHostKeyChecking=no root@proxy.ailinykh.com "/bin/bash ./pullanusbot/deploy_app.sh $TAG"
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              ssh -o StrictHostKeyChecking=no root@proxy.ailinykh.com "/bin/bash ./pullanusbot/deploy_app.sh $TAG"
+            fi
