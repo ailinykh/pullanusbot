@@ -24,7 +24,7 @@ jobs:
 
   test:
     executor: my-executor
-    require:
+    requires:
       - setup
     steps:
       run:  
@@ -32,7 +32,7 @@ jobs:
 
   coverage:
     executor: my-executor
-    require:
+    requires:
       - test
     steps:
       run:
@@ -40,7 +40,7 @@ jobs:
 
   build:
     executor: my-executor
-    require:
+    requires:
       - test
     branches:
       only:
@@ -58,7 +58,7 @@ jobs:
     
   deploy:
     executor: my-executor
-    require:
+    requires:
       - build
     steps:
       - run:
