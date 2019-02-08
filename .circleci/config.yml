@@ -60,7 +60,7 @@ workflows:
             - setup
       - coverage:
           requires:
-          - test
+            - test
       - build:
           requires:
             - test
