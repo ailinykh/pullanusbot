@@ -9,7 +9,7 @@ jobs:
       - TAG: 0.1.{{ .BuildNum }}
     working_directory: /go/src/github.com/ailinykh/pullanusbot
     steps:
-      - checout
+      - checkout
       - run:
           name: Setup environment
           command: |
