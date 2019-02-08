@@ -10,7 +10,7 @@ executors:
     working_directory: /go/src/github.com/ailinykh/pullanusbot
 
 jobs:
-  setup:
+  - setup:
     executor: my-executor
     steps:
       - checkout
@@ -22,7 +22,7 @@ jobs:
               /go/bin/dep ensure
             fi
 
-  test:
+  - test:
     executor: my-executor
     requires:
       - setup
@@ -30,7 +30,7 @@ jobs:
       run:  
         command: go test -race -v -coverprofile=coverage.txt -covermode=atomic
 
-  coverage:
+  - coverage:
     executor: my-executor
     requires:
       - test
@@ -38,7 +38,7 @@ jobs:
       run:
         command: bash <(curl -s https://codecov.io/bash)
 
-  build:
+  - build:
     executor: my-executor
     requires:
       - test
@@ -56,7 +56,7 @@ jobs:
         paths:
           - vendor
     
-  deploy:
+  - deploy:
     executor: my-executor
     requires:
       - build
