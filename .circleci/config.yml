@@ -6,7 +6,7 @@ jobs:
     environment:
       - DEP_VERSION: 0.5.0
       - IMAGE_NAME: pullanusbot
-      - TAG: 0.1.{{ .BuildNum }}
+      - TAG: 0.1.${CIRCLE_BUILD_NUM}
     working_directory: /go/src/github.com/ailinykh/pullanusbot
     steps:
       - checkout
