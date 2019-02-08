@@ -23,25 +23,16 @@ jobs:
 
   test:
     executor: my-executor
-    requires:
-      - setup
     steps:
       - run: go test -race -v -coverprofile=coverage.txt -covermode=atomic
 
   coverage:
     executor: my-executor
-    requires:
-      - test
     steps:
       - run: bash <(curl -s https://codecov.io/bash)
 
   build:
     executor: my-executor
-    requires:
-      - test
-    branches:
-      only:
-        - master
     steps:
       - run: |
           docker build -t ailinykh/$IMAGE_NAME:$TAG .
@@ -54,9 +45,37 @@ jobs:
     
   deploy:
     executor: my-executor
-    requires:
-      - build
     steps:
       - run:
         name: Deploy app to Digital Ocean Server via Docker
         command: ssh -o StrictHostKeyChecking=no root@proxy.ailinykh.com "/bin/bash ./pullanusbot/deploy_app.sh $TAG"
+
+workflows:
+  version: 2
+  commit:
+    jobs:
+      - setup
+      - test:
+        requires:
+          - setup
+      - coverage:
+          requires:
+          - test
+  deploy:
+    branches:
+      only:
+        - master
+    jobs:
+      - setup
+      - test:
+        requires:
+          - setup
+      - coverage:
+          requires:
+          - test
+      - build:
+        requires:
+          - test
+      - deploy:
+        requires:
+          - build
