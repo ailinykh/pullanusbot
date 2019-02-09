@@ -9,13 +9,14 @@ import (
 )
 
 func main() {
-	logfile, err := os.OpenFile("data/log.txt", os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		log.Printf("error opening file: %v", err)
+	if os.Getenv("DEV") == "" {
+		logfile, err := os.OpenFile("data/log.txt", os.O_RDWR|os.O_CREATE, 0666)
+		if err != nil {
+			log.Printf("error opening file: %v", err)
+		}
+		defer logfile.Close()
+		log.SetOutput(logfile)
 	}
-	defer logfile.Close()
-
-	log.SetOutput(logfile)
 
 	token := os.Getenv("BOT_TOKEN")
 
