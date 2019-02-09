@@ -1,12 +1,17 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"os"
+	"path"
 	"time"
 
+	_ "github.com/mattn/go-sqlite3"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
+
+var db *sql.DB
 
 func main() {
 	if os.Getenv("DEV") == "" {
@@ -17,6 +22,8 @@ func main() {
 		defer logfile.Close()
 		log.SetOutput(logfile)
 	}
+
+	setupdb("data")
 
 	token := os.Getenv("BOT_TOKEN")
 
@@ -43,4 +50,32 @@ func main() {
 	game.Start()
 
 	bot.Start()
+}
+
+func setupdb(dir string) {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		log.Printf("Directory not exist! Creating directory: %s", dir)
+		err = os.MkdirAll(dir, os.ModePerm)
+		if err != nil {
+			log.Fatalf("Can't create directory: %s", dir)
+		}
+	}
+
+	dbFile := path.Join(dir, "pullanusbot.db")
+
+	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
+		log.Printf("Database not exist! Creating database: %s", dbFile)
+		_, err = os.Create(dbFile)
+		if err != nil {
+			log.Fatalf("Can't create database: %s", dbFile)
+		}
+	}
+
+	db, _ = sql.Open("sqlite3", dbFile)
+}
+
+func checkErr(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 }
