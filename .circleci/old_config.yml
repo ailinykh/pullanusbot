@@ -1,8 +1,6 @@
 version: 2
 jobs:
   build:
-    branches:
-      only: master
     docker:
       - image: circleci/golang
     environment:
@@ -31,12 +29,17 @@ jobs:
       - run:
           name: Build docker image
           command: |
-            docker build -t ailinykh/$IMAGE_NAME:$TAG .
-            echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
-            docker push ailinykh/$IMAGE_NAME:$TAG
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              docker build -t ailinykh/$IMAGE_NAME:$TAG .
+              echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
+              docker push ailinykh/$IMAGE_NAME:$TAG
+            fi
       - run:
           name: Deploy app to Digital Ocean Server via Docker
-          command: ssh -o StrictHostKeyChecking=no root@proxy.ailinykh.com "/bin/bash ./pullanusbot/deploy_app.sh $TAG"
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              ssh -o StrictHostKeyChecking=no root@proxy.ailinykh.com "/bin/bash ./pullanusbot/deploy_app.sh $TAG"
+            fi
       - save_cache:
           key: gopkg-{{ .Branch }}-{{ checksum "Gopkg.lock" }}
           paths:

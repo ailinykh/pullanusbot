@@ -7,7 +7,10 @@ WORKDIR /go/src/github.com/ailinykh/pullanusbot
 ADD . .
 
 # Install dependencies
-RUN go get gopkg.in/tucnak/telebot.v2
+RUN curl -L -s https://github.com/golang/dep/releases/download/v${DEP_VERSION}/dep-linux-amd64 -o /go/bin/dep \
+    chmod +x /go/bin/dep
+    
+RUN /go/bin/dep ensure
 
 # Build the pullanusbot inside the container.
 RUN go build && go install
