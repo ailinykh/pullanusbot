@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"path"
@@ -15,10 +14,14 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-func restoreReplyTo() {
-	replyTo = func(bot IBot, m *tb.Message, text string) {
-		bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func randStringRunes(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
+	return string(b)
 }
 
 func getPrivateMessage() *tb.Message {
@@ -71,83 +74,24 @@ func getGroupMessage() *tb.Message {
 	return m
 }
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
+func tearUp(t *testing.T) func() {
+	defaultWorkingDir := workingDir
+	workingDir = path.Join(os.TempDir(), fmt.Sprintf("pullanusbot_data_%s_%s", t.Name(), randStringRunes(4)))
+	setupdb(workingDir)
 
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-func randStringRunes(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
-}
-
-type FakeBot struct {
-	handleCalledTimes int
-	sendCalledTimes   int
-}
-
-func (fb *FakeBot) Handle(endpoint interface{}, handler interface{}) {
-	fb.handleCalledTimes++
-}
-
-func (fb *FakeBot) Send(to tb.Recipient, what interface{}, options ...interface{}) (*tb.Message, error) {
-	fb.sendCalledTimes++
-	return nil, nil
-}
-
-func TestStartCommand(t *testing.T) {
-	bot := &FakeBot{}
-	faggot := NewFaggotGame(bot)
-	faggot.Start()
-
-	if bot.handleCalledTimes == 0 {
-		t.Error("faggot.Start() does not call's bot.Handler method")
-	}
-
-	replyTo(bot, &tb.Message{}, "some text")
-
-	if bot.sendCalledTimes == 0 {
-		t.Error("replyTo does not call's bot.Send method")
-	}
-}
-
-func TestLoadGame(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-	defer os.RemoveAll(workingDir)
-
-	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	// JSON invalid
-	file := path.Join(workingDir, "faggot-1488.json")
-	data := []byte(`{wrong json}`)
-	ioutil.WriteFile(file, data, 0644)
-
-	m := getGroupMessage()
-	_, err := faggot.loadGame(m)
-
-	if !strings.Contains(err.Error(), "invalid character") {
-		t.Error("Load game must return error if JSON not valid")
-	}
-
-	// Can't read file
-	os.Remove(file)
-	data = []byte(`{"correct": "json"}`)
-	ioutil.WriteFile(file, data, 0200)
-	_, err = faggot.loadGame(m)
-
-	if !strings.Contains(err.Error(), "permission denied") {
-		t.Error("Load game must return error if can't read file")
+	// tearDown
+	return func() {
+		os.RemoveAll(workingDir)
+		workingDir = defaultWorkingDir
+		// Restore replyTo (possibly mocked by test case)
+		replyTo = func(bot IBot, m *tb.Message, text string) {
+			bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+		}
 	}
 }
 
 func TestRulesCommand(t *testing.T) {
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
 	faggot := NewFaggotGame(bot)
 	replyTo = func(bot IBot, m *tb.Message, text string) {
@@ -156,21 +100,13 @@ func TestRulesCommand(t *testing.T) {
 			t.Error("/rules command must respond rules")
 		}
 	}
-	defer restoreReplyTo()
-
 	faggot.rules(&tb.Message{})
 }
 
 func TestRegCommandRespondsOnlyInGroupChat(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
+	faggot := NewFaggotGame(bot)
 
 	// It should respond only in groups
 	m := getPrivateMessage()
@@ -184,15 +120,9 @@ func TestRegCommandRespondsOnlyInGroupChat(t *testing.T) {
 }
 
 func TestRegCommandAddsPlayerInGame(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
+	faggot := NewFaggotGame(bot)
 
 	// Add new player to game
 	m := getGroupMessage()
@@ -205,44 +135,21 @@ func TestRegCommandAddsPlayerInGame(t *testing.T) {
 	faggot.reg(m)
 
 	// Check player added sucessfully
-	game, _ := faggot.loadGame(m)
-	for _, p := range game.Players {
-		if p.ID == m.Sender.ID {
-			return
-		}
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM faggot_players WHERE chat_id = ? AND user_id = ?", m.Chat.ID, m.Sender.ID).Scan(&count)
+	if err == nil && count != 1 {
+		t.Log(err, count)
+		t.Error("Player not added to game")
 	}
-
-	t.Error("Player not added to game")
 }
 
 func TestRegCommandAddsEachPlayerOnlyOnce(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
-
-	dataMock := []byte(`{
-		"players": [
-		  {
-			"id": 1488,
-			"first_name": "Adolf",
-			"last_name": "Hitler",
-			"username": "adolf",
-			"language_code": "en"
-		  }
-		],
-		"entries": [
-		]
-	  }`)
-	var game *FaggotGame
-	json.Unmarshal(dataMock, &game)
+	faggot := NewFaggotGame(bot)
 	m := getGroupMessage()
-	faggot.saveGame(m, game)
+
+	db.Exec("INSERT INTO faggot_players(chat_id, user_id, first_name, last_name, username, language_code) values(?,?,?,?,?,?)", m.Chat.ID, m.Sender.ID, m.Sender.FirstName, m.Sender.LastName, m.Sender.Username, m.Sender.LanguageCode)
 
 	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "Ты уже в игре") {
@@ -253,22 +160,18 @@ func TestRegCommandAddsEachPlayerOnlyOnce(t *testing.T) {
 	faggot.reg(m)
 
 	// Check player not added twice
-	game, _ = faggot.loadGame(m)
-	if len(game.Players) > 1 {
-		t.Error("Player addet to game twice!")
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM faggot_players WHERE chat_id = ? AND user_id = ?", m.Chat.ID, m.Sender.ID).Scan(&count)
+	if err == nil && count != 1 {
+		t.Log(err, count)
+		t.Error("Player added to game twice!")
 	}
 }
 
 func TestPlayCommandRespondsOnlyInGroupChat(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
+	faggot := NewFaggotGame(bot)
 
 	// It should respond only in groups
 	m := getPrivateMessage()
@@ -282,15 +185,9 @@ func TestPlayCommandRespondsOnlyInGroupChat(t *testing.T) {
 }
 
 func TestPlayCommandRespondsNoPlayers(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
+	faggot := NewFaggotGame(bot)
 
 	m := getGroupMessage()
 	replyTo = func(bot IBot, m *tb.Message, text string) {
@@ -303,33 +200,12 @@ func TestPlayCommandRespondsNoPlayers(t *testing.T) {
 }
 
 func TestPlayCommandRespondsNotEnoughPlayers(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
-
-	dataMock := []byte(`{
-		"players": [
-		  {
-			"id": 1488,
-			"first_name": "Adolf",
-			"last_name": "Hitler",
-			"username": "adolf",
-			"language_code": "en"
-		  }
-		],
-		"entries": [
-		]
-	  }`)
-	var game *FaggotGame
-	json.Unmarshal(dataMock, &game)
+	faggot := NewFaggotGame(bot)
 	m := getGroupMessage()
-	faggot.saveGame(m, game)
+
+	db.Exec("INSERT INTO faggot_players(chat_id, user_id, first_name, last_name, username, language_code) values(?,?,?,?,?,?)", m.Chat.ID, m.Sender.ID, m.Sender.FirstName, m.Sender.LastName, m.Sender.Username, m.Sender.LanguageCode)
 
 	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "Нужно как минимум два игрока") {
@@ -341,41 +217,16 @@ func TestPlayCommandRespondsNotEnoughPlayers(t *testing.T) {
 }
 
 func TestPlayCommandNotRespondsIfGameInProgress(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
-
-	dataMock := []byte(`{
-		"players": [
-		  {
-			"id": 1488,
-			"first_name": "Adolf",
-			"last_name": "Hitler",
-			"username": "adolf",
-			"language_code": "en"
-		  },
-		  {
-			"id": 1489,
-			"first_name": "Joseph",
-			"last_name": "Goebbels",
-			"username": "goebbels",
-			"language_code": "en"
-		  }
-		],
-		"entries": [
-		]
-	  }`)
-	var game *FaggotGame
-	json.Unmarshal(dataMock, &game)
-
+	faggot := NewFaggotGame(bot)
 	m := getGroupMessage()
-	faggot.saveGame(m, game)
+
+	player1 := m.Sender
+	player2 := tb.User{ID: 1918, FirstName: "Jozeph", LastName: "Stalin", Username: "stalin", LanguageCode: "ru"}
+
+	db.Exec("INSERT INTO faggot_players(chat_id, user_id, first_name, last_name, username, language_code) values(?,?,?,?,?,?)", m.Chat.ID, player1.ID, player1.FirstName, player1.LastName, player1.Username, player1.LanguageCode)
+	db.Exec("INSERT INTO faggot_players(chat_id, user_id, first_name, last_name, username, language_code) values(?,?,?,?,?,?)", m.Chat.ID, player2.ID, player2.FirstName, player2.LastName, player2.Username, player2.LanguageCode)
 
 	var wg sync.WaitGroup
 	var mutex sync.Mutex // remove it when reply to chan
@@ -388,7 +239,7 @@ func TestPlayCommandNotRespondsIfGameInProgress(t *testing.T) {
 		mutex.Unlock()
 	}
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 3; i++ {
 		wg.Add(1)
 		go func() {
 			faggot.play(m)
@@ -404,45 +255,18 @@ func TestPlayCommandNotRespondsIfGameInProgress(t *testing.T) {
 }
 
 func TestPlayCommandRespondsWinnerAlreadyKnown(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
-
-	dataMock := []byte(`{
-		"players": [
-		  {
-			"id": 1488,
-			"first_name": "Adolf",
-			"last_name": "Hitler",
-			"username": "adolf",
-			"language_code": "en"
-		  },
-		  {
-			"id": 1489,
-			"first_name": "Joseph",
-			"last_name": "Goebbels",
-			"username": "goebbels",
-			"language_code": "en"
-		  }
-		],
-		"entries": [
-		]
-	  }`)
-	var game *FaggotGame
-	json.Unmarshal(dataMock, &game)
-
-	loc, _ := time.LoadLocation("Europe/Zurich")
-	day := time.Now().In(loc).Format("2006-01-02")
-	entry := FaggotEntry{Day: day, UserID: game.Players[1].ID, Username: game.Players[1].Username}
-	game.Entries = append(game.Entries, &entry)
+	faggot := NewFaggotGame(bot)
 	m := getGroupMessage()
-	faggot.saveGame(m, game)
+
+	player1 := m.Sender
+	player2 := tb.User{ID: 1918, FirstName: "Jozeph", LastName: "Stalin", Username: "stalin", LanguageCode: "ru"}
+	day := time.Now().Format("2006-01-02")
+
+	db.Exec("INSERT INTO faggot_players(chat_id, user_id, first_name, last_name, username, language_code) values(?,?,?,?,?,?)", m.Chat.ID, player1.ID, player1.FirstName, player1.LastName, player1.Username, player1.LanguageCode)
+	db.Exec("INSERT INTO faggot_players(chat_id, user_id, first_name, last_name, username, language_code) values(?,?,?,?,?,?)", m.Chat.ID, player2.ID, player2.FirstName, player2.LastName, player2.Username, player2.LanguageCode)
+	db.Exec("INSERT INTO faggot_entries(day, chat_id, user_id, username) values(?,?,?,?)", day, m.Chat.ID, player1.ID, player1.Username)
 
 	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "по результатам сегодняшнего розыгрыша") {
@@ -454,41 +278,16 @@ func TestPlayCommandRespondsWinnerAlreadyKnown(t *testing.T) {
 }
 
 func TestPlayCommandLaunchGameAndRespondWinner(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
-
-	dataMock := []byte(`{
-		"players": [
-		  {
-			"id": 1488,
-			"first_name": "Adolf",
-			"last_name": "Hitler",
-			"username": "adolf",
-			"language_code": "en"
-		  },
-		  {
-			"id": 1489,
-			"first_name": "Joseph",
-			"last_name": "Goebbels",
-			"username": "goebbels",
-			"language_code": "en"
-		  }
-		],
-		"entries": [
-		]
-	  }`)
-	var game *FaggotGame
-	json.Unmarshal(dataMock, &game)
-
+	faggot := NewFaggotGame(bot)
 	m := getGroupMessage()
-	faggot.saveGame(m, game)
+
+	player1 := m.Sender
+	player2 := tb.User{ID: 1918, FirstName: "Jozeph", LastName: "Stalin", Username: "stalin", LanguageCode: "ru"}
+
+	db.Exec("INSERT INTO faggot_players(chat_id, user_id, first_name, last_name, username, language_code) values(?,?,?,?,?,?)", m.Chat.ID, player1.ID, player1.FirstName, player1.LastName, player1.Username, player1.LanguageCode)
+	db.Exec("INSERT INTO faggot_players(chat_id, user_id, first_name, last_name, username, language_code) values(?,?,?,?,?,?)", m.Chat.ID, player2.ID, player2.FirstName, player2.LastName, player2.Username, player2.LanguageCode)
 
 	replyToCallTimes := 0
 	replyTo = func(bot IBot, m *tb.Message, text string) {
@@ -502,23 +301,19 @@ func TestPlayCommandLaunchGameAndRespondWinner(t *testing.T) {
 		t.Errorf("/play command must respond multiple times (got %d)", replyToCallTimes)
 	}
 
-	game, _ = faggot.loadGame(m)
-
-	if len(game.Entries) != 1 {
+	// Check game results
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM faggot_entries WHERE chat_id = ?", m.Chat.ID).Scan(&count)
+	if err == nil && count != 1 {
+		t.Log(err, count)
 		t.Error("/play command must play game")
 	}
 }
 
 func TestAllCommandRespondsOnlyInGroupChat(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
+	faggot := NewFaggotGame(bot)
 
 	// It should respond only in groups
 	m := getPrivateMessage()
@@ -531,17 +326,10 @@ func TestAllCommandRespondsOnlyInGroupChat(t *testing.T) {
 	faggot.all(m)
 }
 
-func TestAllCommandNotRespondingWhenNoGames(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+func TestAllCommandNotRespondsIfNoGamesPlayedYet(t *testing.T) {
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
-
+	faggot := NewFaggotGame(bot)
 	m := getGroupMessage()
 	replied := false
 	replyTo = func(bot IBot, m *tb.Message, text string) {
@@ -557,56 +345,20 @@ func TestAllCommandNotRespondingWhenNoGames(t *testing.T) {
 }
 
 func TestAllCommandRespondsWithAllTimeStat(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
-
-	dataMock := []byte(`{
-		"players": [
-		  {
-			"id": 1488,
-			"first_name": "Adolf",
-			"last_name": "Hitler",
-			"username": "adolf",
-			"language_code": "en"
-		  },
-		  {
-			"id": 1489,
-			"first_name": "Joseph",
-			"last_name": "Goebbels",
-			"username": "goebbels",
-			"language_code": "en"
-		  }
-		],
-		"entries": [
-		  {
-			"day": "2019-01-10",
-			"user_id": 1488,
-			"username": "hitler"
-		  },
-		  {
-			"day": "2019-01-09",
-			"user_id": 1488,
-			"username": "hitler"
-		  },
-		  {
-			"day": "2018-12-31",
-			"user_id": 1488,
-			"username": "hitler"
-		  }
-		]
-	  }`)
-	var game *FaggotGame
-	json.Unmarshal(dataMock, &game)
-
+	faggot := NewFaggotGame(bot)
 	m := getGroupMessage()
-	faggot.saveGame(m, game)
+
+	player1 := m.Sender
+	player2 := tb.User{ID: 1918, FirstName: "Jozeph", LastName: "Stalin", Username: "stalin", LanguageCode: "ru"}
+
+	db.Exec("INSERT INTO faggot_players(chat_id, user_id, first_name, last_name, username, language_code) values(?,?,?,?,?,?)", m.Chat.ID, player1.ID, player1.FirstName, player1.LastName, player1.Username, player1.LanguageCode)
+	db.Exec("INSERT INTO faggot_players(chat_id, user_id, first_name, last_name, username, language_code) values(?,?,?,?,?,?)", m.Chat.ID, player2.ID, player2.FirstName, player2.LastName, player2.Username, player2.LanguageCode)
+
+	db.Exec("INSERT INTO faggot_entries(day, chat_id, user_id, username) values(?,?,?,?)", "2019-01-10", m.Chat.ID, player1.ID, player1.Username)
+	db.Exec("INSERT INTO faggot_entries(day, chat_id, user_id, username) values(?,?,?,?)", "2019-01-09", m.Chat.ID, player1.ID, player1.Username)
+	db.Exec("INSERT INTO faggot_entries(day, chat_id, user_id, username) values(?,?,?,?)", "2019-12-31", m.Chat.ID, player1.ID, player1.Username)
 
 	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "за всё время") {
@@ -616,16 +368,11 @@ func TestAllCommandRespondsWithAllTimeStat(t *testing.T) {
 	}
 	faggot.all(m)
 }
+
 func TestStatsCommandRespondsOnlyInGroupChat(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
+	faggot := NewFaggotGame(bot)
 
 	// It should respond only in groups
 	m := getPrivateMessage()
@@ -639,17 +386,11 @@ func TestStatsCommandRespondsOnlyInGroupChat(t *testing.T) {
 }
 
 func TestStatsCommandNotRespondingWhenNoGames(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
-
+	faggot := NewFaggotGame(bot)
 	m := getGroupMessage()
+
 	replied := false
 	replyTo = func(bot IBot, m *tb.Message, text string) {
 		t.Log(text)
@@ -663,57 +404,21 @@ func TestStatsCommandNotRespondingWhenNoGames(t *testing.T) {
 	}
 }
 
-func TestAllCommandRespondsWithCurrentYearStat(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+func TestStatsCommandRespondsWithCurrentYearStat(t *testing.T) {
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
-
-	dataMock := []byte(`{
-		"players": [
-		  {
-			"id": 1488,
-			"first_name": "Adolf",
-			"last_name": "Hitler",
-			"username": "adolf",
-			"language_code": "en"
-		  },
-		  {
-			"id": 1489,
-			"first_name": "Joseph",
-			"last_name": "Goebbels",
-			"username": "goebbels",
-			"language_code": "en"
-		  }
-		],
-		"entries": [
-		  {
-			"day": "2019-01-10",
-			"user_id": 1488,
-			"username": "hitler"
-		  },
-		  {
-			"day": "2019-01-09",
-			"user_id": 1488,
-			"username": "hitler"
-		  },
-		  {
-			"day": "2018-12-31",
-			"user_id": 1488,
-			"username": "hitler"
-		  }
-		]
-	  }`)
-	var game *FaggotGame
-	json.Unmarshal(dataMock, &game)
-
+	faggot := NewFaggotGame(bot)
 	m := getGroupMessage()
-	faggot.saveGame(m, game)
+
+	player1 := m.Sender
+	player2 := tb.User{ID: 1918, FirstName: "Jozeph", LastName: "Stalin", Username: "stalin", LanguageCode: "ru"}
+
+	db.Exec("INSERT INTO faggot_players(chat_id, user_id, first_name, last_name, username, language_code) values(?,?,?,?,?,?)", m.Chat.ID, player1.ID, player1.FirstName, player1.LastName, player1.Username, player1.LanguageCode)
+	db.Exec("INSERT INTO faggot_players(chat_id, user_id, first_name, last_name, username, language_code) values(?,?,?,?,?,?)", m.Chat.ID, player2.ID, player2.FirstName, player2.LastName, player2.Username, player2.LanguageCode)
+
+	db.Exec("INSERT INTO faggot_entries(day, chat_id, user_id, username) values(?,?,?,?)", "2019-01-10", m.Chat.ID, player1.ID, player1.Username)
+	db.Exec("INSERT INTO faggot_entries(day, chat_id, user_id, username) values(?,?,?,?)", "2019-01-09", m.Chat.ID, player1.ID, player1.Username)
+	db.Exec("INSERT INTO faggot_entries(day, chat_id, user_id, username) values(?,?,?,?)", "2019-12-31", m.Chat.ID, player1.ID, player1.Username)
 
 	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "за текущий год") {
@@ -725,15 +430,9 @@ func TestAllCommandRespondsWithCurrentYearStat(t *testing.T) {
 }
 
 func TestMeCommandRespondsOnlyInGroupChat(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
+	faggot := NewFaggotGame(bot)
 
 	// It should respond only in groups
 	m := getPrivateMessage()
@@ -747,78 +446,36 @@ func TestMeCommandRespondsOnlyInGroupChat(t *testing.T) {
 }
 
 func TestMeCommandRespondsWithPersonalStat(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
-
-	dataMock := []byte(`{
-		"players": [
-		  {
-			"id": 1488,
-			"first_name": "Adolf",
-			"last_name": "Hitler",
-			"username": "adolf",
-			"language_code": "en"
-		  },
-		  {
-			"id": 1489,
-			"first_name": "Joseph",
-			"last_name": "Goebbels",
-			"username": "goebbels",
-			"language_code": "en"
-		  }
-		],
-		"entries": [
-		  {
-			"day": "2019-01-10",
-			"user_id": 1488,
-			"username": "hitler"
-		  },
-		  {
-			"day": "2019-01-09",
-			"user_id": 1488,
-			"username": "hitler"
-		  },
-		  {
-			"day": "2018-12-31",
-			"user_id": 1488,
-			"username": "hitler"
-		  }
-		]
-	  }`)
-	var game *FaggotGame
-	json.Unmarshal(dataMock, &game)
-
+	faggot := NewFaggotGame(bot)
 	m := getGroupMessage()
-	faggot.saveGame(m, game)
+
+	player1 := m.Sender
+	player2 := tb.User{ID: 1918, FirstName: "Jozeph", LastName: "Stalin", Username: "stalin", LanguageCode: "ru"}
+
+	db.Exec("INSERT INTO faggot_players(chat_id, user_id, first_name, last_name, username, language_code) values(?,?,?,?,?,?)", m.Chat.ID, player1.ID, player1.FirstName, player1.LastName, player1.Username, player1.LanguageCode)
+	db.Exec("INSERT INTO faggot_players(chat_id, user_id, first_name, last_name, username, language_code) values(?,?,?,?,?,?)", m.Chat.ID, player2.ID, player2.FirstName, player2.LastName, player2.Username, player2.LanguageCode)
+
+	db.Exec("INSERT INTO faggot_entries(day, chat_id, user_id, username) values(?,?,?,?)", "2019-01-10", m.Chat.ID, player1.ID, player1.Username)
+	db.Exec("INSERT INTO faggot_entries(day, chat_id, user_id, username) values(?,?,?,?)", "2019-01-09", m.Chat.ID, player1.ID, player1.Username)
+	db.Exec("INSERT INTO faggot_entries(day, chat_id, user_id, username) values(?,?,?,?)", "2019-12-31", m.Chat.ID, player1.ID, player1.Username)
 
 	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "3 раз") {
 			t.Log(text)
-			t.Error("/all command must respond with all time statistic")
+			t.Error("/me command must respond with personal statistic for all time")
 		}
 	}
 	faggot.me(m)
 }
 
 func TestProxyCommandRespondsWithProxyInfo(t *testing.T) {
-	workingDir := path.Join(os.TempDir(), fmt.Sprintf("faggot_bot_data_%s", randStringRunes(4)))
-	t.Logf("Using data directory: %s", workingDir)
-
+	defer tearUp(t)()
 	bot, _ := tb.NewBot(tb.Settings{})
-	dp, _ := NewDataProvider(workingDir)
-	faggot := Faggot{bot: bot, dp: dp}
-
-	defer restoreReplyTo()
-	defer os.RemoveAll(workingDir)
-
+	faggot := NewFaggotGame(bot)
 	m := getGroupMessage()
+
 	replyTo = func(bot IBot, m *tb.Message, text string) {
 		if !strings.Contains(text, "secret") {
 			t.Log(text)
