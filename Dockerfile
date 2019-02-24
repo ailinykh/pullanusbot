@@ -7,6 +7,9 @@ WORKDIR /go/src/github.com/ailinykh/pullanusbot
 ADD . .
 
 # Install dependencies
+RUN apt-get update &&\
+    apt-get install -y ffmpeg
+
 RUN curl -L -s https://github.com/golang/dep/releases/download/v0.5.0/dep-linux-amd64 -o /go/bin/dep &&\
     chmod +x /go/bin/dep
     
