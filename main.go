@@ -11,8 +11,22 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
+// IBot is a generic interface for testing
+type IBot interface {
+	Handle(interface{}, interface{})
+	Send(tb.Recipient, interface{}, ...interface{}) (*tb.Message, error)
+	Start()
+}
+
+// IBotAdapter is a generic interface for different bot communication structs
+type IBotAdapter interface {
+	initialize()
+}
+
 var db *sql.DB
 var workingDir = "data"
+
+var bot IBot
 
 func main() {
 	if os.Getenv("WORKING_DIR") != "" {
@@ -28,35 +42,22 @@ func main() {
 		log.SetOutput(logfile)
 	}
 
-	setupdb(workingDir)
-	token := os.Getenv("BOT_TOKEN")
+	setupDB(workingDir)
+	setupBot(os.Getenv("BOT_TOKEN"))
 
-	if token == "" {
-		log.Println("BOT_TOKEN not set")
-		return
+	adapters := []IBotAdapter{
+		&Faggot{},
+		&Info{},
 	}
 
-	poller := tb.NewMiddlewarePoller(&tb.LongPoller{Timeout: 10 * time.Second}, func(upd *tb.Update) bool {
-		return true
-	})
-
-	bot, err := tb.NewBot(tb.Settings{
-		Token:  token,
-		Poller: poller,
-	})
-
-	if err != nil {
-		log.Println(err)
-		return
+	for _, adapter := range adapters {
+		adapter.initialize()
 	}
-
-	game := NewFaggotGame(bot)
-	game.Start()
 
 	bot.Start()
 }
 
-func setupdb(dir string) {
+func setupDB(dir string) {
 	log.Println("Database initialization")
 
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -83,6 +84,24 @@ func setupdb(dir string) {
 
 	log.Println("Using database:")
 	log.Println("\t" + dbFile)
+}
+
+func setupBot(token string) {
+	if token == "" {
+		log.Fatal("BOT_TOKEN not set")
+	}
+
+	poller := tb.NewMiddlewarePoller(&tb.LongPoller{Timeout: 10 * time.Second}, func(upd *tb.Update) bool {
+		return true
+	})
+
+	var err error
+	bot, err = tb.NewBot(tb.Settings{
+		Token:  token,
+		Poller: poller,
+	})
+
+	checkErr(err)
 }
 
 func checkErr(err error) {
