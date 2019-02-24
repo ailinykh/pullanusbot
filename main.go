@@ -46,6 +46,7 @@ func main() {
 	setupBot(os.Getenv("BOT_TOKEN"))
 
 	adapters := []IBotAdapter{
+		&Converter{},
 		&Faggot{},
 		&Info{},
 	}
