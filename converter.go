@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"os/exec"
 	"path"
@@ -15,6 +17,32 @@ import (
 // Converter helps to post video files proper way
 type Converter struct {
 	mutex sync.Mutex
+}
+
+type ffpResponse struct {
+	Streams []ffpStream `json:"streams"`
+	Format  ffpFormat   `json:"format"`
+}
+
+type ffpStream struct {
+	Index     int    `json:"index"`
+	CodecName string `json:"codec_name"`
+	CodecType string `json:"codec_type"`
+	Width     int    `json:"width"`
+	Height    int    `json:"height"`
+	BitRate   string `json:"bit_rate"`
+}
+
+func (s ffpStream) bitrate() int {
+	bitrate, _ := strconv.Atoi(s.BitRate)
+	return bitrate
+}
+
+type ffpFormat struct {
+	Filename       string `json:"filename"`
+	NbStreams      int    `json:"nb_streams"`
+	FormatName     string `json:"format_name"`
+	FormatLongName string `json:"format_long_name"`
 }
 
 func (c *Converter) initialize() {
@@ -43,39 +71,76 @@ func (c *Converter) checkMessage(m *tb.Message) {
 
 		sourceFile := path.Join(os.TempDir(), m.Document.FileName)
 		destinationFile := path.Join(os.TempDir(), "converted_"+m.Document.FileName)
+		destinationThumbFile := path.Join(os.TempDir(), "converted_"+m.Document.FileName+"_thumb.jpg")
 		defer os.Remove(sourceFile)
 		defer os.Remove(destinationFile)
+		defer os.Remove(destinationThumbFile)
 
 		log.Println("Converter: Downloading video...")
-
 		b.Download(&m.Document.File, sourceFile)
+		log.Println("Converter: Video downloaded")
 
-		log.Println("Converter: Video downloaded. Converting...")
-
-		bitrate, err := c.getBitrate(sourceFile)
+		ffpInfo, err := c.getFFProbeInfo(sourceFile)
 		if err != nil {
-			log.Printf("Converter: Bitrate converting error: %s", err)
+			log.Printf("Converter: FFProbe info retreiving error: %s", err)
 			return
 		}
-		bitrate /= 1024
-		if bitrate > 600 {
-			bitrate = 555
-		}
 
-		cmd := exec.Command("/bin/sh", "-c", "ffmpeg -y -i \""+sourceFile+"\" -c:v libx264 -preset medium -b:v "+strconv.Itoa(bitrate)+"k -pass 1 -b:a 128k -f mp4 /dev/null && ffmpeg -y -i \""+sourceFile+"\" -c:v libx264 -preset medium -b:v "+strconv.Itoa(bitrate)+"k -pass 2 -b:a 128k \""+destinationFile+"\"")
-		err = cmd.Run()
-		if err != nil {
-			log.Printf("Converter: Video converting error: %s", err)
+		if ffpInfo.Format.NbStreams == 1 {
+			log.Println("Converter: Assuming gif file. Skipping...")
 			return
 		}
-		// cmd.Wait()
-		log.Println("Converter: Video converted successfully")
 
-		fi, _ := os.Stat(destinationFile)
+		sourceStreamInfo := ffpInfo.Streams[0]
+		sourceBitrate := sourceStreamInfo.bitrate()
+		destinationBitrate := int(math.Min(float64(sourceBitrate), 568320))
 
-		video := tb.Video{File: tb.FromDisk(destinationFile)}
-		video.Caption = fmt.Sprintf("*%s* (by %s)\n_Original size: %.2f MB\nConverted size: %.2f MB_", m.Document.FileName, m.Sender.Username, float32(m.Document.FileSize)/1048576, float32(fi.Size())/1048576)
+		log.Printf("Converter: Source file bitrate: %d, destination file bitrate: %d", sourceBitrate, destinationBitrate)
+
+		if sourceBitrate != destinationBitrate {
+			log.Println("Converter: Bitrates not equal. Converting...")
+
+			cmd := exec.Command("/bin/sh", "-c", "ffmpeg -y -i \""+sourceFile+"\" -c:v libx264 -preset medium -b:v "+strconv.Itoa(destinationBitrate/1024)+"k -pass 1 -b:a 128k -f mp4 /dev/null && ffmpeg -y -i \""+sourceFile+"\" -c:v libx264 -preset medium -b:v "+strconv.Itoa(destinationBitrate/1024)+"k -pass 2 -b:a 128k \""+destinationFile+"\"")
+			err = cmd.Run()
+			if err != nil {
+				log.Printf("Converter: Video converting error: %s", err)
+				return
+			}
+			// cmd.Wait()
+			log.Println("Converter: Video converted successfully")
+		}
+
+		fi, err := os.Stat(destinationFile)
+		var video tb.Video
+
+		scale := "90:-1"
+		if sourceStreamInfo.Width < sourceStreamInfo.Height {
+			scale = "-1:90"
+		}
+
+		if os.IsNotExist(err) {
+			log.Println("Converter: Destination file not exists. Sending original...")
+			video = tb.Video{File: tb.FromDisk(sourceFile)}
+			video.Caption = fmt.Sprintf("*%s* (by %s)", m.Document.FileName, m.Sender.Username)
+		} else {
+			log.Println("Converter: Sending destination file...")
+			video = tb.Video{File: tb.FromDisk(destinationFile)}
+			video.Caption = fmt.Sprintf("*%s* (by %s)\n_Original size: %.2f MB (%d kb/s)\nConverted size: %.2f MB (%d kb/s)_", m.Document.FileName, m.Sender.Username, float32(m.Document.FileSize)/1048576, sourceBitrate/1024, float32(fi.Size())/1048576, destinationBitrate/1024)
+		}
+
+		video.Width = sourceStreamInfo.Width
+		video.Height = sourceStreamInfo.Height
 		video.SupportsStreaming = true
+
+		// Getting thumbnail
+		cmd := fmt.Sprintf("ffmpeg -i \"%s\" -ss 00:00:01.000 -vframes 1 -filter:v scale=\"%s\" \"%s\"", sourceFile, scale, destinationThumbFile)
+		err = exec.Command("/bin/sh", "-c", cmd).Run()
+		if err != nil {
+			log.Printf("Converter: Thumbnail error: %s", err)
+		} else {
+			thumb := tb.Photo{File: tb.FromDisk(destinationThumbFile)}
+			video.Thumbnail = &thumb
+		}
 		_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 		// _, err := bot.Send(m.Chat, video)
 		if err == nil {
@@ -92,18 +157,18 @@ func (c *Converter) checkMessage(m *tb.Message) {
 	}
 }
 
-func (c *Converter) getBitrate(file string) (int, error) {
-	out, err := exec.Command("/bin/sh", "-c", "ffprobe -v error -select_streams v:0 -show_entries stream=bit_rate -of default=noprint_wrappers=1:nokey=1 \""+file+"\"").Output()
+func (c *Converter) getFFProbeInfo(file string) (*ffpResponse, error) {
+	cmd := fmt.Sprintf("ffprobe -v error -of json -show_streams -show_format \"%s\"", file)
+	out, err := exec.Command("/bin/sh", "-c", cmd).Output()
 	if err != nil {
-		log.Printf("Converter: Bitrate retreiving error: %s", err)
-		return 0, err
+		return nil, err
 	}
 
-	bitrate, err := strconv.Atoi(string(out[:len(out)-1])) // "strip EOL"
+	var resp ffpResponse
+	err = json.Unmarshal(out, &resp)
 	if err != nil {
-		log.Printf("Converter: Bitrate converting error: %s", err)
-		return 0, err
+		return nil, err
 	}
 
-	return bitrate, nil
+	return &resp, nil
 }

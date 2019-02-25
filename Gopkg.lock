@@ -19,11 +19,11 @@
 
 [[projects]]
   branch = "v2"
-  digest = "1:74a08eccad153f677e8ab95d56b4c4150584a931c4341bbd738a67baf08adb0c"
+  digest = "1:cdb99928ddb6141867515a3af95c41bcd02075bebd3965a6e11ddedb8b22c0e3"
   name = "gopkg.in/tucnak/telebot.v2"
   packages = ["."]
   pruneopts = "UT"
-  revision = "7eeea8f32a9b6cba2a6fb9d5b8e941ca1d2717c2"
+  revision = "e6cfaa833930549e4d3aff4af1b9d502b2114d52"
 
 [solve-meta]
   analyzer-name = "dep"
