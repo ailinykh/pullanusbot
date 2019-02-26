@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -24,6 +25,15 @@ type ffpResponse struct {
 	Format  ffpFormat   `json:"format"`
 }
 
+func (f ffpResponse) getVideoStream() (ffpStream, error) {
+	for _, stream := range f.Streams {
+		if stream.CodecType == "video" {
+			return stream, nil
+		}
+	}
+	return ffpStream{}, errors.New("No video stream found")
+}
+
 type ffpStream struct {
 	Index     int    `json:"index"`
 	CodecName string `json:"codec_name"`
@@ -43,6 +53,15 @@ type ffpFormat struct {
 	NbStreams      int    `json:"nb_streams"`
 	FormatName     string `json:"format_name"`
 	FormatLongName string `json:"format_long_name"`
+	Duration       string `json:"duration"`
+}
+
+func (f ffpFormat) duration() int {
+	d, err := strconv.ParseFloat(f.Duration, 32)
+	if err != nil {
+		log.Printf("Converter: Duration error: %s (%s)", err, f.Duration)
+	}
+	return int(d)
 }
 
 func (c *Converter) initialize() {
@@ -91,7 +110,12 @@ func (c *Converter) checkMessage(m *tb.Message) {
 			return
 		}
 
-		sourceStreamInfo := ffpInfo.Streams[0]
+		sourceStreamInfo, err := ffpInfo.getVideoStream()
+		if err != nil {
+			log.Printf("Converter: %s", err)
+			return
+		}
+
 		sourceBitrate := sourceStreamInfo.bitrate()
 		destinationBitrate := int(math.Min(float64(sourceBitrate), 568320))
 
@@ -130,6 +154,7 @@ func (c *Converter) checkMessage(m *tb.Message) {
 
 		video.Width = sourceStreamInfo.Width
 		video.Height = sourceStreamInfo.Height
+		video.Duration = ffpInfo.Format.duration()
 		video.SupportsStreaming = true
 
 		// Getting thumbnail
@@ -141,6 +166,9 @@ func (c *Converter) checkMessage(m *tb.Message) {
 			thumb := tb.Photo{File: tb.FromDisk(destinationThumbFile)}
 			video.Thumbnail = &thumb
 		}
+
+		log.Printf("Converter: Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
+
 		_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 		// _, err := bot.Send(m.Chat, video)
 		if err == nil {
