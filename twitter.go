@@ -16,18 +16,11 @@ type Twitter struct {
 }
 
 type twitterReponse struct {
-	ID               string        `json:"id_str"`
-	FullText         string        `json:"full_text"`
-	ExtendedEntities twitterEntity `json:"extended_entities"`
-	User             twitterUser   `json:"user"`
-	QuotedStatus     twitterQuote  `json:"quoted_status"`
-}
-
-type twitterQuote struct {
-	ID               string        `json:"id_str"`
-	FullText         string        `json:"full_text"`
-	ExtendedEntities twitterEntity `json:"extended_entities"`
-	User             twitterUser   `json:"user"`
+	ID               string          `json:"id_str"`
+	FullText         string          `json:"full_text"`
+	ExtendedEntities twitterEntity   `json:"extended_entities"`
+	User             twitterUser     `json:"user"`
+	QuotedStatus     *twitterReponse `json:"quoted_status"`
 }
 
 type twitterUser struct {
@@ -101,10 +94,10 @@ func (t *Twitter) checkMessage(m *tb.Message) {
 		caption := t.getCaption(m, twResp)
 		album := t.getAlbum(twResp.ExtendedEntities.Media)
 
-		// if len(twResp.ExtendedEntities.Media) == 0 && len(twResp.QuotedStatus.ExtendedEntities.Media) > 0 {
-		// 	caption = t.getCaption(m, twResp.ExtendedEntities)
-		// 	caption = t.getAlbum(twResp.QuotedStatus.ExtendedEntities.Media)
-		// }
+		if len(twResp.ExtendedEntities.Media) == 0 && len(twResp.QuotedStatus.ExtendedEntities.Media) > 0 {
+			caption = t.getCaption(m, *twResp.QuotedStatus)
+			album = t.getAlbum(twResp.QuotedStatus.ExtendedEntities.Media)
+		}
 
 		switch len(album) {
 		case 0:
