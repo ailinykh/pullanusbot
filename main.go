@@ -49,6 +49,7 @@ func main() {
 		&Converter{},
 		&Faggot{},
 		&Info{},
+		&Twitter{},
 	}
 
 	for _, adapter := range adapters {
