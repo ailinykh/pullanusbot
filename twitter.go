@@ -81,7 +81,7 @@ func (t *Twitter) checkMessage(m *tb.Message) {
 		req.Header.Add("Authorization", "Bearer AAAAAAAAAAAAAAAAAAAAAPYXBAAAAAAACLXUNDekMxqa8h%2F40K4moUkGsoc%3DTYfbDKbT3jJPCEVnMYqilB28NHfOPqkca3qaAxGfsyKCs0wRbw")
 		res, err := client.Do(req)
 		if err != nil {
-			log.Printf("Twitter: Tweet json fetch error: %s", err)
+			log.Printf("Twitter: json fetch error: %s", err)
 			return
 		}
 		defer res.Body.Close()
@@ -89,7 +89,11 @@ func (t *Twitter) checkMessage(m *tb.Message) {
 		var twResp twitterReponse
 		body, _ := ioutil.ReadAll(res.Body)
 
-		json.Unmarshal(body, &twResp)
+		err = json.Unmarshal(body, &twResp)
+		if err != nil {
+			log.Printf("Twitter: json parse error: %s", err)
+			return
+		}
 
 		caption := t.getCaption(m, twResp)
 		album := t.getAlbum(twResp.ExtendedEntities.Media)
