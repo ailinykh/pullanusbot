@@ -33,9 +33,10 @@ type twitterEntity struct {
 }
 
 type twitterMedia struct {
-	MediaURL  string           `json:"media_url"`
-	Type      string           `json:"type"`
-	VideoInfo twitterVideoInfo `json:"video_info"`
+	MediaURL      string           `json:"media_url"`
+	MediaURLHTTPS string           `json:"media_url_https"`
+	Type          string           `json:"type"`
+	VideoInfo     twitterVideoInfo `json:"video_info"`
 }
 
 type twitterVideoInfo struct {
@@ -130,7 +131,7 @@ func (t *Twitter) checkMessage(m *tb.Message) {
 				log.Printf("Twitter: Can't delete original message: %s", err)
 			}
 		} else {
-			log.Printf("Twitter: Can't send video: %s", err)
+			log.Printf("Twitter: Can't send entry: %s", err)
 		}
 	}
 }
