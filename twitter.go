@@ -117,6 +117,8 @@ func (t *Twitter) checkMessage(m *tb.Message) {
 				if ok {
 					f.Caption = caption
 					_, err = f.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+				} else {
+					log.Printf("Twitter: Unknown album type: %v", album[0])
 				}
 			}
 		default:
