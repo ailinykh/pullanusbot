@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -162,5 +163,9 @@ func (t *Twitter) getAlbum(media []twitterMedia) tb.Album {
 }
 
 func (t *Twitter) getCaption(m *tb.Message, r twitterReponse) string {
+	idx := strings.LastIndex(r.FullText, " ")
+	if idx > -1 {
+		r.FullText = r.FullText[0:idx]
+	}
 	return fmt.Sprintf("[🐦](https://twitter.com/%s/status/%s) *%s* _(by %s)_\n%s", r.User.ScreenName, r.ID, r.User.Name, m.Sender.Username, r.FullText)
 }
