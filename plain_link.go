@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
+	"path"
 	"regexp"
 
 	tb "gopkg.in/tucnak/telebot.v2"
@@ -16,14 +18,15 @@ type PlainLink struct {
 }
 
 func (l *PlainLink) handleTextMessage(m *tb.Message) {
-	// b, ok := bot.(*tb.Bot)
-	// if !ok {
-	// 	log.Println("PlainLink: Bot cast failed")
-	// 	return
-	// }
+	b, ok := bot.(*tb.Bot)
+	if !ok {
+		log.Println("PlainLink: Bot cast failed")
+		return
+	}
 
 	r, _ := regexp.Compile(`^http(\S+)$`)
 	if r.MatchString(m.Text) {
+		log.Printf("PlainLink: link found %s", m.Text)
 		resp, err := http.Get(m.Text)
 		if err != nil {
 			log.Printf("PlainLink: %s", err)
@@ -31,111 +34,99 @@ func (l *PlainLink) handleTextMessage(m *tb.Message) {
 		switch resp.Header["Content-Type"][0] {
 		case "video/mp4":
 			log.Printf("PlainLink: found mp4 file %s", m.Text)
-			l.sendMP4Video(m, m.Text)
-		// case "video/webm":
-		// 	link := strings.Replace(m.Text, ".webm", ".mp4", 1)
-		// 	log.Printf("PlainLink: checking webm %s", link)
-		// 	resp, err = http.Get(link)
-		// 	if err != nil {
-		// 		log.Printf("PlainLink: webm %s", err)
-		// 	}
+			video := &tb.Video{File: tb.FromURL(m.Text)}
+			video.Caption = fmt.Sprintf("[🎞](%s) *%s* _(by %s)_", m.Text, path.Base(resp.Request.URL.Path), m.Sender.Username)
+			_, err := video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 
-		// 	if resp.Status == "200 OK" {
-		// 		// TODO: file name
-		// 		videoFile := path.Join(os.TempDir(), "plainlink_video.mp4")
-		// 		videoThumbFile := path.Join(os.TempDir(), "plainlink_video_thumb.jpg")
-		// 		defer os.Remove(videoFile)
-		// 		defer os.Remove(videoThumbFile)
+			if err == nil {
+				log.Println("PlainLink: Message sent. Deleting original")
+				err = b.Delete(m)
+				if err != nil {
+					log.Printf("PlainLink: Can't delete original message: %s", err)
+				}
+			} else {
+				log.Printf("PlainLink: Can't send entry: %s", err)
+			}
+		case "video/webm":
+			filename := path.Base(resp.Request.URL.Path)
+			videoFileSrc := path.Join(os.TempDir(), filename)
+			videoFileDest := path.Join(os.TempDir(), filename+".mp4")
+			videoThumbFile := path.Join(os.TempDir(), filename+".jpg")
+			defer os.Remove(videoFileSrc)
+			defer os.Remove(videoFileDest)
+			defer os.Remove(videoThumbFile)
 
-		// 		// log.Printf("PlainLink: file %s, thumb: %s", videoFile, videoThumbFile)
+			// log.Printf("PlainLink: file %s, thumb: %s", videoFileSrc, videoThumbFile)
 
-		// 		err = l.downloadFile(videoFile, link)
-		// 		if err != nil {
-		// 			log.Printf("PlainLink: video download error: %s", err)
-		// 		}
+			// Download webm
+			log.Printf("PlainLink: downloading file %s", filename)
+			err = l.downloadFile(videoFileSrc, m.Text)
+			if err != nil {
+				log.Printf("PlainLink: video download error: %s", err)
+				return
+			}
 
-		// 		c := Converter{}
-		// 		ffpInfo, err := c.getFFProbeInfo(videoFile)
-		// 		if err != nil {
-		// 			log.Printf("PlainLink: FFProbe info retreiving error: %s", err)
-		// 			return
-		// 		}
+			// Convert webm to mp4
+			log.Printf("PlainLink: converting file %s", filename)
+			cmd := fmt.Sprintf(`ffmpeg -y -i "%s" "%s"`, videoFileSrc, videoFileDest)
+			_, err := exec.Command("/bin/sh", "-c", cmd).Output()
+			if err != nil {
+				log.Printf("PlainLink: Video converting error: %s", err)
+				return
+			}
+			log.Println("PlainLink: file converted!")
 
-		// 		videoStreamInfo, err := ffpInfo.getVideoStream()
-		// 		if err != nil {
-		// 			log.Printf("PlainLink: %s", err)
-		// 			return
-		// 		}
+			c := Converter{}
+			ffpInfo, err := c.getFFProbeInfo(videoFileDest)
+			if err != nil {
+				log.Printf("PlainLink: FFProbe info retreiving error: %s", err)
+				return
+			}
 
-		// 		video := tb.Video{File: tb.FromDisk(videoFile)}
+			videoStreamInfo, err := ffpInfo.getVideoStream()
+			if err != nil {
+				log.Printf("PlainLink: %s", err)
+				return
+			}
 
-		// 		scale := "90:-1"
-		// 		if videoStreamInfo.Width < videoStreamInfo.Height {
-		// 			scale = "-1:90"
-		// 		}
+			video := tb.Video{File: tb.FromDisk(videoFileDest)}
 
-		// 		video.Width = videoStreamInfo.Width
-		// 		video.Height = videoStreamInfo.Height
-		// 		video.Duration = ffpInfo.Format.duration()
-		// 		video.SupportsStreaming = true
-		// 		video.Caption = fmt.Sprintf("[🎞](%s) _(by %s)_", link, m.Sender.Username)
+			scale := "90:-1"
+			if videoStreamInfo.Width < videoStreamInfo.Height {
+				scale = "-1:90"
+			}
 
-		// 		// Getting thumbnail
-		// 		cmd := fmt.Sprintf("ffmpeg -i \"%s\" -ss 00:00:01.000 -vframes 1 -filter:v scale=\"%s\" \"%s\"", videoFile, scale, videoThumbFile)
-		// 		err = exec.Command("/bin/sh", "-c", cmd).Run()
-		// 		if err != nil {
-		// 			log.Printf("PlainLink: Thumbnail error: %s", err)
-		// 		} else {
-		// 			thumb := tb.Photo{File: tb.FromDisk(videoThumbFile)}
-		// 			video.Thumbnail = &thumb
-		// 		}
+			video.Width = videoStreamInfo.Width
+			video.Height = videoStreamInfo.Height
+			video.Duration = ffpInfo.Format.duration()
+			video.SupportsStreaming = true
+			video.Caption = fmt.Sprintf("[🎞](%s) *%s* _(by %s)_", m.Text, filename, m.Sender.Username)
 
-		// 		log.Printf("PlainLink: Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
+			// Getting thumbnail
+			cmd = fmt.Sprintf(`ffmpeg -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, videoFileDest, scale, videoThumbFile)
+			err = exec.Command("/bin/sh", "-c", cmd).Run()
+			if err != nil {
+				log.Printf("PlainLink: Thumbnail error: %s", err)
+			} else {
+				thumb := tb.Photo{File: tb.FromDisk(videoThumbFile)}
+				video.Thumbnail = &thumb
+			}
 
-		// 		_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
-		// 		if err == nil {
-		// 			log.Println("PlainLink: Video sent. Deleting original")
-		// 			err = b.Delete(m)
-		// 			if err != nil {
-		// 				log.Printf("PlainLink: Can't delete original message: %s", err)
-		// 			}
-		// 		} else {
-		// 			log.Printf("PlainLink: Can't send video: %s", err)
-		// 		}
+			log.Printf("PlainLink: Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
 
-		// 	} else {
-		// 		log.Println("PlainLink: Wrong webm response")
-		// 		for name, values := range resp.Header {
-		// 			for _, value := range values {
-		// 				log.Println("\t", name, value)
-		// 			}
-		// 		}
-		// 	}
+			_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+			if err == nil {
+				log.Println("PlainLink: Video sent. Deleting original")
+				err = b.Delete(m)
+				if err != nil {
+					log.Printf("PlainLink: Can't delete original message: %s", err)
+				}
+			} else {
+				log.Printf("PlainLink: Can't send video: %s", err)
+			}
 		default:
 			log.Printf("PlainLink: Unknown content type: %s", resp.Header["Content-Type"])
 		}
-	}
-}
-
-func (l *PlainLink) sendMP4Video(m *tb.Message, link string) {
-	b, ok := bot.(*tb.Bot)
-	if !ok {
-		log.Println("PlainLink: Bot cast failed")
-		return
-	}
-
-	video := &tb.Video{File: tb.FromURL(link)}
-	video.Caption = fmt.Sprintf("[🎞](%s) _(by %s)_", link, m.Sender.Username)
-	_, err := video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
-
-	if err == nil {
-		log.Println("PlainLink: Message sent. Deleting original")
-		err = b.Delete(m)
-		if err != nil {
-			log.Printf("PlainLink: Can't delete original message: %s", err)
-		}
-	} else {
-		log.Printf("PlainLink: Can't send entry: %s", err)
 	}
 }
 

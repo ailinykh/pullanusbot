@@ -124,8 +124,9 @@ func (c *Converter) checkMessage(m *tb.Message) {
 		if sourceBitrate != destinationBitrate {
 			log.Println("Converter: Bitrates not equal. Converting...")
 
-			cmd := exec.Command("/bin/sh", "-c", "ffmpeg -y -i \""+sourceFile+"\" -c:v libx264 -preset medium -b:v "+strconv.Itoa(destinationBitrate/1024)+"k -pass 1 -b:a 128k -f mp4 /dev/null && ffmpeg -y -i \""+sourceFile+"\" -c:v libx264 -preset medium -b:v "+strconv.Itoa(destinationBitrate/1024)+"k -pass 2 -b:a 128k \""+destinationFile+"\"")
-			err = cmd.Run()
+			// cmd := exec.Command("/bin/sh", "-c", "ffmpeg -y -i \""+sourceFile+"\" -c:v libx264 -preset medium -b:v "+strconv.Itoa(destinationBitrate/1024)+"k -pass 1 -b:a 128k -f mp4 /dev/null && ffmpeg -y -i \""+sourceFile+"\" -c:v libx264 -preset medium -b:v "+strconv.Itoa(destinationBitrate/1024)+"k -pass 2 -b:a 128k \""+destinationFile+"\"")
+			cmd := fmt.Sprintf(`ffmpeg -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 1 -b:a 128k -f mp4 /dev/null && ffmpeg -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 2 -b:a 128k "%s"`, sourceFile, destinationBitrate/1024, sourceFile, destinationBitrate/1024, destinationFile)
+			err = exec.Command("/bin/sh", "-c", cmd).Run()
 			if err != nil {
 				log.Printf("Converter: Video converting error: %s", err)
 				return
@@ -145,11 +146,11 @@ func (c *Converter) checkMessage(m *tb.Message) {
 		if os.IsNotExist(err) {
 			log.Println("Converter: Destination file not exists. Sending original...")
 			video = tb.Video{File: tb.FromDisk(sourceFile)}
-			video.Caption = fmt.Sprintf("*%s* (by %s)", m.Document.FileName, m.Sender.Username)
+			video.Caption = fmt.Sprintf("*%s* _(by %s)_", m.Document.FileName, m.Sender.Username)
 		} else {
 			log.Println("Converter: Sending destination file...")
 			video = tb.Video{File: tb.FromDisk(destinationFile)}
-			video.Caption = fmt.Sprintf("*%s* (by %s)\n_Original size: %.2f MB (%d kb/s)\nConverted size: %.2f MB (%d kb/s)_", m.Document.FileName, m.Sender.Username, float32(m.Document.FileSize)/1048576, sourceBitrate/1024, float32(fi.Size())/1048576, destinationBitrate/1024)
+			video.Caption = fmt.Sprintf("*%s* _(by %s)_\n_Original size: %.2f MB (%d kb/s)\nConverted size: %.2f MB (%d kb/s)_", m.Document.FileName, m.Sender.Username, float32(m.Document.FileSize)/1048576, sourceBitrate/1024, float32(fi.Size())/1048576, destinationBitrate/1024)
 		}
 
 		video.Width = sourceStreamInfo.Width
