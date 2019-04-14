@@ -34,7 +34,7 @@ func (l *PlainLink) handleTextMessage(m *tb.Message) {
 		switch resp.Header["Content-Type"][0] {
 		case "video/mp4":
 			log.Printf("PlainLink: found mp4 file %s", m.Text)
-			video := &tb.Video{File: tb.FromURL(m.Text)}
+			video := &tb.Video{File: tb.FromURL(resp.Request.URL.String())}
 			video.Caption = fmt.Sprintf("[🎞](%s) *%s* _(by %s)_", m.Text, path.Base(resp.Request.URL.Path), m.Sender.Username)
 			_, err := video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 
