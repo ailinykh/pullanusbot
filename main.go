@@ -49,7 +49,10 @@ func main() {
 		&Converter{},
 		&Faggot{},
 		&Info{},
-		&Twitter{},
+		&TextHandler{handlers: []ITextHandler{
+			&PlainLink{},
+			&Twitter{},
+		}},
 	}
 
 	for _, adapter := range adapters {

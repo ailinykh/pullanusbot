@@ -60,12 +60,7 @@ type twitterVideoInfoVariant struct {
 	URL         string `json:"url"`
 }
 
-func (t *Twitter) initialize() {
-	bot.Handle(tb.OnText, t.checkMessage)
-	log.Println("Twitter: successfully initialized")
-}
-
-func (t *Twitter) checkMessage(m *tb.Message) {
+func (t *Twitter) handleTextMessage(m *tb.Message) {
 	b, ok := bot.(*tb.Bot)
 	if !ok {
 		log.Println("Twitter: Bot cast failed")
