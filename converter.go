@@ -97,10 +97,8 @@ func (c *Converter) checkMessage(m *tb.Message) {
 
 		sourceFile := path.Join(os.TempDir(), m.Document.FileName)
 		destinationFile := path.Join(os.TempDir(), "converted_"+m.Document.FileName)
-		destinationThumbFile := path.Join(os.TempDir(), "converted_"+m.Document.FileName+"_thumb.jpg")
 		defer os.Remove(sourceFile)
 		defer os.Remove(destinationFile)
-		defer os.Remove(destinationThumbFile)
 
 		log.Println("Converter: Downloading video...")
 		b.Download(&m.Document.File, sourceFile)
@@ -161,13 +159,12 @@ func (c *Converter) checkMessage(m *tb.Message) {
 		video.SupportsStreaming = true
 
 		// Getting thumbnail
-		cmd := fmt.Sprintf(`ffmpeg -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, sourceFile, sourceStreamInfo.scale(), destinationThumbFile)
-		err = exec.Command("/bin/sh", "-c", cmd).Run()
+		thumb, err := c.getThumbnail(destinationFile)
 		if err != nil {
 			log.Printf("Converter: Thumbnail error: %s", err)
 		} else {
-			thumb := tb.Photo{File: tb.FromDisk(destinationThumbFile)}
-			video.Thumbnail = &thumb
+			video.Thumbnail = &tb.Photo{File: tb.FromDisk(thumb)}
+			defer os.Remove(thumb)
 		}
 
 		log.Printf("Converter: Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
@@ -202,4 +199,24 @@ func (c *Converter) getFFProbeInfo(file string) (*ffpResponse, error) {
 	}
 
 	return &resp, nil
+}
+
+func (c *Converter) getThumbnail(filepath string) (string, error) {
+	ffpInfo, err := c.getFFProbeInfo(filepath)
+	if err != nil {
+		return "", err
+	}
+
+	videoStreamInfo, err := ffpInfo.getVideoStream()
+	if err != nil {
+		return "", err
+	}
+	thumb := filepath + ".jpg"
+	cmd := fmt.Sprintf(`ffmpeg -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, filepath, videoStreamInfo.scale(), thumb)
+	err = exec.Command("/bin/sh", "-c", cmd).Run()
+	if err != nil {
+		return "", err
+	}
+
+	return thumb, nil
 }

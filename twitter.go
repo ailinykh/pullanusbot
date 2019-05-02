@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"path"
 	"regexp"
 	"strings"
 
@@ -133,6 +135,66 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 			}
 		} else {
 			log.Printf("Twitter: Can't send entry: %s", err)
+
+			if strings.HasSuffix(err.Error(), "failed to get HTTP URL content") {
+				// Try to upload file to telegram
+				f, ok := album[0].(*tb.Video)
+				if ok {
+					log.Println("Twitter: Sending by uploading")
+
+					filename := path.Base(f.FileURL)
+					videoFile := path.Join(os.TempDir(), filename)
+					defer os.Remove(videoFile)
+
+					err = downloadFile(videoFile, f.FileURL)
+					if err != nil {
+						log.Printf("Twitter: video download error: %s", err)
+						return
+					}
+
+					c := Converter{}
+					ffpInfo, err := c.getFFProbeInfo(videoFile)
+					if err != nil {
+						log.Printf("Twitter: FFProbe info retreiving error: %s", err)
+						return
+					}
+
+					videoStreamInfo, err := ffpInfo.getVideoStream()
+					if err != nil {
+						log.Printf("Twitter: %s", err)
+						return
+					}
+
+					video := tb.Video{File: tb.FromDisk(videoFile)}
+					video.Width = videoStreamInfo.Width
+					video.Height = videoStreamInfo.Height
+					video.Duration = ffpInfo.Format.duration()
+					video.SupportsStreaming = true
+					video.Caption = caption
+
+					// Getting thumbnail
+					thumb, err := c.getThumbnail(videoFile)
+					if err != nil {
+						log.Printf("PlainLink: Thumbnail error: %s", err)
+					} else {
+						video.Thumbnail = &tb.Photo{File: tb.FromDisk(thumb)}
+						defer os.Remove(thumb)
+					}
+
+					log.Printf("Twitter: Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
+
+					_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+					if err == nil {
+						log.Println("Twitter: Video sent. Deleting original")
+						err = b.Delete(m)
+						if err != nil {
+							log.Printf("Twitter: Can't delete original message: %s", err)
+						}
+					} else {
+						log.Printf("Twitter: Can't send video: %s", err)
+					}
+				}
+			}
 		}
 	}
 }

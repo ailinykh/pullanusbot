@@ -50,10 +50,8 @@ func (l *PlainLink) handleTextMessage(m *tb.Message) {
 			filename := path.Base(resp.Request.URL.Path)
 			videoFileSrc := path.Join(os.TempDir(), filename)
 			videoFileDest := path.Join(os.TempDir(), filename+".mp4")
-			videoThumbFile := path.Join(os.TempDir(), filename+".jpg")
 			defer os.Remove(videoFileSrc)
 			defer os.Remove(videoFileDest)
-			defer os.Remove(videoThumbFile)
 
 			// log.Printf("PlainLink: file %s, thumb: %s", videoFileSrc, videoThumbFile)
 
@@ -96,13 +94,12 @@ func (l *PlainLink) handleTextMessage(m *tb.Message) {
 			video.Caption = fmt.Sprintf("[🎞](%s) *%s* _(by %s)_", m.Text, filename, m.Sender.Username)
 
 			// Getting thumbnail
-			cmd = fmt.Sprintf(`ffmpeg -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, videoFileDest, videoStreamInfo.scale(), videoThumbFile)
-			err = exec.Command("/bin/sh", "-c", cmd).Run()
+			thumb, err := c.getThumbnail(videoFileDest)
 			if err != nil {
 				log.Printf("PlainLink: Thumbnail error: %s", err)
 			} else {
-				thumb := tb.Photo{File: tb.FromDisk(videoThumbFile)}
-				video.Thumbnail = &thumb
+				video.Thumbnail = &tb.Photo{File: tb.FromDisk(thumb)}
+				defer os.Remove(thumb)
 			}
 
 			log.Printf("PlainLink: Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
