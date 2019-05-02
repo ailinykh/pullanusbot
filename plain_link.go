@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -60,7 +59,7 @@ func (l *PlainLink) handleTextMessage(m *tb.Message) {
 
 			// Download webm
 			log.Printf("PlainLink: downloading file %s", filename)
-			err = l.downloadFile(videoFileSrc, m.Text)
+			err = downloadFile(videoFileSrc, m.Text)
 			if err != nil {
 				log.Printf("PlainLink: video download error: %s", err)
 				return
@@ -90,12 +89,6 @@ func (l *PlainLink) handleTextMessage(m *tb.Message) {
 			}
 
 			video := tb.Video{File: tb.FromDisk(videoFileDest)}
-
-			scale := "90:-1"
-			if videoStreamInfo.Width < videoStreamInfo.Height {
-				scale = "-1:90"
-			}
-
 			video.Width = videoStreamInfo.Width
 			video.Height = videoStreamInfo.Height
 			video.Duration = ffpInfo.Format.duration()
@@ -103,7 +96,7 @@ func (l *PlainLink) handleTextMessage(m *tb.Message) {
 			video.Caption = fmt.Sprintf("[🎞](%s) *%s* _(by %s)_", m.Text, filename, m.Sender.Username)
 
 			// Getting thumbnail
-			cmd = fmt.Sprintf(`ffmpeg -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, videoFileDest, scale, videoThumbFile)
+			cmd = fmt.Sprintf(`ffmpeg -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, videoFileDest, videoStreamInfo.scale(), videoThumbFile)
 			err = exec.Command("/bin/sh", "-c", cmd).Run()
 			if err != nil {
 				log.Printf("PlainLink: Thumbnail error: %s", err)
@@ -128,25 +121,4 @@ func (l *PlainLink) handleTextMessage(m *tb.Message) {
 			log.Printf("PlainLink: Unknown content type: %s", resp.Header["Content-Type"])
 		}
 	}
-}
-
-func (l *PlainLink) downloadFile(filepath string, url string) error {
-
-	// Get the data
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Create the file
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
-	return err
 }

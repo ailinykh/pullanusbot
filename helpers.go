@@ -1,6 +1,11 @@
 package main
 
-import "sync"
+import (
+	"io"
+	"net/http"
+	"os"
+	"sync"
+)
 
 // ConcurrentSlice is a thread safe integer store
 type ConcurrentSlice struct {
@@ -33,4 +38,26 @@ func (s *ConcurrentSlice) Index(e int64) int {
 		}
 	}
 	return -1
+}
+
+// Simple file downloader
+func downloadFile(filepath string, url string) error {
+
+	// Get the data
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Create the file
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Write the body to file
+	_, err = io.Copy(out, resp.Body)
+	return err
 }

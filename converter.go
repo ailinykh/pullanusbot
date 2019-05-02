@@ -43,6 +43,13 @@ type ffpStream struct {
 	BitRate   string `json:"bit_rate"`
 }
 
+func (s ffpStream) scale() string {
+	if s.Width < s.Height {
+		return "-1:90"
+	}
+	return "90:-1"
+}
+
 func (s ffpStream) bitrate() int {
 	bitrate, _ := strconv.Atoi(s.BitRate)
 	return bitrate
@@ -138,11 +145,6 @@ func (c *Converter) checkMessage(m *tb.Message) {
 		fi, err := os.Stat(destinationFile)
 		var video tb.Video
 
-		scale := "90:-1"
-		if sourceStreamInfo.Width < sourceStreamInfo.Height {
-			scale = "-1:90"
-		}
-
 		if os.IsNotExist(err) {
 			log.Println("Converter: Destination file not exists. Sending original...")
 			video = tb.Video{File: tb.FromDisk(sourceFile)}
@@ -159,7 +161,7 @@ func (c *Converter) checkMessage(m *tb.Message) {
 		video.SupportsStreaming = true
 
 		// Getting thumbnail
-		cmd := fmt.Sprintf("ffmpeg -i \"%s\" -ss 00:00:01.000 -vframes 1 -filter:v scale=\"%s\" \"%s\"", sourceFile, scale, destinationThumbFile)
+		cmd := fmt.Sprintf(`ffmpeg -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, sourceFile, sourceStreamInfo.scale(), destinationThumbFile)
 		err = exec.Command("/bin/sh", "-c", cmd).Run()
 		if err != nil {
 			log.Printf("Converter: Thumbnail error: %s", err)

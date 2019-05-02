@@ -106,9 +106,11 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 		case 1:
 			f, ok := album[0].(*tb.Video)
 			if ok {
+				log.Printf("Twitter: Sending as Video %s", f.FileURL)
 				f.Caption = caption
 				_, err = f.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 			} else {
+				log.Printf("Twitter: Sending as Photo %s", f.FileURL)
 				f, ok := album[0].(*tb.Photo)
 				if ok {
 					f.Caption = caption
@@ -118,6 +120,7 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 				}
 			}
 		default:
+			log.Printf("Twitter: Sending as Album")
 			b.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeMarkdown, DisableWebPagePreview: true})
 			_, err = b.SendAlbum(m.Chat, album)
 		}
