@@ -100,13 +100,13 @@ func (f *Faggot) reply(m *tb.Message, text string) {
 
 // Print game rules
 func (f *Faggot) rules(m *tb.Message) {
-	f.reply(m, i18n("rules"))
+	f.reply(m, i18n("faggot_rules"))
 }
 
 // Register new player
 func (f *Faggot) reg(m *tb.Message) {
 	if m.Private() {
-		f.reply(m, i18n("not_available_for_private"))
+		f.reply(m, i18n("faggot_not_available_for_private"))
 		return
 	}
 
@@ -120,7 +120,7 @@ func (f *Faggot) reg(m *tb.Message) {
 
 	if count > 0 {
 		log.Printf("%d REG:  Player already in game! (%d)", m.Chat.ID, m.Sender.ID)
-		f.reply(m, i18n("already_in_game"))
+		f.reply(m, i18n("faggot_already_in_game"))
 		return
 	}
 
@@ -137,7 +137,7 @@ func (f *Faggot) reg(m *tb.Message) {
 	log.Printf("%d REG:  LastInsertId: (%d)", m.Chat.ID, id)
 
 	log.Printf("%d REG:  Player added to game (%d)", m.Chat.ID, m.Sender.ID)
-	f.reply(m, i18n("added_to_game"))
+	f.reply(m, i18n("faggot_added_to_game"))
 }
 
 // Active games sync
@@ -146,7 +146,7 @@ var activeGames = ConcurrentSlice{}
 // Play POTD game
 func (f *Faggot) play(m *tb.Message) {
 	if m.Private() {
-		f.reply(m, i18n("not_available_for_private"))
+		f.reply(m, i18n("faggot_not_available_for_private"))
 		return
 	}
 
@@ -177,11 +177,11 @@ func (f *Faggot) play(m *tb.Message) {
 	case 0:
 		log.Printf("%d POTD: No players!", m.Chat.ID)
 		player := FaggotPlayer{User: m.Sender}
-		f.reply(m, fmt.Sprintf(i18n("no_players"), player.mention()))
+		f.reply(m, fmt.Sprintf(i18n("faggot_no_players"), player.mention()))
 		return
 	case 1:
 		log.Printf("%d POTD: Not enough players!", m.Chat.ID)
-		f.reply(m, i18n("not_enough_players"))
+		f.reply(m, i18n("faggot_not_enough_players"))
 		return
 	default:
 	}
@@ -196,7 +196,7 @@ func (f *Faggot) play(m *tb.Message) {
 
 		log.Printf("%d POTD: Already known!", m.Chat.ID)
 
-		phrase := fmt.Sprintf(i18n("winner_known"), username)
+		phrase := fmt.Sprintf(i18n("faggot_winner_known"), username)
 		f.reply(m, phrase)
 		return
 	}
@@ -232,7 +232,7 @@ func (f *Faggot) play(m *tb.Message) {
 		time.Sleep(time.Duration(r) * time.Second)
 	}
 
-	// Insert into DB after reply to prevent winner_known invocation by multiple /pidor calling
+	// Insert into DB after reply to prevent faggot_winner_known invocation by multiple /pidor calling
 	stmt, err := db.Prepare("INSERT INTO faggot_entries(day, chat_id, user_id, username) values(?,?,?,?)")
 	checkErr(err)
 	defer stmt.Close()
@@ -251,7 +251,7 @@ func (f *Faggot) play(m *tb.Message) {
 // Statistics for all time
 func (f *Faggot) all(m *tb.Message) {
 	if m.Private() {
-		f.reply(m, i18n("not_available_for_private"))
+		f.reply(m, i18n("faggot_not_available_for_private"))
 		return
 	}
 
@@ -299,7 +299,7 @@ func (f *Faggot) all(m *tb.Message) {
 // Current year statistics
 func (f *Faggot) stats(m *tb.Message) {
 	if m.Private() {
-		f.reply(m, i18n("not_available_for_private"))
+		f.reply(m, i18n("faggot_not_available_for_private"))
 		return
 	}
 
@@ -355,7 +355,7 @@ func (f *Faggot) stats(m *tb.Message) {
 // Personal stat
 func (f *Faggot) me(m *tb.Message) {
 	if m.Private() {
-		f.reply(m, i18n("not_available_for_private"))
+		f.reply(m, i18n("faggot_not_available_for_private"))
 		return
 	}
 
