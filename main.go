@@ -53,6 +53,7 @@ func main() {
 			&PlainLink{},
 			&Twitter{},
 		}},
+		&Vpn{},
 	}
 
 	for _, adapter := range adapters {
