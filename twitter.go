@@ -21,9 +21,9 @@ type Twitter struct {
 type twitterReponse struct {
 	ID               string          `json:"id_str"`
 	FullText         string          `json:"full_text"`
-	ExtendedEntities twitterEntity   `json:"extended_entities"`
+	ExtendedEntities twitterEntity   `json:"extended_entities,omitempty"`
 	User             twitterUser     `json:"user"`
-	QuotedStatus     *twitterReponse `json:"quoted_status"`
+	QuotedStatus     *twitterReponse `json:"quoted_status,omitempty"`
 }
 
 type twitterUser struct {
@@ -95,36 +95,36 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 		}
 
 		caption := t.getCaption(m, twResp)
-		album := t.getAlbum(twResp.ExtendedEntities.Media)
+		media := twResp.ExtendedEntities.Media
 
-		if len(twResp.ExtendedEntities.Media) == 0 && len(twResp.QuotedStatus.ExtendedEntities.Media) > 0 {
+		if len(twResp.ExtendedEntities.Media) == 0 && twResp.QuotedStatus != nil && len(twResp.QuotedStatus.ExtendedEntities.Media) > 0 {
 			caption = t.getCaption(m, *twResp.QuotedStatus)
-			album = t.getAlbum(twResp.QuotedStatus.ExtendedEntities.Media)
+			media = twResp.QuotedStatus.ExtendedEntities.Media
 		}
 
-		switch len(album) {
+		switch len(media) {
 		case 0:
+			log.Println("Twitter: Senting as text")
 			_, err = b.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeMarkdown, DisableWebPagePreview: true})
+			log.Printf("Twitter: %v", err)
 		case 1:
-			f, ok := album[0].(*tb.Video)
-			if ok {
-				log.Printf("Twitter: Sending as Video %s", f.FileURL)
-				f.Caption = caption
-				_, err = f.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+			if media[0].Type == "video" {
+				file := &tb.Video{File: tb.FromURL(media[0].VideoInfo.best().URL)}
+				file.Caption = caption
+				log.Printf("Twitter: Sending as Video %s", file.FileURL)
+				_, err = file.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+			} else if media[0].Type == "photo" {
+				file := &tb.Photo{File: tb.FromURL(media[0].MediaURL)}
+				file.Caption = caption
+				log.Printf("Twitter: Sending as Photo %s", file.FileURL)
+				_, err = file.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 			} else {
-				log.Printf("Twitter: Sending as Photo %s", f.FileURL)
-				f, ok := album[0].(*tb.Photo)
-				if ok {
-					f.Caption = caption
-					_, err = f.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
-				} else {
-					log.Printf("Twitter: Unknown album type: %v", album[0])
-				}
+				log.Printf("Twitter: Unknown type: %s", media[0].Type)
 			}
 		default:
 			log.Printf("Twitter: Sending as Album")
 			b.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeMarkdown, DisableWebPagePreview: true})
-			_, err = b.SendAlbum(m.Chat, album)
+			_, err = b.SendAlbum(m.Chat, t.getAlbum(media))
 		}
 
 		if err == nil {
@@ -138,61 +138,61 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 
 			if strings.HasSuffix(err.Error(), "failed to get HTTP URL content") {
 				// Try to upload file to telegram
-				f, ok := album[0].(*tb.Video)
-				if ok {
-					log.Println("Twitter: Sending by uploading")
+				log.Println("Twitter: Sending by uploading")
 
-					filename := path.Base(f.FileURL)
-					videoFile := path.Join(os.TempDir(), filename)
-					defer os.Remove(videoFile)
+				filename := path.Base(media[0].VideoInfo.best().URL)
+				videoFile := path.Join(os.TempDir(), filename)
+				defer os.Remove(videoFile)
 
-					err = downloadFile(videoFile, f.FileURL)
+				err = downloadFile(videoFile, media[0].VideoInfo.best().URL)
+				if err != nil {
+					log.Printf("Twitter: video download error: %s", err)
+					return
+				}
+
+				c := Converter{}
+				ffpInfo, err := c.getFFProbeInfo(videoFile)
+				if err != nil {
+					log.Printf("Twitter: FFProbe info retreiving error: %s", err)
+					return
+				}
+
+				videoStreamInfo, err := ffpInfo.getVideoStream()
+				if err != nil {
+					log.Printf("Twitter: %s", err)
+					return
+				}
+
+				video := tb.Video{File: tb.FromDisk(videoFile)}
+				video.Width = videoStreamInfo.Width
+				video.Height = videoStreamInfo.Height
+				video.Duration = ffpInfo.Format.duration()
+				video.SupportsStreaming = true
+				// insert hot link
+				idx := strings.Index(caption, " ")
+
+				video.Caption = caption[0:idx] + fmt.Sprintf("[🎞](%s)", media[0].VideoInfo.best().URL) + caption[idx:]
+
+				// Getting thumbnail
+				thumb, err := c.getThumbnail(videoFile)
+				if err != nil {
+					log.Printf("PlainLink: Thumbnail error: %s", err)
+				} else {
+					video.Thumbnail = &tb.Photo{File: tb.FromDisk(thumb)}
+					defer os.Remove(thumb)
+				}
+
+				log.Printf("Twitter: Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
+
+				_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+				if err == nil {
+					log.Println("Twitter: Video sent. Deleting original")
+					err = b.Delete(m)
 					if err != nil {
-						log.Printf("Twitter: video download error: %s", err)
-						return
+						log.Printf("Twitter: Can't delete original message: %s", err)
 					}
-
-					c := Converter{}
-					ffpInfo, err := c.getFFProbeInfo(videoFile)
-					if err != nil {
-						log.Printf("Twitter: FFProbe info retreiving error: %s", err)
-						return
-					}
-
-					videoStreamInfo, err := ffpInfo.getVideoStream()
-					if err != nil {
-						log.Printf("Twitter: %s", err)
-						return
-					}
-
-					video := tb.Video{File: tb.FromDisk(videoFile)}
-					video.Width = videoStreamInfo.Width
-					video.Height = videoStreamInfo.Height
-					video.Duration = ffpInfo.Format.duration()
-					video.SupportsStreaming = true
-					video.Caption = caption
-
-					// Getting thumbnail
-					thumb, err := c.getThumbnail(videoFile)
-					if err != nil {
-						log.Printf("PlainLink: Thumbnail error: %s", err)
-					} else {
-						video.Thumbnail = &tb.Photo{File: tb.FromDisk(thumb)}
-						defer os.Remove(thumb)
-					}
-
-					log.Printf("Twitter: Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
-
-					_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
-					if err == nil {
-						log.Println("Twitter: Video sent. Deleting original")
-						err = b.Delete(m)
-						if err != nil {
-							log.Printf("Twitter: Can't delete original message: %s", err)
-						}
-					} else {
-						log.Printf("Twitter: Can't send video: %s", err)
-					}
+				} else {
+					log.Printf("Twitter: Can't send video: %s", err)
 				}
 			}
 		}
@@ -223,9 +223,7 @@ func (t *Twitter) getAlbum(media []twitterMedia) tb.Album {
 }
 
 func (t *Twitter) getCaption(m *tb.Message, r twitterReponse) string {
-	idx := strings.LastIndex(r.FullText, " ")
-	if idx > -1 {
-		r.FullText = r.FullText[0:idx]
-	}
-	return fmt.Sprintf("[🐦](https://twitter.com/%s/status/%s) *%s* _(by %s)_\n%s", r.User.ScreenName, r.ID, r.User.Name, m.Sender.Username, r.FullText)
+	re := regexp.MustCompile(`\s?http\S+$`)
+	text := re.ReplaceAllString(r.FullText, "")
+	return fmt.Sprintf("[🐦](https://twitter.com/%s/status/%s) *%s* _(by %s)_\n%s", r.User.ScreenName, r.ID, r.User.Name, m.Sender.Username, text)
 }
