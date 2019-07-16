@@ -23,6 +23,13 @@ type IBotAdapter interface {
 	initialize()
 }
 
+type Admin struct {
+}
+
+func (a *Admin) Recipient() string {
+	return os.Getenv("ADMIN_CHAT_ID")
+}
+
 var db *sql.DB
 var workingDir = "data"
 
@@ -49,6 +56,7 @@ func main() {
 		&Converter{},
 		&Faggot{},
 		&Info{},
+		&SMS{},
 		&TextHandler{handlers: []ITextHandler{
 			&PlainLink{},
 			&Twitter{},
