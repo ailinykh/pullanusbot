@@ -32,6 +32,7 @@ func (l *PlainLink) handleTextMessage(m *tb.Message) {
 		}
 		switch resp.Header["Content-Type"][0] {
 		case "video/mp4":
+			b.Notify(m.Chat, tb.UploadingVideo)
 			log.Printf("PlainLink: found mp4 file %s", m.Text)
 			video := &tb.Video{File: tb.FromURL(resp.Request.URL.String())}
 			video.Caption = fmt.Sprintf("[🎞](%s) *%s* _(by %s)_", m.Text, path.Base(resp.Request.URL.Path), m.Sender.Username)
@@ -47,6 +48,7 @@ func (l *PlainLink) handleTextMessage(m *tb.Message) {
 				log.Printf("PlainLink: Can't send entry: %s", err)
 			}
 		case "video/webm":
+			b.Notify(m.Chat, tb.UploadingVideo)
 			filename := path.Base(resp.Request.URL.Path)
 			videoFileSrc := path.Join(os.TempDir(), filename)
 			videoFileDest := path.Join(os.TempDir(), filename+".mp4")
