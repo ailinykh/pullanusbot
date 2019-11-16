@@ -26,8 +26,8 @@ jobs:
       - run:
           name: Push coverage results
           command: bash <(curl -s https://codecov.io/bash)
-      # - setup_remote_docker:
-      #     docker_layer_caching: true
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
           name: Build docker image
           command: |
