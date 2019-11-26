@@ -17,7 +17,7 @@ jobs:
       uses: actions/checkout@v1
 
     - name: Setup dependencies
-      run: mkdir -p go/bin
+      run: mkdir -p ../../../go/bin
 
     - name: Get dependencies
       run: |
