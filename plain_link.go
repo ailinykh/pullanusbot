@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"path"
 	"regexp"
 
+	"github.com/google/logger"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -19,33 +19,33 @@ type PlainLink struct {
 func (l *PlainLink) handleTextMessage(m *tb.Message) {
 	b, ok := bot.(*tb.Bot)
 	if !ok {
-		log.Println("PlainLink: Bot cast failed")
+		logger.Error("PlainLink: Bot cast failed")
 		return
 	}
 
 	r, _ := regexp.Compile(`^http(\S+)$`)
 	if r.MatchString(m.Text) {
-		log.Printf("PlainLink: link found %s", m.Text)
+		logger.Infof("PlainLink: link found %s", m.Text)
 		resp, err := http.Get(m.Text)
 		if err != nil {
-			log.Printf("PlainLink: %s", err)
+			logger.Errorf("PlainLink: %v", err)
 		}
 		switch resp.Header["Content-Type"][0] {
 		case "video/mp4":
 			b.Notify(m.Chat, tb.UploadingVideo)
-			log.Printf("PlainLink: found mp4 file %s", m.Text)
+			logger.Infof("PlainLink: found mp4 file %s", m.Text)
 			video := &tb.Video{File: tb.FromURL(resp.Request.URL.String())}
 			video.Caption = fmt.Sprintf("[🎞](%s) *%s* _(by %s)_", m.Text, path.Base(resp.Request.URL.Path), m.Sender.Username)
 			_, err := video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 
 			if err == nil {
-				log.Println("PlainLink: Message sent. Deleting original")
+				logger.Info("PlainLink: Message sent. Deleting original")
 				err = b.Delete(m)
 				if err != nil {
-					log.Printf("PlainLink: Can't delete original message: %s", err)
+					logger.Errorf("PlainLink: Can't delete original message: %v", err)
 				}
 			} else {
-				log.Printf("PlainLink: Can't send entry: %s", err)
+				logger.Errorf("PlainLink: Can't send entry: %v", err)
 			}
 		case "video/webm":
 			b.Notify(m.Chat, tb.UploadingVideo)
@@ -55,36 +55,36 @@ func (l *PlainLink) handleTextMessage(m *tb.Message) {
 			defer os.Remove(videoFileSrc)
 			defer os.Remove(videoFileDest)
 
-			// log.Printf("PlainLink: file %s, thumb: %s", videoFileSrc, videoThumbFile)
+			// logger.Printf("PlainLink: file %s, thumb: %s", videoFileSrc, videoThumbFile)
 
 			// Download webm
-			log.Printf("PlainLink: downloading file %s", filename)
+			logger.Infof("PlainLink: downloading file %s", filename)
 			err = downloadFile(videoFileSrc, m.Text)
 			if err != nil {
-				log.Printf("PlainLink: video download error: %s", err)
+				logger.Errorf("PlainLink: video download error: %v", err)
 				return
 			}
 
 			// Convert webm to mp4
-			log.Printf("PlainLink: converting file %s", filename)
+			logger.Infof("PlainLink: converting file %s", filename)
 			cmd := fmt.Sprintf(`ffmpeg -y -i "%s" "%s"`, videoFileSrc, videoFileDest)
 			_, err := exec.Command("/bin/sh", "-c", cmd).Output()
 			if err != nil {
-				log.Printf("PlainLink: Video converting error: %s", err)
+				logger.Errorf("PlainLink: Video converting error: %v", err)
 				return
 			}
-			log.Println("PlainLink: file converted!")
+			logger.Infof("PlainLink: file converted!")
 
 			c := Converter{}
 			ffpInfo, err := c.getFFProbeInfo(videoFileDest)
 			if err != nil {
-				log.Printf("PlainLink: FFProbe info retreiving error: %s", err)
+				logger.Errorf("PlainLink: FFProbe info retreiving error: %v", err)
 				return
 			}
 
 			videoStreamInfo, err := ffpInfo.getVideoStream()
 			if err != nil {
-				log.Printf("PlainLink: %s", err)
+				logger.Errorf("PlainLink: %v", err)
 				return
 			}
 
@@ -98,26 +98,26 @@ func (l *PlainLink) handleTextMessage(m *tb.Message) {
 			// Getting thumbnail
 			thumb, err := c.getThumbnail(videoFileDest)
 			if err != nil {
-				log.Printf("PlainLink: Thumbnail error: %s", err)
+				logger.Errorf("PlainLink: Thumbnail error: %v", err)
 			} else {
 				video.Thumbnail = &tb.Photo{File: tb.FromDisk(thumb)}
 				defer os.Remove(thumb)
 			}
 
-			log.Printf("PlainLink: Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
+			logger.Infof("PlainLink: Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
 
 			_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 			if err == nil {
-				log.Println("PlainLink: Video sent. Deleting original")
+				logger.Info("PlainLink: Video sent. Deleting original")
 				err = b.Delete(m)
 				if err != nil {
-					log.Printf("PlainLink: Can't delete original message: %s", err)
+					logger.Errorf("PlainLink: Can't delete original message: %v", err)
 				}
 			} else {
-				log.Printf("PlainLink: Can't send video: %s", err)
+				logger.Errorf("PlainLink: Can't send video: %v", err)
 			}
 		default:
-			log.Printf("PlainLink: Unknown content type: %s", resp.Header["Content-Type"])
+			logger.Errorf("PlainLink: Unknown content type: %s", resp.Header["Content-Type"])
 		}
 	}
 }

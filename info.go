@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -12,11 +10,7 @@ type Info struct {
 
 // initialize database and all nesessary command handlers
 func (i *Info) initialize() {
-	log.Println("Info: subscribing to bot events")
-
 	bot.Handle("/proxy", i.proxy)
-
-	log.Println("Info: successfully initialized")
 }
 
 func (i *Info) proxy(m *tb.Message) {

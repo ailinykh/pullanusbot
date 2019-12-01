@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 
+	"github.com/google/logger"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -23,25 +23,21 @@ type smsRegGetBalance struct {
 // initialize database and all nesessary command handlers
 func (s *SMS) initialize() {
 	if os.Getenv("SMS_API_KEY") == "" {
-		log.Println("SMS: SMS_API_KEY not set! Skipping...")
+		logger.Error("SMS_API_KEY not set! Skipping...")
 		return
 	}
 
 	if os.Getenv("ADMIN_CHAT_ID") == "" {
-		log.Println("SMS: ADMIN_CHAT_ID not set! Skipping...")
+		logger.Error("ADMIN_CHAT_ID not set! Skipping...")
 		return
 	}
-
-	log.Println("SMS: database initialization")
 
 	_, err := db.Exec("CREATE TABLE IF NOT EXISTS sms (chat_id INTEGER, enabled INTEGER, processed INTEGER)")
 	checkErr(err)
 
-	log.Println("VPN: subscribing to bot events")
-
 	bot.Handle("/sms", s.start)
 
-	log.Println("SMS: successfully initialized")
+	logger.Info("successfully initialized")
 }
 
 func (s *SMS) start(m *tb.Message) {
@@ -61,7 +57,7 @@ func (s *SMS) start(m *tb.Message) {
 	err = db.QueryRow("SELECT enabled, processed FROM sms WHERE chat_id = ?", m.Chat.ID).Scan(&enabled, &processed)
 	checkErr(err)
 
-	log.Printf("SMS: chat_id: %d enabled: %d processed: %d", m.Chat.ID, enabled, processed)
+	logger.Infof("chat_id: %d enabled: %d processed: %d", m.Chat.ID, enabled, processed)
 
 	if processed == 0 {
 		s.authorize(m)
@@ -75,7 +71,7 @@ func (s *SMS) start(m *tb.Message) {
 
 	resp, err := http.Get("http://api.sms-reg.com/getBalance.php?apikey=" + os.Getenv("SMS_API_KEY"))
 	if err != nil {
-		log.Printf("SMS: Balance request error: %s", err)
+		logger.Errorf("Balance request error: %v", err)
 		// handle error
 	}
 	defer resp.Body.Close()
@@ -85,7 +81,7 @@ func (s *SMS) start(m *tb.Message) {
 
 	err = json.Unmarshal(body, &srResp)
 	if err != nil {
-		log.Printf("SMS: json parse error: %s", err)
+		logger.Errorf("json parse error: %v", err)
 		return
 	}
 
@@ -97,7 +93,7 @@ func (s *SMS) start(m *tb.Message) {
 	bot.Handle(&getNumberBtn, func(c *tb.Callback) {
 		b, ok := bot.(*tb.Bot)
 		if !ok {
-			log.Println("SMS: Bot cast failed")
+			logger.Error("Bot cast failed")
 			return
 		}
 		b.Edit(msg, msg.Text, &tb.ReplyMarkup{InlineKeyboard: nil})
@@ -115,7 +111,7 @@ func (s *SMS) start(m *tb.Message) {
 func (s *SMS) authorize(m *tb.Message) {
 	b, ok := bot.(*tb.Bot)
 	if !ok {
-		log.Println("SMS: Bot cast failed")
+		logger.Error("Bot cast failed")
 		return
 	}
 
@@ -194,7 +190,7 @@ func (s *SMS) processPhone(m *tb.Message) {
 	bot.Handle(&smsSentBtn, func(c *tb.Callback) {
 		b, ok := bot.(*tb.Bot)
 		if !ok {
-			log.Println("SMS: Bot cast failed")
+			logger.Info("Bot cast failed")
 			return
 		}
 		b.Edit(msg, msg.Text, &tb.ReplyMarkup{InlineKeyboard: nil})

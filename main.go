@@ -2,11 +2,11 @@ package main
 
 import (
 	"database/sql"
-	"log"
 	"os"
 	"path"
 	"time"
 
+	"github.com/google/logger"
 	_ "github.com/mattn/go-sqlite3"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -23,33 +23,38 @@ type IBotAdapter interface {
 	initialize()
 }
 
+// Admin is a structure for sirvice messages
 type Admin struct {
 }
 
+// Recipient returns chatID for service messages
 func (a *Admin) Recipient() string {
 	return os.Getenv("ADMIN_CHAT_ID")
 }
 
 var db *sql.DB
-var workingDir = "data"
+var rootDir = "data"
 
 var bot IBot
 
 func main() {
 	if os.Getenv("WORKING_DIR") != "" {
-		workingDir = os.Getenv("WORKING_DIR")
+		rootDir = os.Getenv("WORKING_DIR")
 	}
 
-	if os.Getenv("DEV") == "" {
-		logfile, err := os.OpenFile(path.Join(workingDir, "log.txt"), os.O_RDWR|os.O_CREATE, 0666)
+	// if os.Getenv("DEV") == ""
+	{
+		verbose := os.Getenv("DEV") == "1"
+		logPath := path.Join(rootDir, "log.txt")
+		lf, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
 		if err != nil {
-			log.Printf("error opening file: %v", err)
+			logger.Fatalf("Failed to open log file: %v", err)
 		}
-		defer logfile.Close()
-		log.SetOutput(logfile)
+		defer lf.Close()
+		defer logger.Init("pullanusbot", verbose, true, lf).Close()
 	}
 
-	setupDB(workingDir)
+	setupDB(rootDir)
 	setupBot(os.Getenv("BOT_TOKEN"))
 
 	adapters := []IBotAdapter{
@@ -72,37 +77,37 @@ func main() {
 }
 
 func setupDB(dir string) {
-	log.Println("Database initialization")
+	logger.Info("Database initialization")
 
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		log.Println("Directory not exist! Creating directory:")
-		log.Println("\t" + dir)
+		logger.Warning("Directory not exist! Creating directory:")
+		logger.Warning("\t" + dir)
 		err = os.MkdirAll(dir, os.ModePerm)
 		if err != nil {
-			log.Fatalf("Can't create directory: %s", dir)
+			logger.Fatalf("Can't create directory: %s", dir)
 		}
 	}
 
 	dbFile := path.Join(dir, "pullanusbot.db")
 
 	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
-		log.Println("Database not exist! Creating database:")
-		log.Println("\t" + dbFile)
+		logger.Warning("Database not exist! Creating database:")
+		logger.Warning("\t" + dbFile)
 		_, err = os.Create(dbFile)
 		if err != nil {
-			log.Fatalf("Can't create database: %s", dbFile)
+			logger.Fatalf("Can't create database: %s", dbFile)
 		}
 	}
 
 	db, _ = sql.Open("sqlite3", dbFile)
 
-	log.Println("Using database:")
-	log.Println("\t" + dbFile)
+	logger.Info("Using database:")
+	logger.Info("\t" + dbFile)
 }
 
 func setupBot(token string) {
 	if token == "" {
-		log.Fatal("BOT_TOKEN not set")
+		logger.Fatal("BOT_TOKEN not set")
 	}
 
 	poller := tb.NewMiddlewarePoller(&tb.LongPoller{Timeout: 10 * time.Second}, func(upd *tb.Update) bool {
@@ -120,6 +125,6 @@ func setupBot(token string) {
 
 func checkErr(err error) {
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 }

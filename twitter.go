@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"path"
 	"regexp"
 	"strings"
 
+	"github.com/google/logger"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -65,7 +65,7 @@ type twitterVideoInfoVariant struct {
 func (t *Twitter) handleTextMessage(m *tb.Message) {
 	b, ok := bot.(*tb.Bot)
 	if !ok {
-		log.Println("Twitter: Bot cast failed")
+		logger.Errorf("Twitter: Bot cast failed")
 		return
 	}
 
@@ -73,14 +73,14 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 	match := r.FindStringSubmatch(m.Text)
 	if len(match) > 1 {
 		tweetID := match[1]
-		log.Printf("Twitter: Found tweet %s", tweetID)
+		logger.Infof("Twitter: Found tweet %s", tweetID)
 
 		client := &http.Client{}
 		req, _ := http.NewRequest("GET", fmt.Sprintf("https://api.twitter.com/1.1/statuses/show.json?id=%s&tweet_mode=extended", tweetID), nil)
 		req.Header.Add("Authorization", "Bearer AAAAAAAAAAAAAAAAAAAAAPYXBAAAAAAACLXUNDekMxqa8h%2F40K4moUkGsoc%3DTYfbDKbT3jJPCEVnMYqilB28NHfOPqkca3qaAxGfsyKCs0wRbw")
 		res, err := client.Do(req)
 		if err != nil {
-			log.Printf("Twitter: json fetch error: %s", err)
+			logger.Errorf("Twitter: json fetch error: %v", err)
 			return
 		}
 		defer res.Body.Close()
@@ -90,7 +90,7 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 
 		err = json.Unmarshal(body, &twResp)
 		if err != nil {
-			log.Printf("Twitter: json parse error: %s", err)
+			logger.Errorf("Twitter: json parse error: %v", err)
 			return
 		}
 
@@ -104,41 +104,41 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 
 		switch len(media) {
 		case 0:
-			log.Println("Twitter: Senting as text")
+			logger.Info("Twitter: Senting as text")
 			_, err = b.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeMarkdown, DisableWebPagePreview: true})
-			log.Printf("Twitter: %v", err)
+			logger.Infof("Twitter: %v", err)
 		case 1:
 			if media[0].Type == "video" {
 				file := &tb.Video{File: tb.FromURL(media[0].VideoInfo.best().URL)}
 				file.Caption = caption
-				log.Printf("Twitter: Sending as Video %s", file.FileURL)
+				logger.Infof("Twitter: Sending as Video %s", file.FileURL)
 				_, err = file.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 			} else if media[0].Type == "photo" {
 				file := &tb.Photo{File: tb.FromURL(media[0].MediaURL)}
 				file.Caption = caption
-				log.Printf("Twitter: Sending as Photo %s", file.FileURL)
+				logger.Infof("Twitter: Sending as Photo %s", file.FileURL)
 				_, err = file.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 			} else {
-				log.Printf("Twitter: Unknown type: %s", media[0].Type)
+				logger.Infof("Twitter: Unknown type: %s", media[0].Type)
 			}
 		default:
-			log.Printf("Twitter: Sending as Album")
+			logger.Infof("Twitter: Sending as Album")
 			b.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeMarkdown, DisableWebPagePreview: true})
 			_, err = b.SendAlbum(m.Chat, t.getAlbum(media))
 		}
 
 		if err == nil {
-			log.Println("Twitter: Messages sent. Deleting original")
+			logger.Info("Twitter: Messages sent. Deleting original")
 			err = b.Delete(m)
 			if err != nil {
-				log.Printf("Twitter: Can't delete original message: %s", err)
+				logger.Errorf("Twitter: Can't delete original message: %v", err)
 			}
 		} else {
-			log.Printf("Twitter: Can't send entry: %s", err)
+			logger.Errorf("Twitter: Can't send entry: %v", err)
 
 			if strings.HasSuffix(err.Error(), "failed to get HTTP URL content") {
 				// Try to upload file to telegram
-				log.Println("Twitter: Sending by uploading")
+				logger.Info("Twitter: Sending by uploading")
 
 				filename := path.Base(media[0].VideoInfo.best().URL)
 				videoFile := path.Join(os.TempDir(), filename)
@@ -146,20 +146,20 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 
 				err = downloadFile(videoFile, media[0].VideoInfo.best().URL)
 				if err != nil {
-					log.Printf("Twitter: video download error: %s", err)
+					logger.Errorf("Twitter: video download error: %v", err)
 					return
 				}
 
 				c := Converter{}
 				ffpInfo, err := c.getFFProbeInfo(videoFile)
 				if err != nil {
-					log.Printf("Twitter: FFProbe info retreiving error: %s", err)
+					logger.Errorf("Twitter: FFProbe info retreiving error: %v", err)
 					return
 				}
 
 				videoStreamInfo, err := ffpInfo.getVideoStream()
 				if err != nil {
-					log.Printf("Twitter: %s", err)
+					logger.Errorf("Twitter: %v", err)
 					return
 				}
 
@@ -176,23 +176,23 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 				// Getting thumbnail
 				thumb, err := c.getThumbnail(videoFile)
 				if err != nil {
-					log.Printf("PlainLink: Thumbnail error: %s", err)
+					logger.Errorf("PlainLink: Thumbnail error: %v", err)
 				} else {
 					video.Thumbnail = &tb.Photo{File: tb.FromDisk(thumb)}
 					defer os.Remove(thumb)
 				}
 
-				log.Printf("Twitter: Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
+				logger.Infof("Twitter: Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
 
 				_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 				if err == nil {
-					log.Println("Twitter: Video sent. Deleting original")
+					logger.Info("Twitter: Video sent. Deleting original")
 					err = b.Delete(m)
 					if err != nil {
-						log.Printf("Twitter: Can't delete original message: %s", err)
+						logger.Errorf("Twitter: Can't delete original message: %v", err)
 					}
 				} else {
-					log.Printf("Twitter: Can't send video: %s", err)
+					logger.Errorf("Twitter: Can't send video: %v", err)
 				}
 			}
 		}
@@ -209,7 +209,7 @@ func (t *Twitter) getAlbum(media []twitterMedia) tb.Album {
 		} else if m.Type == "photo" {
 			file = &tb.Photo{File: tb.FromURL(m.MediaURL)}
 		} else {
-			log.Printf("Twitter: Unknown type: %s", m.Type)
+			logger.Errorf("Twitter: Unknown type: %s", m.Type)
 			file = nil
 		}
 

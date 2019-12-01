@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/google/logger"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -75,15 +75,12 @@ func (s FaggotStat) Swap(i, j int) {
 
 // initialize database and all nesessary command handlers
 func (f *Faggot) initialize() {
-	log.Println("Faggot: database initialization")
-
 	_, err := db.Exec("CREATE TABLE IF NOT EXISTS faggot_players (chat_id INTEGER, user_id INTEGER, first_name TEXT, last_name TEXT, username TEXT, language_code TEXT)")
 	checkErr(err)
 
 	_, err = db.Exec("CREATE TABLE IF NOT EXISTS faggot_entries (day TEXT, chat_id INTEGER, user_id INTEGER, username TEXT)")
 	checkErr(err)
 
-	log.Println("Faggot: subscribing to bot events")
 	bot.Handle("/pidorules", f.rules)
 	bot.Handle("/pidoreg", f.reg)
 	bot.Handle("/pidor", f.play)
@@ -91,7 +88,7 @@ func (f *Faggot) initialize() {
 	bot.Handle("/pidorstats", f.stats)
 	bot.Handle("/pidorme", f.me)
 
-	log.Println("Faggot: game started")
+	logger.Info("game started")
 }
 
 func (f *Faggot) reply(m *tb.Message, text string) {
@@ -110,16 +107,16 @@ func (f *Faggot) reg(m *tb.Message) {
 		return
 	}
 
-	log.Printf("%d REG:  Registering new player", m.Chat.ID)
+	logger.Infof("%d Registering new player", m.Chat.ID)
 
 	var count int
 	err := db.QueryRow("SELECT COUNT(*) FROM faggot_players WHERE chat_id = ? AND user_id = ?", m.Chat.ID, m.Sender.ID).Scan(&count)
 	checkErr(err)
 
-	log.Printf("%d REG:  Players found: %d", m.Chat.ID, count)
+	logger.Infof("%d Players found: %d", m.Chat.ID, count)
 
 	if count > 0 {
-		log.Printf("%d REG:  Player already in game! (%d)", m.Chat.ID, m.Sender.ID)
+		logger.Infof("%d Player already in game! (%d)", m.Chat.ID, m.Sender.ID)
 		f.reply(m, i18n("faggot_already_in_game"))
 		return
 	}
@@ -134,9 +131,9 @@ func (f *Faggot) reg(m *tb.Message) {
 	id, err := res.LastInsertId()
 	checkErr(err)
 
-	log.Printf("%d REG:  LastInsertId: (%d)", m.Chat.ID, id)
+	logger.Infof("%d LastInsertId: (%d)", m.Chat.ID, id)
 
-	log.Printf("%d REG:  Player added to game (%d)", m.Chat.ID, m.Sender.ID)
+	logger.Infof("%d Player added to game (%d)", m.Chat.ID, m.Sender.ID)
 	f.reply(m, i18n("faggot_added_to_game"))
 }
 
@@ -155,7 +152,7 @@ func (f *Faggot) play(m *tb.Message) {
 	loc, _ := time.LoadLocation("Europe/Zurich")
 	day := time.Now().In(loc).Format("2006-01-02")
 
-	log.Printf("%d POTD: Playing pidor of the day for %s!", m.Chat.ID, day)
+	logger.Infof("%d POTD: Playing pidor of the day for %s!", m.Chat.ID, day)
 
 	rows, err := db.Query("SELECT user_id, username FROM faggot_players WHERE chat_id = ?", m.Chat.ID)
 	checkErr(err)
@@ -171,16 +168,16 @@ func (f *Faggot) play(m *tb.Message) {
 		players = append(players, FaggotPlayer{User: &user})
 	}
 
-	log.Printf("%d POTD: Players found: %d", m.Chat.ID, len(players))
+	logger.Infof("%d POTD: Players found: %d", m.Chat.ID, len(players))
 
 	switch len(players) {
 	case 0:
-		log.Printf("%d POTD: No players!", m.Chat.ID)
+		logger.Infof("%d POTD: No players!", m.Chat.ID)
 		player := FaggotPlayer{User: m.Sender}
 		f.reply(m, fmt.Sprintf(i18n("faggot_no_players"), player.mention()))
 		return
 	case 1:
-		log.Printf("%d POTD: Not enough players!", m.Chat.ID)
+		logger.Infof("%d POTD: Not enough players!", m.Chat.ID)
 		f.reply(m, i18n("faggot_not_enough_players"))
 		return
 	default:
@@ -194,7 +191,7 @@ func (f *Faggot) play(m *tb.Message) {
 		err = db.QueryRow("SELECT username FROM faggot_entries WHERE chat_id = ? AND day = ?", m.Chat.ID, day).Scan(&username)
 		checkErr(err)
 
-		log.Printf("%d POTD: Already known!", m.Chat.ID)
+		logger.Infof("%d POTD: Already known!", m.Chat.ID)
 
 		phrase := fmt.Sprintf(i18n("faggot_winner_known"), username)
 		f.reply(m, phrase)
@@ -202,14 +199,14 @@ func (f *Faggot) play(m *tb.Message) {
 	}
 
 	if activeGames.Index(m.Chat.ID) > -1 {
-		log.Printf("%d PODT: Game in progress! Do nothing!", m.Chat.ID)
+		logger.Infof("%d PODT: Game in progress! Do nothing!", m.Chat.ID)
 		return
 	}
 
 	activeGames.Add(m.Chat.ID)
 
 	winner := players[rand.Intn(len(players))]
-	log.Printf("%d POTD: Pidor of the day is %s!", m.Chat.ID, winner.Username)
+	logger.Infof("%d POTD: Pidor of the day is %s!", m.Chat.ID, winner.Username)
 
 	for i := 0; i <= 3; i++ {
 		templates := []string{}
@@ -220,7 +217,7 @@ func (f *Faggot) play(m *tb.Message) {
 		}
 		template := templates[rand.Intn(len(templates))]
 		phrase := i18n(template)
-		log.Printf("%d POTD: Using template: %s", m.Chat.ID, template)
+		logger.Infof("%d POTD: Using template: %s", m.Chat.ID, template)
 
 		if i == 3 {
 			phrase = fmt.Sprintf(phrase, winner.mention())
@@ -243,7 +240,7 @@ func (f *Faggot) play(m *tb.Message) {
 	id, err := res.LastInsertId()
 	checkErr(err)
 
-	log.Printf("%d POTD: LastInsertId %d!", m.Chat.ID, id)
+	logger.Infof("%d POTD: LastInsertId %d!", m.Chat.ID, id)
 
 	activeGames.Remove(m.Chat.ID)
 }
@@ -278,7 +275,7 @@ func (f *Faggot) all(m *tb.Message) {
 		entries = append(entries, FaggotEntry{Username: username})
 	}
 
-	log.Printf("%d All:  Entries found: %d", m.Chat.ID, len(entries))
+	logger.Infof("%d All:  Entries found: %d", m.Chat.ID, len(entries))
 
 	for _, entry := range entries {
 		stats.Increment(entry.Username)
@@ -330,7 +327,7 @@ func (f *Faggot) stats(m *tb.Message) {
 		entries = append(entries, FaggotEntry{Day: day, Username: username})
 	}
 
-	log.Printf("%d Stat: Entries found: %d", m.Chat.ID, len(entries))
+	logger.Infof("%d Stat: Entries found: %d", m.Chat.ID, len(entries))
 
 	for _, entry := range entries {
 		t, _ := time.Parse("2006-01-02", entry.Day)

@@ -124,10 +124,10 @@ func (f *FakeBot) replyText() string {
 }
 
 func tearUp(t *testing.T) func() {
-	originalWorkingDir := workingDir
+	originalrootDir := rootDir
 	originalBot := bot
-	workingDir = path.Join(os.TempDir(), fmt.Sprintf("pullanusbot_data_%s_%s", t.Name(), randStringRunes(4)))
-	setupDB(workingDir)
+	rootDir = path.Join(os.TempDir(), fmt.Sprintf("pullanusbot_data_%s_%s", t.Name(), randStringRunes(4)))
+	setupDB(rootDir)
 
 	var err error
 	bot = &FakeBot{}
@@ -135,8 +135,8 @@ func tearUp(t *testing.T) func() {
 
 	// tearDown
 	return func() {
-		os.RemoveAll(workingDir)
-		workingDir = originalWorkingDir
+		os.RemoveAll(rootDir)
+		rootDir = originalrootDir
 		bot = originalBot
 	}
 }

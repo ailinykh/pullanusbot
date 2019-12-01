@@ -1,8 +1,7 @@
 package main
 
 import (
-	"log"
-
+	"github.com/google/logger"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -18,7 +17,7 @@ type TextHandler struct {
 
 func (h *TextHandler) initialize() {
 	bot.Handle(tb.OnText, h.handleText)
-	log.Println("TextHandler: successfully initialized")
+	logger.Info("successfully initialized")
 }
 
 func (h *TextHandler) handleText(m *tb.Message) {

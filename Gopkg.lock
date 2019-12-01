@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:ebdeb808fe6861df1eaa262006a879bdbed826dd51c343bd5e681045e194997c"
+  name = "github.com/google/logger"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "7047ffcb7339f3f59be32de74a92217cb17cb40c"
+  version = "v1.0.1"
+
+[[projects]]
   digest = "1:4a49346ca45376a2bba679ca0e83bec949d780d4e927931317904bad482943ec"
   name = "github.com/mattn/go-sqlite3"
   packages = ["."]
@@ -18,6 +26,18 @@
   version = "v0.8.1"
 
 [[projects]]
+  branch = "master"
+  digest = "1:a06b417586cb84d294a93dd67d521bd62c29f2506363d7a0adb310b5cd0f72f9"
+  name = "golang.org/x/sys"
+  packages = [
+    "windows",
+    "windows/registry",
+    "windows/svc/eventlog",
+  ]
+  pruneopts = "UT"
+  revision = "6d18c012aee9febd81bbf9806760c8c4480e870d"
+
+[[projects]]
   branch = "v2"
   digest = "1:cdb99928ddb6141867515a3af95c41bcd02075bebd3965a6e11ddedb8b22c0e3"
   name = "gopkg.in/tucnak/telebot.v2"
@@ -29,6 +49,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/google/logger",
     "github.com/mattn/go-sqlite3",
     "gopkg.in/tucnak/telebot.v2",
   ]
