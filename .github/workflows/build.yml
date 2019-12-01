@@ -18,6 +18,8 @@ jobs:
 
     - name: Setup dependencies
       run: mkdir -p ../../../go/bin
+      
+    - run: echo $GOPATH
 
     - name: Get dependencies
       run: |
