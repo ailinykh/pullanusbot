@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"path"
@@ -11,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/logger"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -127,9 +129,25 @@ func tearUp(t *testing.T) func() {
 	originalrootDir := rootDir
 	originalBot := bot
 	rootDir = path.Join(os.TempDir(), fmt.Sprintf("pullanusbot_data_%s_%s", t.Name(), randStringRunes(4)))
+
+	if _, err := os.Stat(rootDir); os.IsNotExist(err) {
+		err = os.MkdirAll(rootDir, os.ModePerm)
+		if err != nil {
+			log.Fatalf("Can't create directory: %s", rootDir)
+		}
+	}
+
+	logPath := path.Join(rootDir, "log.txt")
+	lf, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
+	if err != nil {
+		log.Fatalf("Failed to open log file: %v", err)
+	}
+
+	defer lf.Close()
+	defer logger.Init("pullanusbot", true, true, lf).Close()
+
 	setupDB(rootDir)
 
-	var err error
 	bot = &FakeBot{}
 	checkErr(err)
 

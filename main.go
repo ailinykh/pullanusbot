@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"log"
 	"os"
 	"path"
 	"time"
@@ -34,7 +35,6 @@ func (a *Admin) Recipient() string {
 
 var db *sql.DB
 var rootDir = "data"
-
 var bot IBot
 
 func main() {
@@ -42,18 +42,14 @@ func main() {
 		rootDir = os.Getenv("WORKING_DIR")
 	}
 
-	// if os.Getenv("DEV") == ""
-	{
-		verbose := os.Getenv("DEV") == "1"
-		logPath := path.Join(rootDir, "log.txt")
-		lf, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
-		if err != nil {
-			logger.Fatalf("Failed to open log file: %v", err)
-		}
-		defer lf.Close()
-		defer logger.Init("pullanusbot", verbose, true, lf).Close()
+	logPath := path.Join(rootDir, "log.txt")
+	lf, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
+	if err != nil {
+		log.Fatalf("Failed to open log file: %v", err)
 	}
-
+	defer lf.Close()
+	defer logger.Init("pullanusbot", true, true, lf).Close()
+	// logger.Init("pullanusbot", true, true, lf)
 	setupDB(rootDir)
 	setupBot(os.Getenv("BOT_TOKEN"))
 

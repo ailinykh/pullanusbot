@@ -311,6 +311,7 @@ func (f *Faggot) stats(m *tb.Message) {
 	checkErr(err)
 
 	if count == 0 {
+		logger.Infof("%d Stat: no entries. Exiting...", m.Chat.ID)
 		return
 	}
 
