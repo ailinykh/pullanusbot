@@ -144,7 +144,7 @@ func tearUp(t *testing.T) func() {
 	}
 
 	defer lf.Close()
-	defer logger.Init("pullanusbot", true, true, lf).Close()
+	defer logger.Init("pullanusbot", true, false, lf).Close()
 
 	setupDB(rootDir)
 

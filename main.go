@@ -48,7 +48,7 @@ func main() {
 		log.Fatalf("Failed to open log file: %v", err)
 	}
 	defer lf.Close()
-	defer logger.Init("pullanusbot", true, true, lf).Close()
+	defer logger.Init("pullanusbot", true, false, lf).Close()
 	// logger.Init("pullanusbot", true, true, lf)
 	setupDB(rootDir)
 	setupBot(os.Getenv("BOT_TOKEN"))
