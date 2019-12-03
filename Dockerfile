@@ -8,6 +8,7 @@ ADD . .
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags '-extldflags "-static"'
 
 FROM jrottenberg/ffmpeg:4.1-alpine
+RUN apk update && apk add tzdata --no-cache
 WORKDIR /go/bin
 COPY --from=builder /go/src/github.com/ailinykh/pullanusbot/pullanusbot .
 VOLUME [ "data" ]
