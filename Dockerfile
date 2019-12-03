@@ -11,4 +11,4 @@ FROM jrottenberg/ffmpeg:4.1-alpine
 WORKDIR /go/bin
 COPY --from=builder /go/src/github.com/ailinykh/pullanusbot/pullanusbot .
 VOLUME [ "data" ]
-ENTRYPOINT /bin/sh
+ENTRYPOINT /go/bin/pullanusbot
