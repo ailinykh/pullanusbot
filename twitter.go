@@ -69,7 +69,7 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 		return
 	}
 
-	r, _ := regexp.Compile(`twitter\.com.+/(\d+)`)
+	r, _ := regexp.Compile(`twitter\.com.+/(\d+)\S*$`)
 	match := r.FindStringSubmatch(m.Text)
 	if len(match) > 1 {
 		tweetID := match[1]
