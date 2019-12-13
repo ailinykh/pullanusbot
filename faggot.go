@@ -92,7 +92,7 @@ func (f *Faggot) initialize() {
 }
 
 func (f *Faggot) reply(m *tb.Message, text string) {
-	bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+	bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeHTML})
 }
 
 // Print game rules
@@ -283,7 +283,7 @@ func (f *Faggot) all(m *tb.Message) {
 
 	sort.Sort(sort.Reverse(stats))
 	for i, stat := range stats.stat {
-		s = append(s, fmt.Sprintf(i18n("faggot_all_entry"), i+1, strings.Replace(stat.Player, "_", "\\_", -1), stat.Count))
+		s = append(s, fmt.Sprintf(i18n("faggot_all_entry"), i+1, stat.Player, stat.Count))
 	}
 
 	err = db.QueryRow("SELECT COUNT(*) FROM faggot_players WHERE chat_id = ?", m.Chat.ID).Scan(&count)
@@ -340,7 +340,7 @@ func (f *Faggot) stats(m *tb.Message) {
 
 	sort.Sort(sort.Reverse(stats))
 	for i, stat := range stats.stat {
-		s = append(s, fmt.Sprintf(i18n("faggot_stats_entry"), i+1, strings.Replace(stat.Player, "_", "\\_", -1), stat.Count))
+		s = append(s, fmt.Sprintf(i18n("faggot_stats_entry"), i+1, stat.Player, stat.Count))
 	}
 
 	err = db.QueryRow("SELECT COUNT(*) FROM faggot_players WHERE chat_id = ?", m.Chat.ID).Scan(&count)
