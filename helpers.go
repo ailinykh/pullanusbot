@@ -26,12 +26,19 @@ func (s *ConcurrentSlice) Remove(e int64) {
 	s.Lock()
 	defer s.Unlock()
 
-	i := s.Index(e)
+	i := s.index(e)
 	s.items = append(s.items[0:i], s.items[i+1:]...)
 }
 
 // Index of current item or -1 if not found
 func (s *ConcurrentSlice) Index(e int64) int {
+	s.Lock()
+	defer s.Unlock()
+
+	return s.index(e)
+}
+
+func (s *ConcurrentSlice) index(e int64) int {
 	for i, el := range s.items {
 		if el == e {
 			return i
