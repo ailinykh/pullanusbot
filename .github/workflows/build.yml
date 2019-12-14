@@ -24,4 +24,25 @@ jobs:
       
     - name: Coverage
       run: bash <(curl -s https://codecov.io/bash)
+
+
+    - name: Generate build number and tag
+      uses: einaregilsson/build-number@v2 
+      with:
+        token: ${{secrets.github_token}}
+      run: TAG=0.2.$BUILD_NUMBER
+    
+    - name: Build docker container
+      run: |
+        docker build -tag ${{ github.repository }}:$TAG
+        echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
+        docker push ${{ github.repository }}:$TAG
+      env:
+        DOCKER_LOGIN: ${{ secrets.DOCKER_LOGIN }}
+        DOCKER_PWD: ${{ secrets.DOCKER_PWD }}
+
+    - name: Deploy app
+      run: echo "$SSH_IDENTITY_KEY" > identity && ssh -i identity -o StrictHostKeyChecking=no root@proxy.ailinykh.com "/bin/bash ./pullanusbot/deploy_app.sh $TAG"
+      env:
+        SSH_IDENTITY_KEY: ${{ secrets.SSH_IDENTITY_KEY }}
     
