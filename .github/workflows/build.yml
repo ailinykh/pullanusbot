@@ -26,11 +26,13 @@ jobs:
       run: bash <(curl -s https://codecov.io/bash)
 
 
-    - name: Generate build number and tag
+    - name: Generate build number
       uses: einaregilsson/build-number@v2 
       with:
         token: ${{secrets.github_token}}
-      run: TAG=0.2.$BUILD_NUMBER
+
+    - name: Setup tag
+      run: TAG=0.2.$BUILD_NUMBER && echo $TAG
     
     - name: Build docker container
       run: |
