@@ -39,7 +39,7 @@ type twitterMedia struct {
 	MediaURL      string           `json:"media_url"`
 	MediaURLHTTPS string           `json:"media_url_https"`
 	Type          string           `json:"type"`
-	VideoInfo     twitterVideoInfo `json:"video_info"`
+	VideoInfo     twitterVideoInfo `json:"video_info,omitempty"`
 }
 
 type twitterVideoInfo struct {
@@ -104,7 +104,7 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 
 		switch len(media) {
 		case 0:
-			logger.Info("Senting as text")
+			logger.Info("Sending as text")
 			_, err = b.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeMarkdown, DisableWebPagePreview: true})
 			logger.Infof("%v", err)
 		case 1:
