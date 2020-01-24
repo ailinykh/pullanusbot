@@ -24,6 +24,7 @@ type twitterReponse struct {
 	ExtendedEntities twitterEntity   `json:"extended_entities,omitempty"`
 	User             twitterUser     `json:"user"`
 	QuotedStatus     *twitterReponse `json:"quoted_status,omitempty"`
+	Errors			 []twitterError	 `json:"errors,omitempty"`
 }
 
 type twitterUser struct {
@@ -44,6 +45,11 @@ type twitterMedia struct {
 
 type twitterVideoInfo struct {
 	Variants []twitterVideoInfoVariant `json:"variants"`
+}
+
+type twitterError struct {
+	Message string	`json:"message"`
+	Code	int		`json:"code"`
 }
 
 func (info *twitterVideoInfo) best() twitterVideoInfoVariant {
@@ -91,6 +97,12 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 		err = json.Unmarshal(body, &twResp)
 		if err != nil {
 			logger.Errorf("json parse error: %v", err)
+			return
+		}
+
+		if len(twResp.Errors) > 0 {
+			logger.Errorf("twitter api error: %v", twResp.Errors)
+			b.Send(m.Chat, fmt.Sprint(twResp.Errors), &tb.SendOptions{ReplyTo: m})
 			return
 		}
 
