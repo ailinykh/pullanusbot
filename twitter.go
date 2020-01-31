@@ -24,7 +24,7 @@ type twitterReponse struct {
 	ExtendedEntities twitterEntity   `json:"extended_entities,omitempty"`
 	User             twitterUser     `json:"user"`
 	QuotedStatus     *twitterReponse `json:"quoted_status,omitempty"`
-	Errors			 []twitterError	 `json:"errors,omitempty"`
+	Errors           []twitterError  `json:"errors,omitempty"`
 }
 
 type twitterUser struct {
@@ -48,8 +48,8 @@ type twitterVideoInfo struct {
 }
 
 type twitterError struct {
-	Message string	`json:"message"`
-	Code	int		`json:"code"`
+	Message string `json:"message"`
+	Code    int    `json:"code"`
 }
 
 func (info *twitterVideoInfo) best() twitterVideoInfoVariant {
