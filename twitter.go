@@ -102,6 +102,8 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 
 		if len(twResp.Errors) > 0 {
 			logger.Errorf("twitter api error: %v", twResp.Errors)
+			logger.Errorf("%v", res.Header)
+
 			b.Send(m.Chat, fmt.Sprint(twResp.Errors), &tb.SendOptions{ReplyTo: m})
 			return
 		}
@@ -132,6 +134,8 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 				_, err = file.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 			} else {
 				logger.Infof("Unknown type: %s", media[0].Type)
+				b.Send(m.Chat, fmt.Sprintf("Unknown type: %s", media[0].Type), &tb.SendOptions{ReplyTo: m})
+				return
 			}
 		default:
 			logger.Infof("Sending as Album")
