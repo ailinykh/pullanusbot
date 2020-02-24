@@ -204,9 +204,18 @@ func (f *Faggot) play(m *tb.Message) {
 	}
 
 	activeGames.Add(m.Chat.ID)
+	defer activeGames.Remove(m.Chat.ID)
 
 	winner := players[rand.Intn(len(players))]
 	logger.Infof("%d POTD: Pidor of the day is %s!", m.Chat.ID, winner.Username)
+
+	_, err = bot.ChatMemberOf(m.Chat, winner.User)
+
+	if err != nil {
+		logger.Errorf("%d POTD: %v", m.Chat.ID, err)
+		f.reply(m, i18n("faggot_winner_left"))
+		return
+	}
 
 	for i := 0; i <= 3; i++ {
 		templates := []string{}
@@ -241,8 +250,6 @@ func (f *Faggot) play(m *tb.Message) {
 	checkErr(err)
 
 	logger.Infof("%d POTD: LastInsertId %d!", m.Chat.ID, id)
-
-	activeGames.Remove(m.Chat.ID)
 }
 
 // Statistics for all time

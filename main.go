@@ -17,6 +17,7 @@ type IBot interface {
 	Handle(interface{}, interface{})
 	Send(tb.Recipient, interface{}, ...interface{}) (*tb.Message, error)
 	Start()
+	ChatMemberOf(chat *tb.Chat, user *tb.User) (*tb.ChatMember, error)
 }
 
 // IBotAdapter is a generic interface for different bot communication structs

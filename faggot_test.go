@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -123,6 +124,13 @@ func (f *FakeBot) replyText() string {
 	}
 
 	return f.replies[0]
+}
+
+func (f *FakeBot) ChatMemberOf(chat *tb.Chat, user *tb.User) (*tb.ChatMember, error) {
+	if chat.ID == 1414 {
+		return nil, errors.New("api error: Bad Request: user not found")
+	}
+	return &tb.ChatMember{}, nil
 }
 
 func tearUp(t *testing.T) func() {
@@ -332,6 +340,28 @@ func TestPlayCommandRespondsWinnerAlreadyKnown(t *testing.T) {
 	if !strings.Contains(text, "по результатам сегодняшнего розыгрыша") {
 		t.Log(text)
 		t.Error("/play command must respond winner already known")
+	}
+}
+
+func TestPlayCommandRespondsUserIsNotMemberOfChat(t *testing.T) {
+	defer tearUp(t)()
+	faggot := &Faggot{}
+	faggot.initialize()
+	m := getGroupMessage()
+	m.Chat.ID = 1414 // Secret ID to trigger "user not found" error
+
+	player1 := m.Sender
+	player2 := tb.User{ID: 1918, FirstName: "Jozeph", LastName: "Stalin", Username: "stalin", LanguageCode: "ru"}
+
+	db.Exec("INSERT INTO faggot_players(chat_id, user_id, first_name, last_name, username, language_code) values(?,?,?,?,?,?)", m.Chat.ID, player1.ID, player1.FirstName, player1.LastName, player1.Username, player1.LanguageCode)
+	db.Exec("INSERT INTO faggot_players(chat_id, user_id, first_name, last_name, username, language_code) values(?,?,?,?,?,?)", m.Chat.ID, player2.ID, player2.FirstName, player2.LastName, player2.Username, player2.LanguageCode)
+
+	faggot.play(m)
+
+	text := bot.(*FakeBot).replyText()
+	if !strings.Contains(text, "Я нашел пидора дня, но похоже, что он вышел из этого чата") {
+		t.Log(text)
+		t.Error("/play command must check that player is member of current chat")
 	}
 }
 
