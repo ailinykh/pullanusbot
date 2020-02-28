@@ -147,8 +147,6 @@ func (f *Faggot) play(m *tb.Message) {
 		return
 	}
 
-	rand.Seed(time.Now().UTC().UnixNano())
-
 	loc, _ := time.LoadLocation("Europe/Zurich")
 	day := time.Now().In(loc).Format("2006-01-02")
 
@@ -206,10 +204,12 @@ func (f *Faggot) play(m *tb.Message) {
 	activeGames.Add(m.Chat.ID)
 	defer activeGames.Remove(m.Chat.ID)
 
+	rand.Seed(time.Now().UTC().UnixNano())
 	winner := players[rand.Intn(len(players))]
 	logger.Infof("%d POTD: Pidor of the day is %s!", m.Chat.ID, winner.Username)
 
-	_, err = bot.ChatMemberOf(m.Chat, winner.User)
+	member, err := bot.ChatMemberOf(m.Chat, winner.User)
+	logger.Infof("%d POTD: %v %v", m.Chat.ID, member, err)
 
 	if err != nil {
 		logger.Errorf("%d POTD: %v", m.Chat.ID, err)
