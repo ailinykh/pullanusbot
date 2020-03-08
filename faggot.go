@@ -211,7 +211,9 @@ func (f *Faggot) play(m *tb.Message) {
 	member, err := bot.ChatMemberOf(m.Chat, winner.User)
 	logger.Infof("%d POTD: %v %v", m.Chat.ID, member, err)
 
-	if err != nil {
+	if member == nil ||
+		member.Role == tb.Left ||
+		member.Role == tb.Kicked {
 		logger.Errorf("%d POTD: %v", m.Chat.ID, err)
 		f.reply(m, i18n("faggot_winner_left"))
 		return
