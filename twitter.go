@@ -126,11 +126,13 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 				file := &tb.Video{File: tb.FromURL(media[0].VideoInfo.best().URL)}
 				file.Caption = caption
 				logger.Infof("Sending as Video %s", file.FileURL)
+				b.Notify(m.Chat, tb.UploadingVideo)
 				_, err = file.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 			} else if media[0].Type == "photo" {
 				file := &tb.Photo{File: tb.FromURL(media[0].MediaURL)}
 				file.Caption = caption
 				logger.Infof("Sending as Photo %s", file.FileURL)
+				b.Notify(m.Chat, tb.UploadingPhoto)
 				_, err = file.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 			} else {
 				logger.Infof("Unknown type: %s", media[0].Type)
@@ -139,6 +141,7 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 			}
 		default:
 			logger.Infof("Sending as Album")
+			b.Notify(m.Chat, tb.UploadingPhoto)
 			b.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeMarkdown, DisableWebPagePreview: true})
 			_, err = b.SendAlbum(m.Chat, t.getAlbum(media))
 		}
@@ -200,6 +203,7 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 
 				logger.Infof("Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
 
+				b.Notify(m.Chat, tb.UploadingVideo)
 				_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 				if err == nil {
 					logger.Info("Video sent. Deleting original")

@@ -169,6 +169,7 @@ func (c *Converter) checkMessage(m *tb.Message) {
 
 		logger.Infof("Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
 
+		b.Notify(m.Chat, tb.UploadingVideo)
 		_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 		// _, err := bot.Send(m.Chat, video)
 		if err == nil {
