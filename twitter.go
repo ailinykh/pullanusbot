@@ -21,6 +21,7 @@ type Twitter struct {
 type twitterReponse struct {
 	ID               string          `json:"id_str"`
 	FullText         string          `json:"full_text"`
+	Entities         twitterEntity   `json:"entities"`
 	ExtendedEntities twitterEntity   `json:"extended_entities,omitempty"`
 	User             twitterUser     `json:"user"`
 	QuotedStatus     *twitterReponse `json:"quoted_status,omitempty"`
@@ -33,6 +34,7 @@ type twitterUser struct {
 }
 
 type twitterEntity struct {
+	Urls  []twitterURL   `json:"urls,omitempty"`
 	Media []twitterMedia `json:"media"`
 }
 
@@ -41,6 +43,10 @@ type twitterMedia struct {
 	MediaURLHTTPS string           `json:"media_url_https"`
 	Type          string           `json:"type"`
 	VideoInfo     twitterVideoInfo `json:"video_info,omitempty"`
+}
+
+type twitterURL struct {
+	ExpandedURL string `json:"expanded_url"`
 }
 
 type twitterVideoInfo struct {
@@ -119,8 +125,12 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 		switch len(media) {
 		case 0:
 			logger.Info("Sending as text")
+
+			for _, url := range twResp.Entities.Urls {
+				caption += "\n" + url.ExpandedURL
+			}
+
 			_, err = b.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true})
-			logger.Infof("%v", err)
 		case 1:
 			if media[0].Type == "video" {
 				file := &tb.Video{File: tb.FromURL(media[0].VideoInfo.best().URL)}
@@ -245,5 +255,5 @@ func (t *Twitter) getAlbum(media []twitterMedia) tb.Album {
 func (t *Twitter) getCaption(m *tb.Message, r twitterReponse) string {
 	re := regexp.MustCompile(`\s?http\S+$`)
 	text := re.ReplaceAllString(r.FullText, "")
-	return fmt.Sprintf(`<a href="https://twitter.com/%s/status/%s">🐦</a> <b>%s</b> <i>(by %s)</i>\n%s`, r.User.ScreenName, r.ID, r.User.Name, m.Sender.Username, text)
+	return fmt.Sprintf("<a href='https://twitter.com/%s/status/%s'>🐦</a> <b>%s</b> <i>(by %s)</i>\n%s", r.User.ScreenName, r.ID, r.User.Name, m.Sender.Username, text)
 }
