@@ -146,11 +146,11 @@ func (c *Converter) checkMessage(m *tb.Message) {
 		if os.IsNotExist(err) {
 			logger.Info("Destination file not exists. Sending original...")
 			video = tb.Video{File: tb.FromDisk(sourceFile)}
-			video.Caption = fmt.Sprintf("*%s* _(by %s)_", m.Document.FileName, m.Sender.Username)
+			video.Caption = fmt.Sprintf("<b>%s</b> <i>(by %s)</i>", m.Document.FileName, m.Sender.Username)
 		} else {
 			logger.Info("Sending destination file...")
 			video = tb.Video{File: tb.FromDisk(destinationFile)}
-			video.Caption = fmt.Sprintf("*%s* _(by %s)_\n_Original size: %.2f MB (%d kb/s)\nConverted size: %.2f MB (%d kb/s)_", m.Document.FileName, m.Sender.Username, float32(m.Document.FileSize)/1048576, sourceBitrate/1024, float32(fi.Size())/1048576, destinationBitrate/1024)
+			video.Caption = fmt.Sprintf("<b>%s</b> <i>(by %s)</i>\n<i>Original size: %.2f MB (%d kb/s)\nConverted size: %.2f MB (%d kb/s)</i>", m.Document.FileName, m.Sender.Username, float32(m.Document.FileSize)/1048576, sourceBitrate/1024, float32(fi.Size())/1048576, destinationBitrate/1024)
 		}
 
 		video.Width = sourceStreamInfo.Width
@@ -170,7 +170,7 @@ func (c *Converter) checkMessage(m *tb.Message) {
 		logger.Infof("Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
 
 		b.Notify(m.Chat, tb.UploadingVideo)
-		_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+		_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
 		// _, err := bot.Send(m.Chat, video)
 		if err == nil {
 			logger.Info("Video sent. Deleting original")

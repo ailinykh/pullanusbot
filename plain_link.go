@@ -36,8 +36,8 @@ func (l *PlainLink) handleTextMessage(m *tb.Message) {
 			b.Notify(m.Chat, tb.UploadingVideo)
 			logger.Infof("found mp4 file %s", m.Text)
 			video := &tb.Video{File: tb.FromURL(resp.Request.URL.String())}
-			video.Caption = fmt.Sprintf("[🎞](%s) *%s* _(by %s)_", m.Text, path.Base(resp.Request.URL.Path), m.Sender.Username)
-			_, err := video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+			video.Caption = fmt.Sprintf(`<a href="%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, m.Text, path.Base(resp.Request.URL.Path), m.Sender.Username)
+			_, err := video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
 
 			if err == nil {
 				logger.Info("Message sent. Deleting original")
@@ -114,7 +114,7 @@ func (l *PlainLink) sendByUploading(b *tb.Bot, m *tb.Message) {
 	video.Height = videoStreamInfo.Height
 	video.Duration = ffpInfo.Format.duration()
 	video.SupportsStreaming = true
-	video.Caption = fmt.Sprintf("[🎞](%s) *%s* _(by %s)_", m.Text, filename, m.Sender.Username)
+	video.Caption = fmt.Sprintf(`<a href="%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, m.Text, filename, m.Sender.Username)
 
 	// Getting thumbnail
 	thumb, err := c.getThumbnail(videoFileDest)
@@ -127,7 +127,7 @@ func (l *PlainLink) sendByUploading(b *tb.Bot, m *tb.Message) {
 
 	logger.Infof("Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
 
-	_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+	_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
 	if err == nil {
 		logger.Info("Video sent. Deleting original")
 		err = b.Delete(m)

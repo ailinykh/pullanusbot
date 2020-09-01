@@ -119,7 +119,7 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 		switch len(media) {
 		case 0:
 			logger.Info("Sending as text")
-			_, err = b.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeMarkdown, DisableWebPagePreview: true})
+			_, err = b.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true})
 			logger.Infof("%v", err)
 		case 1:
 			if media[0].Type == "video" {
@@ -127,13 +127,13 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 				file.Caption = caption
 				logger.Infof("Sending as Video %s", file.FileURL)
 				b.Notify(m.Chat, tb.UploadingVideo)
-				_, err = file.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+				_, err = file.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
 			} else if media[0].Type == "photo" {
 				file := &tb.Photo{File: tb.FromURL(media[0].MediaURL)}
 				file.Caption = caption
 				logger.Infof("Sending as Photo %s", file.FileURL)
 				b.Notify(m.Chat, tb.UploadingPhoto)
-				_, err = file.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+				_, err = file.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
 			} else {
 				logger.Infof("Unknown type: %s", media[0].Type)
 				b.Send(m.Chat, fmt.Sprintf("Unknown type: %s", media[0].Type), &tb.SendOptions{ReplyTo: m})
@@ -142,7 +142,7 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 		default:
 			logger.Infof("Sending as Album")
 			b.Notify(m.Chat, tb.UploadingPhoto)
-			b.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeMarkdown, DisableWebPagePreview: true})
+			b.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true})
 			_, err = b.SendAlbum(m.Chat, t.getAlbum(media))
 		}
 
@@ -190,7 +190,7 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 				// insert hot link
 				idx := strings.Index(caption, " ")
 
-				video.Caption = caption[0:idx] + fmt.Sprintf("[🎞](%s)", media[0].VideoInfo.best().URL) + caption[idx:]
+				video.Caption = caption[0:idx] + fmt.Sprintf(`<a href="%s">🎞</a>`, media[0].VideoInfo.best().URL) + caption[idx:]
 
 				// Getting thumbnail
 				thumb, err := c.getThumbnail(videoFile)
@@ -204,7 +204,7 @@ func (t *Twitter) handleTextMessage(m *tb.Message) {
 				logger.Infof("Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
 
 				b.Notify(m.Chat, tb.UploadingVideo)
-				_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+				_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
 				if err == nil {
 					logger.Info("Video sent. Deleting original")
 					err = b.Delete(m)
@@ -245,5 +245,5 @@ func (t *Twitter) getAlbum(media []twitterMedia) tb.Album {
 func (t *Twitter) getCaption(m *tb.Message, r twitterReponse) string {
 	re := regexp.MustCompile(`\s?http\S+$`)
 	text := re.ReplaceAllString(r.FullText, "")
-	return fmt.Sprintf("[🐦](https://twitter.com/%s/status/%s) *%s* _(by %s)_\n%s", r.User.ScreenName, r.ID, r.User.Name, m.Sender.Username, text)
+	return fmt.Sprintf(`<a href="https://twitter.com/%s/status/%s">🐦</a> <b>%s</b> <i>(by %s)</i>\n%s`, r.User.ScreenName, r.ID, r.User.Name, m.Sender.Username, text)
 }
