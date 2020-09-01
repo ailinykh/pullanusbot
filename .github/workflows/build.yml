@@ -47,7 +47,7 @@ jobs:
       run: |
         echo "$SSH_IDENTITY_KEY" > identity
         chmod 600 identity
-        ssh -i identity -o StrictHostKeyChecking=no root@proxy.ailinykh.com "/bin/bash ./pullanusbot/deploy_app.sh $TAG"
+        ssh -i identity -o StrictHostKeyChecking=no root@proxy.ailinykh.com "/bin/bash ./docker/pullanusbot/deploy_app.sh $TAG"
       env:
         SSH_IDENTITY_KEY: ${{ secrets.SSH_IDENTITY_KEY }}
     
