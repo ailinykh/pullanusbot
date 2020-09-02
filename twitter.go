@@ -188,9 +188,9 @@ func (t *Twitter) processTweet(m *tb.Message, tweetID string) {
 			logger.Errorf("Can't delete original message: %v", err)
 		}
 	} else {
-		logger.Errorf("Can't send entry: %v", err)
+		logger.Error(err)
 
-		if strings.HasSuffix(err.Error(), "failed to get HTTP URL content") {
+		if strings.HasSuffix(err.Error(), "failed to get HTTP URL content") || strings.HasSuffix(err.Error(), "wrong file identifier/HTTP URL specified") {
 			// Try to upload file to telegram
 			logger.Info("Sending by uploading")
 
@@ -236,7 +236,7 @@ func (t *Twitter) processTweet(m *tb.Message, tweetID string) {
 				defer os.Remove(thumb)
 			}
 
-			logger.Infof("Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
+			logger.Infof("Sending file: w:%d, h:%d, duration:%d, %s", video.Width, video.Height, video.Duration, videoFile)
 
 			b.Notify(m.Chat, tb.UploadingVideo)
 			_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
@@ -248,6 +248,7 @@ func (t *Twitter) processTweet(m *tb.Message, tweetID string) {
 				}
 			} else {
 				logger.Errorf("Can't send video: %v", err)
+				b.Send(m.Chat, err, &tb.SendOptions{ReplyTo: m})
 			}
 		}
 	}
