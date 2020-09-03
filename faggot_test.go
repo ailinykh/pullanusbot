@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"path"
 	"strings"
@@ -36,16 +35,6 @@ func TestFaggotStat(t *testing.T) {
 	if stats.stat[0].Player != "player2" {
 		t.Error("Statistics Swap function incorrect behaviour")
 	}
-}
-
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-func randStringRunes(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
 }
 
 func getPrivateMessage() *tb.Message {

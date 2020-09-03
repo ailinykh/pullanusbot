@@ -71,16 +71,16 @@ func (l *PlainLink) sendByUploading(b *tb.Bot, m *tb.Message) {
 
 	b.Notify(m.Chat, tb.UploadingVideo)
 	filename := path.Base(resp.Request.URL.Path)
-	videoFileSrc := path.Join(os.TempDir(), filename)
-	videoFileDest := path.Join(os.TempDir(), filename+".mp4")
-	defer os.Remove(videoFileSrc)
-	defer os.Remove(videoFileDest)
+	srcPath := path.Join(os.TempDir(), filename)
+	dstPath := path.Join(os.TempDir(), filename+".mp4")
+	defer os.Remove(srcPath)
+	defer os.Remove(dstPath)
 
 	// logger.Printf("file %s, thumb: %s", videoFileSrc, videoThumbFile)
 
 	// Download webm
 	logger.Infof("downloading file %s", filename)
-	err = downloadFile(videoFileSrc, m.Text)
+	err = downloadFile(srcPath, m.Text)
 	if err != nil {
 		logger.Errorf("video download error: %v", err)
 		return
@@ -88,7 +88,7 @@ func (l *PlainLink) sendByUploading(b *tb.Bot, m *tb.Message) {
 
 	// Convert webm to mp4
 	logger.Infof("converting file %s", filename)
-	cmd := fmt.Sprintf(`ffmpeg -y -i "%s" "%s"`, videoFileSrc, videoFileDest)
+	cmd := fmt.Sprintf(`ffmpeg -y -i "%s" "%s"`, srcPath, dstPath)
 	_, err = exec.Command("/bin/sh", "-c", cmd).Output()
 	if err != nil {
 		logger.Errorf("Video converting error: %v", err)
@@ -96,46 +96,14 @@ func (l *PlainLink) sendByUploading(b *tb.Bot, m *tb.Message) {
 	}
 	logger.Infof("file converted!")
 
-	c := Converter{}
-	ffpInfo, err := c.getFFProbeInfo(videoFileDest)
+	videofile, err := NewVideoFile(dstPath)
 	if err != nil {
-		logger.Errorf("FFProbe info retreiving error: %v", err)
+		logger.Errorf("Can't create video file for %s, %v", dstPath, err)
 		return
 	}
-
-	videoStreamInfo, err := ffpInfo.getVideoStream()
-	if err != nil {
-		logger.Errorf("%v", err)
-		return
-	}
-
-	video := tb.Video{File: tb.FromDisk(videoFileDest)}
-	video.Width = videoStreamInfo.Width
-	video.Height = videoStreamInfo.Height
-	video.Duration = ffpInfo.Format.duration()
-	video.SupportsStreaming = true
-	video.Caption = fmt.Sprintf(`<a href="%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, m.Text, filename, m.Sender.Username)
-
-	// Getting thumbnail
-	thumb, err := c.getThumbnail(videoFileDest)
-	if err != nil {
-		logger.Errorf("Thumbnail error: %v", err)
-	} else {
-		video.Thumbnail = &tb.Photo{File: tb.FromDisk(thumb)}
-		defer os.Remove(thumb)
-	}
-
-	logger.Infof("Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
-
-	_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
-	if err == nil {
-		logger.Info("Video sent. Deleting original")
-		err = b.Delete(m)
-		if err != nil {
-			logger.Errorf("Can't delete original message: %v", err)
-		}
-	} else {
-		logger.Errorf("Can't send video: %v", err)
-		b.Send(m.Chat, fmt.Sprint(err), &tb.SendOptions{ReplyTo: m})
-	}
+	logger.Info(videofile)
+	defer os.Remove(videofile.filepath)
+	defer os.Remove(videofile.thumbpath)
+	caption := fmt.Sprintf(`<a href="%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, m.Text, filename, m.Sender.Username)
+	uploadFile(videofile, m, caption)
 }

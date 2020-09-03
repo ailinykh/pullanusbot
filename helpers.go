@@ -1,11 +1,27 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 	"sync"
+
+	"github.com/google/logger"
+	tb "gopkg.in/tucnak/telebot.v2"
 )
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func randStringRunes(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
 
 // ConcurrentSlice is a thread safe integer store
 type ConcurrentSlice struct {
@@ -67,4 +83,36 @@ func downloadFile(filepath string, url string) error {
 	// Write the body to file
 	_, err = io.Copy(out, resp.Body)
 	return err
+}
+
+func uploadFile(videofile *VideoFile, m *tb.Message, caption string) error {
+	b, ok := bot.(*tb.Bot)
+	if !ok {
+		return errors.New("Bot cast failed")
+	}
+
+	video := tb.Video{File: tb.FromDisk(videofile.filepath)}
+	video.Width = videofile.videoStreamInfo.Width
+	video.Height = videofile.videoStreamInfo.Height
+	video.Caption = caption
+	video.Duration = videofile.ffpInfo.Format.duration()
+	video.SupportsStreaming = true
+	video.Thumbnail = &tb.Photo{File: tb.FromDisk(videofile.thumbpath)}
+
+	logger.Infof("Uploading w:%d, h:%d, duration:%d, size:%d file: %s", video.Width, video.Height, video.Duration, videofile.ffpInfo.Format.size(), videofile.filepath)
+
+	b.Notify(m.Chat, tb.UploadingVideo)
+	_, err := video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
+	if err == nil {
+		logger.Info("video sent, now removing original message")
+		err = b.Delete(m)
+		if err != nil {
+			logger.Error(err)
+		}
+	} else {
+		logger.Error("Can't send video: ", err)
+		b.Send(m.Chat, fmt.Sprint(err), &tb.SendOptions{ReplyTo: m})
+		return err
+	}
+	return nil
 }

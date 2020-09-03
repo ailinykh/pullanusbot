@@ -20,6 +20,89 @@ type Converter struct {
 	mutex sync.Mutex
 }
 
+// VideoFile is a simple struct for a video file representation
+type VideoFile struct {
+	filepath  string
+	thumbpath string
+	width     int
+	height    int
+	size      int
+
+	ffpInfo         *ffpResponse
+	videoStreamInfo *ffpStream
+}
+
+// NewVideoFile is a simple VideoFile constructor
+func NewVideoFile(path string) (*VideoFile, error) {
+	v := VideoFile{}
+	ffpInfo, err := v.getFFProbeInfo(path)
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+
+	streamInfo, err := ffpInfo.getVideoStream()
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+
+	thumbpath := path + ".jpg"
+	cmd := fmt.Sprintf(`ffmpeg -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, path, streamInfo.scale(), thumbpath)
+	out, err := exec.Command("/bin/sh", "-c", cmd).Output()
+	if err != nil {
+		logger.Error(out)
+		logger.Error(err)
+		return nil, err
+	}
+
+	v.filepath = path
+	v.thumbpath = thumbpath
+	v.width = streamInfo.Width
+	v.height = streamInfo.Height
+	v.size = ffpInfo.Format.size()
+	v.ffpInfo = ffpInfo
+	v.videoStreamInfo = &streamInfo
+
+	return &v, nil
+}
+
+func (v VideoFile) getFFProbeInfo(file string) (*ffpResponse, error) {
+	cmd := fmt.Sprintf("ffprobe -v error -of json -show_streams -show_format \"%s\"", file)
+	out, err := exec.Command("/bin/sh", "-c", cmd).Output()
+	if err != nil {
+		return nil, err
+	}
+
+	var resp ffpResponse
+	err = json.Unmarshal(out, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
+}
+
+func (v VideoFile) getThumbnail(filepath string) (string, error) {
+	ffpInfo, err := v.getFFProbeInfo(filepath)
+	if err != nil {
+		return "", err
+	}
+
+	videoStreamInfo, err := ffpInfo.getVideoStream()
+	if err != nil {
+		return "", err
+	}
+	thumb := filepath + ".jpg"
+	cmd := fmt.Sprintf(`ffmpeg -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, filepath, videoStreamInfo.scale(), thumb)
+	err = exec.Command("/bin/sh", "-c", cmd).Run()
+	if err != nil {
+		return "", err
+	}
+
+	return thumb, nil
+}
+
 type ffpResponse struct {
 	Streams []ffpStream `json:"streams"`
 	Format  ffpFormat   `json:"format"`
@@ -61,6 +144,7 @@ type ffpFormat struct {
 	FormatName     string `json:"format_name"`
 	FormatLongName string `json:"format_long_name"`
 	Duration       string `json:"duration"`
+	Size           string `json:"size"`
 }
 
 func (f ffpFormat) duration() int {
@@ -69,6 +153,14 @@ func (f ffpFormat) duration() int {
 		logger.Errorf("Duration error: %v (%s)", err, f.Duration)
 	}
 	return int(d)
+}
+
+func (f ffpFormat) size() int {
+	d, err := strconv.Atoi(f.Size)
+	if err != nil {
+		logger.Errorf("Size error: %v (%s)", err, f.Size)
+	}
+	return d
 }
 
 func (c *Converter) initialize() {
@@ -95,129 +187,56 @@ func (c *Converter) checkMessage(m *tb.Message) {
 			return
 		}
 
-		sourceFile := path.Join(os.TempDir(), m.Document.FileName)
-		destinationFile := path.Join(os.TempDir(), "converted_"+m.Document.FileName)
-		defer os.Remove(sourceFile)
-		defer os.Remove(destinationFile)
+		srcPath := path.Join(os.TempDir(), m.Document.FileName)
+		dstPath := path.Join(os.TempDir(), "converted_"+m.Document.FileName)
+		defer os.Remove(srcPath)
+		defer os.Remove(dstPath)
 
 		logger.Info("Downloading video...")
-		b.Download(&m.Document.File, sourceFile)
+		b.Download(&m.Document.File, srcPath)
 		logger.Info("Video downloaded")
 
-		ffpInfo, err := c.getFFProbeInfo(sourceFile)
+		videofile, err := NewVideoFile(srcPath)
 		if err != nil {
-			logger.Errorf("FFProbe info retreiving error: %v", err)
+			logger.Errorf("Can't create video file for %s, %v", srcPath, err)
 			return
 		}
+		defer os.Remove(videofile.filepath)
+		defer os.Remove(videofile.thumbpath)
 
-		if ffpInfo.Format.NbStreams == 1 {
+		if videofile.ffpInfo.Format.NbStreams == 1 {
 			logger.Error("Assuming gif file. Skipping...")
 			return
 		}
 
-		sourceStreamInfo, err := ffpInfo.getVideoStream()
-		if err != nil {
-			logger.Errorf("%v", err)
-			return
-		}
+		srcBitrate := videofile.videoStreamInfo.bitrate()
+		dstBitrate := int(math.Min(float64(srcBitrate), 568320))
 
-		sourceBitrate := sourceStreamInfo.bitrate()
-		destinationBitrate := int(math.Min(float64(sourceBitrate), 568320))
+		logger.Infof("Source file bitrate: %d, destination file bitrate: %d", srcBitrate, dstBitrate)
 
-		logger.Infof("Source file bitrate: %d, destination file bitrate: %d", sourceBitrate, destinationBitrate)
-
-		if sourceBitrate != destinationBitrate {
+		if srcBitrate != dstBitrate {
 			logger.Info("Bitrates not equal. Converting...")
-
-			// cmd := exec.Command("/bin/sh", "-c", "ffmpeg -y -i \""+sourceFile+"\" -c:v libx264 -preset medium -b:v "+strconv.Itoa(destinationBitrate/1024)+"k -pass 1 -b:a 128k -f mp4 /dev/null && ffmpeg -y -i \""+sourceFile+"\" -c:v libx264 -preset medium -b:v "+strconv.Itoa(destinationBitrate/1024)+"k -pass 2 -b:a 128k \""+destinationFile+"\"")
-			cmd := fmt.Sprintf(`ffmpeg -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 1 -b:a 128k -f mp4 /dev/null && ffmpeg -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 2 -b:a 128k "%s"`, sourceFile, destinationBitrate/1024, sourceFile, destinationBitrate/1024, destinationFile)
+			cmd := fmt.Sprintf(`ffmpeg -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 1 -b:a 128k -f mp4 /dev/null && ffmpeg -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 2 -b:a 128k "%s"`, srcPath, dstBitrate/1024, srcPath, dstBitrate/1024, dstPath)
 			err = exec.Command("/bin/sh", "-c", cmd).Run()
 			if err != nil {
 				logger.Errorf("Video converting error: %v", err)
 				return
 			}
-			// cmd.Wait()
 			logger.Info("Video converted successfully")
 		}
 
-		fi, err := os.Stat(destinationFile)
-		var video tb.Video
-
+		fi, err := os.Stat(dstPath)
 		if os.IsNotExist(err) {
 			logger.Info("Destination file not exists. Sending original...")
-			video = tb.Video{File: tb.FromDisk(sourceFile)}
-			video.Caption = fmt.Sprintf("<b>%s</b> <i>(by %s)</i>", m.Document.FileName, m.Sender.Username)
+			caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>", m.Document.FileName, m.Sender.Username)
+			uploadFile(videofile, m, caption)
 		} else {
 			logger.Info("Sending destination file...")
-			video = tb.Video{File: tb.FromDisk(destinationFile)}
-			video.Caption = fmt.Sprintf("<b>%s</b> <i>(by %s)</i>\n<i>Original size: %.2f MB (%d kb/s)\nConverted size: %.2f MB (%d kb/s)</i>", m.Document.FileName, m.Sender.Username, float32(m.Document.FileSize)/1048576, sourceBitrate/1024, float32(fi.Size())/1048576, destinationBitrate/1024)
-		}
-
-		video.Width = sourceStreamInfo.Width
-		video.Height = sourceStreamInfo.Height
-		video.Duration = ffpInfo.Format.duration()
-		video.SupportsStreaming = true
-
-		// Getting thumbnail
-		thumb, err := c.getThumbnail(destinationFile)
-		if err != nil {
-			logger.Errorf("Thumbnail error: %v", err)
-		} else {
-			video.Thumbnail = &tb.Photo{File: tb.FromDisk(thumb)}
-			defer os.Remove(thumb)
-		}
-
-		logger.Infof("Sending file: w:%d h:%d duration:%d", video.Width, video.Height, video.Duration)
-
-		b.Notify(m.Chat, tb.UploadingVideo)
-		_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
-		// _, err := bot.Send(m.Chat, video)
-		if err == nil {
-			logger.Info("Video sent. Deleting original")
-			err = b.Delete(m)
-			if err != nil {
-				logger.Errorf("Can't delete original message: %v", err)
-			}
-		} else {
-			logger.Errorf("Can't send video: %v", err)
+			caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>\n<i>Original size: %.2f MB (%d kb/s)\nConverted size: %.2f MB (%d kb/s)</i>", m.Document.FileName, m.Sender.Username, float32(m.Document.FileSize)/1048576, srcBitrate/1024, float32(fi.Size())/1048576, dstBitrate/1024)
+			videofile.filepath = dstPath // It's ok
+			uploadFile(videofile, m, caption)
 		}
 	} else {
 		logger.Errorf("%s is not mpeg video", m.Document.MIME)
 	}
-}
-
-func (c *Converter) getFFProbeInfo(file string) (*ffpResponse, error) {
-	cmd := fmt.Sprintf("ffprobe -v error -of json -show_streams -show_format \"%s\"", file)
-	out, err := exec.Command("/bin/sh", "-c", cmd).Output()
-	if err != nil {
-		return nil, err
-	}
-
-	var resp ffpResponse
-	err = json.Unmarshal(out, &resp)
-	if err != nil {
-		return nil, err
-	}
-
-	return &resp, nil
-}
-
-func (c *Converter) getThumbnail(filepath string) (string, error) {
-	ffpInfo, err := c.getFFProbeInfo(filepath)
-	if err != nil {
-		return "", err
-	}
-
-	videoStreamInfo, err := ffpInfo.getVideoStream()
-	if err != nil {
-		return "", err
-	}
-	thumb := filepath + ".jpg"
-	cmd := fmt.Sprintf(`ffmpeg -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, filepath, videoStreamInfo.scale(), thumb)
-	err = exec.Command("/bin/sh", "-c", cmd).Run()
-	if err != nil {
-		return "", err
-	}
-
-	return thumb, nil
 }

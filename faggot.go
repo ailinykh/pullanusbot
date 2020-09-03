@@ -204,7 +204,6 @@ func (f *Faggot) play(m *tb.Message) {
 	activeGames.Add(m.Chat.ID)
 	defer activeGames.Remove(m.Chat.ID)
 
-	rand.Seed(time.Now().UTC().UnixNano())
 	winner := players[rand.Intn(len(players))]
 	logger.Infof("%d POTD: Pidor of the day is %s!", m.Chat.ID, winner.Username)
 

@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"log"
+	"math/rand"
 	"os"
 	"path"
 	"time"
@@ -43,6 +44,8 @@ func main() {
 		rootDir = os.Getenv("WORKING_DIR")
 	}
 
+	rand.Seed(time.Now().UTC().UnixNano())
+
 	logPath := path.Join(rootDir, "log.txt")
 	lf, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
 	if err != nil {
@@ -64,6 +67,7 @@ func main() {
 			&Twitter{},
 		}},
 		&Vpn{},
+		&Youtube{},
 	}
 
 	for _, adapter := range adapters {

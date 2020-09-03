@@ -195,61 +195,24 @@ func (t *Twitter) processTweet(m *tb.Message, tweetID string) {
 			logger.Info("Sending by uploading")
 
 			filename := path.Base(media[0].VideoInfo.best().URL)
-			videoFile := path.Join(os.TempDir(), filename)
-			defer os.Remove(videoFile)
+			filepath := path.Join(os.TempDir(), filename)
+			defer os.Remove(filepath)
 
-			err = downloadFile(videoFile, media[0].VideoInfo.best().URL)
+			err = downloadFile(filepath, media[0].VideoInfo.best().URL)
 			if err != nil {
 				logger.Errorf("video download error: %v", err)
 				return
 			}
 
-			c := Converter{}
-			ffpInfo, err := c.getFFProbeInfo(videoFile)
+			videofile, err := NewVideoFile(filepath)
 			if err != nil {
-				logger.Errorf("FFProbe info retreiving error: %v", err)
+				logger.Errorf("Can't create video file for %s, %v", filepath, err)
 				return
 			}
-
-			videoStreamInfo, err := ffpInfo.getVideoStream()
-			if err != nil {
-				logger.Errorf("%v", err)
-				return
-			}
-
-			video := tb.Video{File: tb.FromDisk(videoFile)}
-			video.Width = videoStreamInfo.Width
-			video.Height = videoStreamInfo.Height
-			video.Duration = ffpInfo.Format.duration()
-			video.SupportsStreaming = true
-			// insert hot link
-			idx := strings.Index(caption, " ")
-
-			video.Caption = caption[0:idx] + fmt.Sprintf(`<a href="%s">🎞</a>`, media[0].VideoInfo.best().URL) + caption[idx:]
-
-			// Getting thumbnail
-			thumb, err := c.getThumbnail(videoFile)
-			if err != nil {
-				logger.Errorf("PlainLink: Thumbnail error: %v", err)
-			} else {
-				video.Thumbnail = &tb.Photo{File: tb.FromDisk(thumb)}
-				defer os.Remove(thumb)
-			}
-
-			logger.Infof("Sending file: w:%d, h:%d, duration:%d, %s", video.Width, video.Height, video.Duration, videoFile)
-
-			b.Notify(m.Chat, tb.UploadingVideo)
-			_, err = video.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
-			if err == nil {
-				logger.Info("Video sent. Deleting original")
-				err = b.Delete(m)
-				if err != nil {
-					logger.Errorf("Can't delete original message: %v", err)
-				}
-			} else {
-				logger.Errorf("Can't send video: %v", err)
-				b.Send(m.Chat, err, &tb.SendOptions{ReplyTo: m})
-			}
+			defer os.Remove(videofile.filepath)
+			defer os.Remove(videofile.thumbpath)
+			caption := fmt.Sprintf(`<a href="%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, m.Text, filename, m.Sender.Username)
+			uploadFile(videofile, m, caption)
 		}
 	}
 }
