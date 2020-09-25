@@ -177,8 +177,7 @@ func (t *Twitter) processTweet(m *tb.Message, tweetID string) {
 	default:
 		logger.Infof("Sending as Album")
 		b.Notify(m.Chat, tb.UploadingPhoto)
-		b.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true})
-		_, err = b.SendAlbum(m.Chat, t.getAlbum(media))
+		_, err = b.SendAlbum(m.Chat, t.getAlbum(media, twResp.FullText))
 	}
 
 	if err == nil {
@@ -217,15 +216,20 @@ func (t *Twitter) processTweet(m *tb.Message, tweetID string) {
 	}
 }
 
-func (t *Twitter) getAlbum(media []twitterMedia) tb.Album {
+func (t *Twitter) getAlbum(media []twitterMedia, fullText string) tb.Album {
 	var file tb.Sendable
 	var album = tb.Album{}
+	var caption string
 
-	for _, m := range media {
+	for i, m := range media {
+		if i == len(media)-1 {
+			caption = fullText
+		}
+
 		if m.Type == "video" {
-			file = &tb.Video{File: tb.FromURL(m.VideoInfo.best().URL)}
+			file = &tb.Video{File: tb.FromURL(m.VideoInfo.best().URL), Caption: caption}
 		} else if m.Type == "photo" {
-			file = &tb.Photo{File: tb.FromURL(m.MediaURL)}
+			file = &tb.Photo{File: tb.FromURL(m.MediaURL), Caption: caption}
 		} else {
 			logger.Errorf("Unknown type: %s", m.Type)
 			file = nil
@@ -243,5 +247,5 @@ func (t *Twitter) getAlbum(media []twitterMedia) tb.Album {
 func (t *Twitter) getCaption(m *tb.Message, r twitterReponse) string {
 	re := regexp.MustCompile(`\s?http\S+$`)
 	text := re.ReplaceAllString(r.FullText, "")
-	return fmt.Sprintf("<a href='https://twitter.com/%s/status/%s'>🐦</a> <b>%s</b> <i>(by %s)</i>\n%s", r.User.ScreenName, r.ID, r.User.Name, m.Sender.Username, text)
+	return fmt.Sprintf(`<a href="https://twitter.com/%s/status/%s">🐦</a> <b>%s</b> <i>(by %s)</i>\n%s`, r.User.ScreenName, r.ID, r.User.Name, m.Sender.Username, text)
 }
