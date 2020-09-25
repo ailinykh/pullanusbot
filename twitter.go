@@ -246,5 +246,5 @@ func (t *Twitter) getAlbum(media []twitterMedia, fullText string) tb.Album {
 func (t *Twitter) getCaption(m *tb.Message, r twitterReponse) string {
 	re := regexp.MustCompile(`\s?http\S+$`)
 	text := re.ReplaceAllString(r.FullText, "")
-	return fmt.Sprintf(`<a href="https://twitter.com/%s/status/%s">🐦</a> <b>%s</b> <i>(by %s)</i>\n%s`, r.User.ScreenName, r.ID, r.User.Name, m.Sender.Username, text)
+	return fmt.Sprintf("<a href='https://twitter.com/%s/status/%s'>🐦</a> <b>%s</b> <i>(by %s)</i>\n%s", r.User.ScreenName, r.ID, r.User.Name, m.Sender.Username, text)
 }
