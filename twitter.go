@@ -210,7 +210,6 @@ func (t *Twitter) processTweet(m *tb.Message, tweetID string) {
 			}
 			defer os.Remove(videofile.filepath)
 			defer os.Remove(videofile.thumbpath)
-			caption := fmt.Sprintf(`<a href="%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, m.Text, filename, m.Sender.Username)
 			uploadFile(videofile, m, caption)
 		}
 	}
