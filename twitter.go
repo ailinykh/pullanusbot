@@ -177,7 +177,7 @@ func (t *Twitter) processTweet(m *tb.Message, tweetID string) {
 	default:
 		logger.Infof("Sending as Album")
 		b.Notify(m.Chat, tb.UploadingPhoto)
-		_, err = b.SendAlbum(m.Chat, t.getAlbum(media, twResp.FullText))
+		_, err = b.SendAlbum(m.Chat, t.getAlbum(media, caption, twResp.FullText))
 	}
 
 	if err == nil {
@@ -215,20 +215,21 @@ func (t *Twitter) processTweet(m *tb.Message, tweetID string) {
 	}
 }
 
-func (t *Twitter) getAlbum(media []twitterMedia, fullText string) tb.Album {
+func (t *Twitter) getAlbum(media []twitterMedia, photoCaption, videoCaption string) tb.Album {
 	var file tb.Sendable
 	var album = tb.Album{}
-	var caption string
+	var pc, vc string
 
 	for i, m := range media {
 		if i == len(media)-1 {
-			caption = fullText
+			vc = videoCaption
+			pc = photoCaption
 		}
 
 		if m.Type == "video" {
-			file = &tb.Video{File: tb.FromURL(m.VideoInfo.best().URL), Caption: caption}
+			file = &tb.Video{File: tb.FromURL(m.VideoInfo.best().URL), Caption: vc}
 		} else if m.Type == "photo" {
-			file = &tb.Photo{File: tb.FromURL(m.MediaURL), Caption: caption}
+			file = &tb.Photo{File: tb.FromURL(m.MediaURL), Caption: pc, ParseMode: tb.ModeHTML}
 		} else {
 			logger.Errorf("Unknown type: %s", m.Type)
 			file = nil
