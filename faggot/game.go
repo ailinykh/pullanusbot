@@ -6,13 +6,15 @@ import (
 	"strings"
 	"time"
 
+	i "pullanusbot/interfaces"
+
 	"github.com/google/logger"
 	tb "gopkg.in/tucnak/telebot.v2"
 	"gorm.io/gorm"
 )
 
 var (
-	bot   *tb.Bot
+	bot   i.Bot
 	db    *gorm.DB
 	games = concurrentSlice{}
 )
@@ -22,7 +24,7 @@ type Game struct {
 }
 
 // Setup all the nessesary bot command handlers
-func (g *Game) Setup(b *tb.Bot, conn *gorm.DB) {
+func (g *Game) Setup(b i.Bot, conn *gorm.DB) {
 	bot, db = b, conn
 	db.AutoMigrate(&Entry{}, &Player{})
 
@@ -173,7 +175,13 @@ func (g *Game) all(m *tb.Message) {
 		Count    int64
 	}
 	var results []result
-	db.Table("faggot_entries").Select("username, count(*) as Count").Where("chat_id = ?", -1001114199360).Group("username").Order("Count desc").Scan(&results)
+	db.Table("faggot_entries").Select("username, count(*) as Count").Where("chat_id = ?", m.Chat.ID).Group("username").Order("Count desc").Scan(&results)
+
+	if len(results) == 0 {
+		logger.Warningf("%d No results for %s", m.Chat.ID, m.Text)
+		return // Do not respond if there are no games yet
+	}
+
 	for i, res := range results {
 		s = append(s, fmt.Sprintf(i18n("faggot_all_entry"), i+1, res.Username, res.Count))
 	}
@@ -197,7 +205,12 @@ func (g *Game) stats(m *tb.Message) {
 		Count    int64
 	}
 	var results []result
-	db.Table("faggot_entries").Select("username, count(*) as Count").Where("chat_id = ? AND day LIKE ?", -1001114199360, year).Group("username").Order("Count desc").Scan(&results)
+	db.Table("faggot_entries").Select("username, count(*) as Count").Where("chat_id = ? AND day LIKE ?", m.Chat.ID, year).Group("username").Order("Count desc").Scan(&results)
+
+	if len(results) == 0 {
+		logger.Warningf("%d No results for %s", m.Chat.ID, m.Text)
+		return // Do not respond if there are no games yet
+	}
 
 	for i, res := range results {
 		s = append(s, fmt.Sprintf(i18n("faggot_stats_entry"), i+1, res.Username, res.Count))
