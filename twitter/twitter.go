@@ -1,12 +1,16 @@
-package main
+package twitter
 
 import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"os"
 	"path"
+	c "pullanusbot/converter"
+	i "pullanusbot/interfaces"
+	u "pullanusbot/utils"
 	"regexp"
 	"strconv"
 	"strings"
@@ -14,83 +18,33 @@ import (
 
 	"github.com/google/logger"
 	tb "gopkg.in/tucnak/telebot.v2"
+	"gorm.io/gorm"
 )
 
-// Twitter goes to prettify twitter links
+var (
+	bot i.Bot
+)
+
+// Twitter ...
 type Twitter struct {
 }
 
-type twitterReponse struct {
-	ID               string          `json:"id_str"`
-	FullText         string          `json:"full_text"`
-	Entities         twitterEntity   `json:"entities"`
-	ExtendedEntities twitterEntity   `json:"extended_entities,omitempty"`
-	User             twitterUser     `json:"user"`
-	QuotedStatus     *twitterReponse `json:"quoted_status,omitempty"`
-	Errors           []twitterError  `json:"errors,omitempty"`
+// Setup all nesessary command handlers
+func (*Twitter) Setup(b i.Bot, conn *gorm.DB) {
+	bot = b
+	logger.Info("Successfully initialized")
 }
 
-type twitterUser struct {
-	Name       string `json:"name"`
-	ScreenName string `json:"screen_name"`
-}
-
-type twitterEntity struct {
-	Urls  []twitterURL   `json:"urls,omitempty"`
-	Media []twitterMedia `json:"media"`
-}
-
-type twitterMedia struct {
-	MediaURL      string           `json:"media_url"`
-	MediaURLHTTPS string           `json:"media_url_https"`
-	Type          string           `json:"type"`
-	VideoInfo     twitterVideoInfo `json:"video_info,omitempty"`
-}
-
-type twitterURL struct {
-	ExpandedURL string `json:"expanded_url"`
-}
-
-type twitterVideoInfo struct {
-	Variants []twitterVideoInfoVariant `json:"variants"`
-}
-
-type twitterError struct {
-	Message string `json:"message"`
-	Code    int    `json:"code"`
-}
-
-func (info *twitterVideoInfo) best() twitterVideoInfoVariant {
-	variant := info.Variants[0]
-	for _, v := range info.Variants {
-		if v.ContentType == "video/mp4" && v.Bitrate > variant.Bitrate {
-			return v
-		}
-	}
-	return variant
-}
-
-type twitterVideoInfoVariant struct {
-	Bitrate     int    `json:"bitrate"`
-	ContentType string `json:"content_type"`
-	URL         string `json:"url"`
-}
-
-func (t *Twitter) handleTextMessage(m *tb.Message) {
+// HandleTextMessage is an i.TextMessageHandler interface implementation
+func (t *Twitter) HandleTextMessage(m *tb.Message) {
 	r, _ := regexp.Compile(`twitter\.com.+/(\d+)\S*$`)
 	match := r.FindStringSubmatch(m.Text)
 	if len(match) > 1 {
-		t.processTweet(m, match[1])
+		t.processTweet(match[1], m)
 	}
 }
 
-func (t *Twitter) processTweet(m *tb.Message, tweetID string) {
-	b, ok := bot.(*tb.Bot)
-	if !ok {
-		logger.Errorf("Bot cast failed")
-		return
-	}
-
+func (t *Twitter) processTweet(tweetID string, m *tb.Message) {
 	logger.Infof("Processing tweet %s", tweetID)
 
 	client := &http.Client{}
@@ -98,7 +52,7 @@ func (t *Twitter) processTweet(m *tb.Message, tweetID string) {
 	req.Header.Add("Authorization", "Bearer AAAAAAAAAAAAAAAAAAAAAPYXBAAAAAAACLXUNDekMxqa8h%2F40K4moUkGsoc%3DTYfbDKbT3jJPCEVnMYqilB28NHfOPqkca3qaAxGfsyKCs0wRbw")
 	res, err := client.Do(req)
 	if err != nil {
-		logger.Errorf("json fetch error: %v", err)
+		logger.Error(err)
 		return
 	}
 	defer res.Body.Close()
@@ -108,7 +62,7 @@ func (t *Twitter) processTweet(m *tb.Message, tweetID string) {
 
 	err = json.Unmarshal(body, &twResp)
 	if err != nil {
-		logger.Errorf("json parse error: %v", err)
+		logger.Error(err)
 		return
 	}
 
@@ -123,19 +77,20 @@ func (t *Twitter) processTweet(m *tb.Message, tweetID string) {
 
 			timeout := limit - time.Now().Unix()
 			logger.Infof("Twitter api timeout %d seconds", timeout)
+			timeout = int64(math.Max(float64(timeout), 3)) // Twitter api timeout might be negative
 
 			go func() {
 				time.Sleep(time.Duration(timeout) * time.Second)
-				t.processTweet(m, tweetID)
+				t.processTweet(tweetID, m)
 			}()
 
 			return
 		}
 
-		logger.Errorf("Twitter api error: %v", twResp.Errors)
-		logger.Errorf("%v", res.Header)
+		logger.Error(twResp.Errors)
+		logger.Info(res.Header)
 
-		b.Send(m.Chat, fmt.Sprint(twResp.Errors), &tb.SendOptions{ReplyTo: m})
+		bot.Send(m.Chat, fmt.Sprint(twResp.Errors), &tb.SendOptions{ReplyTo: m})
 		return
 	}
 
@@ -155,34 +110,34 @@ func (t *Twitter) processTweet(m *tb.Message, tweetID string) {
 			caption += "\n" + url.ExpandedURL
 		}
 
-		_, err = b.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true})
+		_, err = bot.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true})
 	case 1:
 		if media[0].Type == "video" {
 			file := &tb.Video{File: tb.FromURL(media[0].VideoInfo.best().URL)}
 			file.Caption = caption
 			logger.Infof("Sending as Video %s", file.FileURL)
-			b.Notify(m.Chat, tb.UploadingVideo)
-			_, err = file.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
+			bot.Notify(m.Chat, tb.UploadingVideo)
+			_, err = file.Send(bot.(*tb.Bot), m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
 		} else if media[0].Type == "photo" {
 			file := &tb.Photo{File: tb.FromURL(media[0].MediaURL)}
 			file.Caption = caption
 			logger.Infof("Sending as Photo %s", file.FileURL)
-			b.Notify(m.Chat, tb.UploadingPhoto)
-			_, err = file.Send(b, m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
+			bot.Notify(m.Chat, tb.UploadingPhoto)
+			_, err = file.Send(bot.(*tb.Bot), m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
 		} else {
 			logger.Infof("Unknown type: %s", media[0].Type)
-			b.Send(m.Chat, fmt.Sprintf("Unknown type: %s", media[0].Type), &tb.SendOptions{ReplyTo: m})
+			bot.Send(m.Chat, fmt.Sprintf("Unknown type: %s", media[0].Type), &tb.SendOptions{ReplyTo: m})
 			return
 		}
 	default:
 		logger.Infof("Sending as Album")
-		b.Notify(m.Chat, tb.UploadingPhoto)
-		_, err = b.SendAlbum(m.Chat, t.getAlbum(media, caption, twResp.FullText))
+		bot.Notify(m.Chat, tb.UploadingPhoto)
+		_, err = bot.SendAlbum(m.Chat, t.getAlbum(media, caption, twResp.FullText))
 	}
 
 	if err == nil {
 		logger.Info("Messages sent. Deleting original")
-		err = b.Delete(m)
+		err = bot.Delete(m)
 		if err != nil {
 			logger.Errorf("Can't delete original message: %v", err)
 		}
@@ -197,20 +152,19 @@ func (t *Twitter) processTweet(m *tb.Message, tweetID string) {
 			filepath := path.Join(os.TempDir(), filename)
 			defer os.Remove(filepath)
 
-			err = downloadFile(filepath, media[0].VideoInfo.best().URL)
+			err = u.DownloadFile(filepath, media[0].VideoInfo.best().URL)
 			if err != nil {
 				logger.Errorf("video download error: %v", err)
 				return
 			}
 
-			videofile, err := NewVideoFile(filepath)
+			videofile, err := c.NewVideoFile(filepath)
 			if err != nil {
 				logger.Errorf("Can't create video file for %s, %v", filepath, err)
 				return
 			}
-			defer os.Remove(videofile.filepath)
-			defer os.Remove(videofile.thumbpath)
-			uploadFile(videofile, m, caption)
+			defer videofile.Dispose()
+			videofile.Upload(bot, m, caption)
 		}
 	}
 }
