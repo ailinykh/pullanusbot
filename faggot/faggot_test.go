@@ -26,9 +26,7 @@ var (
 	chat     *tb.Chat
 )
 
-type Bot struct {
-	// mock.Mock
-}
+type Bot struct{}
 
 func (Bot) ChatMemberOf(c *tb.Chat, u *tb.User) (*tb.ChatMember, error) {
 	if c.ID == 43 {
@@ -36,8 +34,12 @@ func (Bot) ChatMemberOf(c *tb.Chat, u *tb.User) (*tb.ChatMember, error) {
 	}
 	return &tb.ChatMember{}, nil
 }
-
-func (Bot) Handle(interface{}, interface{}) {}
+func (Bot) Delete(tb.Editable) error                                               { return nil }
+func (Bot) Download(*tb.File, string) error                                        { return nil }
+func (Bot) Handle(interface{}, interface{})                                        {}
+func (Bot) Notify(tb.Recipient, tb.ChatAction) error                               { return nil }
+func (Bot) SendAlbum(tb.Recipient, tb.Album, ...interface{}) ([]tb.Message, error) { return nil, nil }
+func (Bot) Start()                                                                 {}
 
 func (Bot) Send(to tb.Recipient, what interface{}, options ...interface{}) (*tb.Message, error) {
 	m := &tb.Message{Text: what.(string)}
@@ -53,13 +55,12 @@ func tearUp(t *testing.T) func() {
 	logger.Info("Creating database: " + dbFile)
 	db, _ = gorm.Open(sqlite.Open(dbFile+"?cache=shared"), nil)
 	// setup Game
-	bot = &Bot{}
 	messages = []*tb.Message{}
 	user1 = &tb.User{ID: 1, FirstName: "Paul", LastName: "Durov", Username: "durov"}
 	user2 = &tb.User{ID: 2, FirstName: "Nick", LastName: "Durov", Username: "durov2"}
 	chat = &tb.Chat{ID: 42}
 	game = &Game{}
-	game.Setup(bot, db)
+	game.Setup(&Bot{}, db)
 	return func() {
 		l.Close()
 		os.Remove(dbFile)
@@ -68,7 +69,6 @@ func tearUp(t *testing.T) func() {
 
 func TestRulesCommand(t *testing.T) {
 	defer tearUp(t)()
-	bot = &Bot{}
 	game.rules(&tb.Message{Text: "/rules"})
 	assert.Contains(t, messages[0].Text, "Правила игры")
 }
