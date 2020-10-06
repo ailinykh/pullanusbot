@@ -1,12 +1,12 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
-
-	"github.com/google/logger"
 )
 
+// Config represents common bot settings
 type Config struct {
 	BotToken     string
 	ReportChatID int64
@@ -16,15 +16,17 @@ type Config struct {
 	WorkingDir   string
 }
 
+// Get current config
 func Get() *Config {
 	token := os.Getenv("BOT_TOKEN")
 	if len(token) == 0 {
-		logger.Fatal("BOT_TOKEN required")
+		panic("BOT_TOKEN required")
 	}
 
 	reportChatID, err := strconv.ParseInt(os.Getenv("ADMIN_CHAT_ID"), 10, 64)
+	fmt.Println(os.Getenv("ADMIN_CHAT_ID"))
 	if err != nil {
-		logger.Fatal("ADMIN_CHAT_ID required")
+		panic(err)
 	}
 
 	debug, err := strconv.ParseBool(os.Getenv("DEV"))
