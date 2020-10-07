@@ -1,4 +1,9 @@
 # pullanusbot
+
+[![Build Status](https://github.com/ailinykh/pullanusbot/workflows/build/badge.svg)](https://github.com/ailinykh/pullanusbot/actions?query=workflow%3Abuild)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ailinykh/pullanusbot)](https://goreportcard.com/report/github.com/ailinykh/pullanusbot)
+![GitHub](https://img.shields.io/github/license/ailinykh/pullanusbot.svg)
+
 This bot helps your telegram chat to consume content in more native way
 
 Let's say somebody sends a link to the webm video:
