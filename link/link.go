@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"pullanusbot/converter"
 	c "pullanusbot/converter"
 	i "pullanusbot/interfaces"
 	u "pullanusbot/utils"
@@ -126,5 +127,5 @@ func (l *Link) downloadAndSend(link string, m *tb.Message) {
 	}
 	defer videofile.Dispose()
 	caption := fmt.Sprintf(`<a href="%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, link, filename, m.Sender.Username)
-	videofile.Upload(bot, m, caption)
+	videofile.Upload(bot, m, caption, converter.UploadFinishedCallback)
 }

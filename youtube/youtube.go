@@ -141,13 +141,14 @@ func (y *Youtube) uploadVideo(video Video, m *tb.Message) {
 			n++
 		}
 
-		for i, vf := range videoFiles {
-			caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🎞</a> <b>[%d/%d] %s</b> <i>(by %s)</i>`, video.ID, i+1, len(videoFiles), video.Title, m.Sender.Username)
-			vf.Upload(bot, m, caption)
+		for idx, vf := range videoFiles {
+			caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🎞</a> <b>[%d/%d] %s</b> <i>(by %s)</i>`, video.ID, idx+1, len(videoFiles), video.Title, m.Sender.Username)
+			vf.Upload(bot, m, caption, func(i.Bot, *tb.Message) {})
 		}
+		c.UploadFinishedCallback(bot, m)
 
 	} else {
 		caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, video.ID, video.Title, m.Sender.Username)
-		videoFile.Upload(bot, m, caption)
+		videoFile.Upload(bot, m, caption, c.UploadFinishedCallback)
 	}
 }

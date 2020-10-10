@@ -24,6 +24,15 @@ type VideoFile struct {
 	videoStreamInfo *ffpStream
 }
 
+// UploadFinishedCallback ...
+// default behaviour - remove original message
+func UploadFinishedCallback(bot i.Bot, m *tb.Message) {
+	err := bot.Delete(m)
+	if err != nil {
+		logger.Error(err)
+	}
+}
+
 // NewVideoFile is a simple VideoFile constructor
 func NewVideoFile(path string) (*VideoFile, error) {
 	v := VideoFile{}
@@ -76,7 +85,7 @@ func (v *VideoFile) getFFProbeInfo(file string) (*ffpResponse, error) {
 }
 
 // Upload file to chat
-func (v *VideoFile) Upload(bot i.Bot, m *tb.Message, caption string) error {
+func (v *VideoFile) Upload(bot i.Bot, m *tb.Message, caption string, cb func(i.Bot, *tb.Message)) error {
 	video := tb.Video{File: tb.FromDisk(v.filepath)}
 	video.Width = v.videoStreamInfo.Width
 	video.Height = v.videoStreamInfo.Height
@@ -90,13 +99,10 @@ func (v *VideoFile) Upload(bot i.Bot, m *tb.Message, caption string) error {
 	bot.Notify(m.Chat, tb.UploadingVideo)
 	_, err := video.Send(bot.(*tb.Bot), m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
 	if err == nil {
-		logger.Info("Video sent, now removing original message")
-		err = bot.Delete(m)
-		if err != nil {
-			logger.Error(err)
-		}
+		logger.Info("Video sent successfully")
+		cb(bot, m)
 	} else {
-		logger.Error("Can't send video: ", err)
+		logger.Error(err)
 		bot.Send(m.Chat, fmt.Sprint(err), &tb.SendOptions{ReplyTo: m})
 		return err
 	}

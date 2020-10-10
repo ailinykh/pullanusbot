@@ -164,7 +164,7 @@ func (t *Twitter) processTweet(tweetID string, m *tb.Message) {
 				return
 			}
 			defer videofile.Dispose()
-			videofile.Upload(bot, m, caption)
+			videofile.Upload(bot, m, caption, c.UploadFinishedCallback)
 		}
 	}
 }

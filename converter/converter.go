@@ -83,12 +83,12 @@ func (c *Converter) checkMessage(m *tb.Message) {
 		if os.IsNotExist(err) {
 			logger.Info("Destination file not exists. Sending original...")
 			caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>", m.Document.FileName, m.Sender.Username)
-			videofile.Upload(bot, m, caption)
+			videofile.Upload(bot, m, caption, UploadFinishedCallback)
 		} else {
 			logger.Info("Sending destination file...")
 			caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>\n<i>Original size: %.2f MB (%d kb/s)\nConverted size: %.2f MB (%d kb/s)</i>", m.Document.FileName, m.Sender.Username, float32(m.Document.FileSize)/1048576, srcBitrate/1024, float32(fi.Size())/1048576, dstBitrate/1024)
 			videofile.filepath = dstPath // It's ok, cause we sending original
-			videofile.Upload(bot, m, caption)
+			videofile.Upload(bot, m, caption, UploadFinishedCallback)
 		}
 	} else {
 		logger.Errorf("%s is not mpeg video", m.Document.MIME)
