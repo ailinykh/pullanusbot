@@ -11,7 +11,6 @@ import (
 	i "pullanusbot/interfaces"
 	u "pullanusbot/utils"
 	"regexp"
-	"strings"
 	"sync"
 
 	"github.com/google/logger"
@@ -71,13 +70,8 @@ func (l *Link) processLink(link string, m *tb.Message) {
 			}
 		} else {
 			logger.Error(err)
-
-			if strings.HasPrefix(fmt.Sprint(err), "api error: Bad Request:") {
-				logger.Info("Looks like Telegram API error. Trying upload as file...")
-				l.downloadAndSend(link, m)
-			} else {
-				bot.Send(m.Chat, fmt.Sprint(err), &tb.SendOptions{ReplyTo: m})
-			}
+			// telegram error, fallback to upload
+			l.downloadAndSend(link, m)
 		}
 	case "video/webm":
 		l.downloadAndSend(link, m)
