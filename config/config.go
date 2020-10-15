@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 )
@@ -24,7 +23,6 @@ func Get() *Config {
 	}
 
 	reportChatID, err := strconv.ParseInt(os.Getenv("ADMIN_CHAT_ID"), 10, 64)
-	fmt.Println(os.Getenv("ADMIN_CHAT_ID"))
 	if err != nil {
 		panic(err)
 	}
