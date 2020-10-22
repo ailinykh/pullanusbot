@@ -47,8 +47,13 @@ func (c *Converter) checkMessage(m *tb.Message) {
 		defer os.Remove(srcPath)
 		defer os.Remove(dstPath)
 
-		logger.Info("Downloading video...")
-		bot.Download(&m.Document.File, srcPath)
+		logger.Infof("Downloading video to %s", srcPath)
+		err := bot.Download(&m.Document.File, srcPath)
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+
 		logger.Info("Video downloaded")
 
 		videofile, err := NewVideoFile(srcPath)

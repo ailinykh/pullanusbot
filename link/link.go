@@ -106,8 +106,8 @@ func (l *Link) downloadAndSend(link string, m *tb.Message) {
 	}
 
 	// Convert webm to mp4
-	logger.Infof("converting file %s", filename)
-	cmd := fmt.Sprintf(`ffmpeg -y -i "%s" "%s"`, srcPath, dstPath)
+	logger.Infof("converting file %s", srcPath)
+	cmd := fmt.Sprintf("ffmpeg -v error -y -i %s %s", srcPath, dstPath)
 	_, err = exec.Command("/bin/sh", "-c", cmd).Output()
 	if err != nil {
 		logger.Error(err)

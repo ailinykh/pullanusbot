@@ -100,7 +100,7 @@ func (y *Youtube) uploadVideo(video Video, m *tb.Message) {
 	filepath := path.Join(os.TempDir(), "youtube-"+video.ID+".mp4")
 	defer os.Remove(filepath)
 
-	cmd := fmt.Sprintf(`youtube-dl -f 134+140 "%s" -o "%s"`, video.ID, filepath)
+	cmd := fmt.Sprintf("youtube-dl -f 134+140 %s -o %s", video.ID, filepath)
 	logger.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
 	err := exec.Command("/bin/sh", "-c", cmd).Run()
 	if err != nil {
