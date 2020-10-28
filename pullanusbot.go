@@ -14,6 +14,7 @@ import (
 	i "pullanusbot/interfaces"
 	"pullanusbot/link"
 	"pullanusbot/report"
+	"pullanusbot/telegraph"
 	"pullanusbot/twitter"
 	"pullanusbot/youtube"
 
@@ -62,6 +63,7 @@ func main() {
 		&info.Info{},
 		&link.Link{},
 		&report.Report{},
+		&telegraph.Telegraph{},
 		&twitter.Twitter{},
 		&youtube.Youtube{},
 	}
