@@ -14,6 +14,7 @@ import (
 	i "pullanusbot/interfaces"
 	"pullanusbot/link"
 	"pullanusbot/report"
+	"pullanusbot/smsreg"
 	"pullanusbot/telegraph"
 	"pullanusbot/twitter"
 	"pullanusbot/youtube"
@@ -63,6 +64,7 @@ func main() {
 		&info.Info{},
 		&link.Link{},
 		&report.Report{},
+		&smsreg.SmsReg{},
 		&telegraph.Telegraph{},
 		&twitter.Twitter{},
 		&youtube.Youtube{},
