@@ -24,10 +24,10 @@ It's even support links to twitter videos
 
 ## how to run
 
-Install go
+Setup environment
 
 ```shell
-brew install go
+brew install go ffmpeg youtube-dl
 ```
 clone repo
 
@@ -36,11 +36,11 @@ git clone https://github.com/ailinykh/pullanusbot.git
 cd pullanusbot
 ```
 
-install dependencies
+install go dependencies
 ```shell
 go mod download
 ```
-obtain bot token from [@BotFather](https://t.me/BotFather) and you telegram ID from [@userifobot](https://t.me/userinfobot)
+obtain bot token from [@BotFather](https://t.me/BotFather) and your telegram ID via `/info` command from [@pullanusbot](https://t.me/pullanusbot)
 
 ```shell
 echo "export BOT_TOKEN:=12345678:XXXXXXXXxxxxxxxxXXXXXXXXxxxxxxxxXXX" > .env
