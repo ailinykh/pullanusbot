@@ -60,7 +60,7 @@ func (s *SmsReg) start(m *tb.Message) {
 	}
 	menu := &tb.ReplyMarkup{ResizeReplyKeyboard: true, InlineKeyboard: keyboard}
 	opts := &tb.SendOptions{ParseMode: tb.ModeMarkdown, ReplyMarkup: menu}
-	bot.Send(m.Chat, fmt.Sprintf(i18n("sms_choose_service"), balance.Amount), opts)
+	bot.Send(m.Chat, i18n("sms_choose_service", balance.Amount), opts)
 }
 
 func (s *SmsReg) handleService(c *tb.Callback) {
@@ -71,7 +71,7 @@ func (s *SmsReg) handleService(c *tb.Callback) {
 	keyboard := [][]tb.InlineButton{[]tb.InlineButton{btn}}
 	menu := &tb.ReplyMarkup{InlineKeyboard: keyboard}
 	opts := &tb.SendOptions{ParseMode: tb.ModeMarkdown, ReplyMarkup: menu}
-	bot.Edit(c.Message, fmt.Sprintf(i18n("sms_confirm_service"), balance, serviceTitle), opts)
+	bot.Edit(c.Message, i18n("sms_confirm_service", balance, serviceTitle), opts)
 	bot.Handle(&btn, s.handleNumber)
 	bot.Respond(c, &tb.CallbackResponse{})
 }
@@ -81,7 +81,7 @@ func (s *SmsReg) handleNumber(c *tb.Callback) {
 	data := strings.Split(c.Data, "|")
 	balance, serviceID, serviceTitle := data[0], data[1], data[2]
 	opts := &tb.SendOptions{ParseMode: tb.ModeMarkdown}
-	bot.Edit(c.Message, fmt.Sprintf(i18n("sms_number_requested"), balance, serviceTitle), opts)
+	bot.Edit(c.Message, i18n("sms_number_requested", balance, serviceTitle), opts)
 	bot.Respond(c, &tb.CallbackResponse{})
 	num, _ := client.getNum(serviceID)
 	loop := 0
@@ -111,7 +111,7 @@ func (s *SmsReg) handleNumber(c *tb.Callback) {
 			opts := &tb.SendOptions{ParseMode: tb.ModeMarkdown, ReplyMarkup: menu}
 			bot.Handle(&btnReady, s.handleSms)
 			bot.Handle(&btnUsed, s.handleFeedbackUsed)
-			bot.Edit(c.Message, fmt.Sprintf(i18n("sms_number_received"), balance, serviceTitle, tz.Number), opts)
+			bot.Edit(c.Message, i18n("sms_number_received", balance, serviceTitle, tz.Number), opts)
 			return
 		}
 
@@ -121,7 +121,7 @@ func (s *SmsReg) handleNumber(c *tb.Callback) {
 			return
 		}
 
-		bot.Edit(c.Message, fmt.Sprintf(i18n("sms_number_requested_sec"), balance, serviceTitle, loop*sleepTimeout), opts)
+		bot.Edit(c.Message, i18n("sms_number_requested_sec", balance, serviceTitle, loop*sleepTimeout), opts)
 	}
 }
 
@@ -133,7 +133,7 @@ func (s *SmsReg) handleSms(c *tb.Callback) {
 	tz, _ := client.getState(tzid)
 	number := tz.Number // For some reason TZ_NUM_ANSWER erases the number
 	opts := &tb.SendOptions{ParseMode: tb.ModeMarkdown}
-	bot.Edit(c.Message, fmt.Sprintf(i18n("sms_await_for_message"), balance, serviceTitle, number), opts)
+	bot.Edit(c.Message, i18n("sms_await_for_message", balance, serviceTitle, number), opts)
 	bot.Respond(c, &tb.CallbackResponse{})
 	loop := 0
 
@@ -151,12 +151,12 @@ func (s *SmsReg) handleSms(c *tb.Callback) {
 			opts := &tb.SendOptions{ParseMode: tb.ModeMarkdown, ReplyMarkup: menu}
 			bot.Handle(&btnOkay, s.handleFeedbackOkay)
 			bot.Handle(&btnUsed, s.handleFeedbackUsed)
-			bot.Edit(c.Message, fmt.Sprintf(i18n("sms_message_received"), balance, serviceTitle, number, tz.Message), opts)
+			bot.Edit(c.Message, i18n("sms_message_received", balance, serviceTitle, number, tz.Message), opts)
 			return
 		}
 		// timeout
 		if tz.Base.Response == "TZ_OVER_NR" {
-			bot.Edit(c.Message, fmt.Sprintf(i18n("sms_message_timeout"), balance, serviceTitle, number), opts)
+			bot.Edit(c.Message, i18n("sms_message_timeout", balance, serviceTitle, number), opts)
 			return
 		}
 		// Unexpected response
@@ -165,7 +165,7 @@ func (s *SmsReg) handleSms(c *tb.Callback) {
 			return
 		}
 		// Status update
-		bot.Edit(c.Message, fmt.Sprintf(i18n("sms_await_for_message_sec"), balance, serviceTitle, number, loop*sleepTimeout), opts)
+		bot.Edit(c.Message, i18n("sms_await_for_message_sec", balance, serviceTitle, number, loop*sleepTimeout), opts)
 	}
 }
 

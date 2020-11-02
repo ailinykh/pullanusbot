@@ -24,10 +24,10 @@ var ru = map[string]string{
 	"sms_finished_text":         "Спасибо!",
 }
 
-func i18n(key string) string {
+func i18n(key string, args ...interface{}) string {
 
 	if val, ok := ru[key]; ok {
-		return val
+		return fmt.Sprintf(val, args...)
 	}
 
 	_, file, line, _ := runtime.Caller(0)
