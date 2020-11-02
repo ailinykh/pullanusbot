@@ -26,8 +26,10 @@ type Bot struct{}
 func (Bot) ChatMemberOf(c *tb.Chat, u *tb.User) (*tb.ChatMember, error)            { return nil, nil }
 func (Bot) Delete(tb.Editable) error                                               { return nil }
 func (Bot) Download(*tb.File, string) error                                        { return nil }
+func (Bot) Edit(tb.Editable, interface{}, ...interface{}) (*tb.Message, error)     { return nil, nil }
 func (Bot) Handle(interface{}, interface{})                                        {}
 func (Bot) Notify(tb.Recipient, tb.ChatAction) error                               { return nil }
+func (Bot) Respond(*tb.Callback, ...*tb.CallbackResponse) error                    { return nil }
 func (Bot) SendAlbum(tb.Recipient, tb.Album, ...interface{}) ([]tb.Message, error) { return nil, nil }
 func (Bot) Start()                                                                 {}
 
