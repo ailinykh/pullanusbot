@@ -3,6 +3,7 @@ package smsreg
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	i "pullanusbot/interfaces"
@@ -48,8 +49,7 @@ func (s *SmsReg) start(m *tb.Message) {
 	for _, service := range list.Services {
 		if service.enabled() {
 			lastIdx := len(keyboard) - 1
-			// nextBtn := tb.InlineButton{Unique: service.ID, Text: service.Title, Data: fmt.Sprintf("%s|%s|%s", balance.Amount, service.ID, service.Title)}
-			nextBtn := tb.InlineButton{Unique: service.ID, Text: service.Title, Data: service.ID}
+			nextBtn := tb.InlineButton{Unique: service.ID, Text: service.Title, Data: fmt.Sprintf("%s|%s|%s", balance.Amount, service.ID, service.Title)}
 			bot.Handle(&nextBtn, s.handleService)
 			if lastIdx >= 0 && len(keyboard[lastIdx]) == 1 {
 				keyboard[lastIdx] = append(keyboard[lastIdx], nextBtn)
@@ -64,22 +64,26 @@ func (s *SmsReg) start(m *tb.Message) {
 }
 
 func (s *SmsReg) handleService(c *tb.Callback) {
-	logger.Infof("Confirm service %s", c.Data)
+	logger.Infof("Confirm service step: %s", c.Data)
+	data := strings.Split(c.Data, "|")
+	balance, _, serviceTitle := data[0], data[1], data[2]
 	btn := tb.InlineButton{Unique: "sms_get_number_btn", Text: i18n("sms_get_number_btn"), Data: c.Data}
 	keyboard := [][]tb.InlineButton{[]tb.InlineButton{btn}}
 	menu := &tb.ReplyMarkup{InlineKeyboard: keyboard}
 	opts := &tb.SendOptions{ParseMode: tb.ModeMarkdown, ReplyMarkup: menu}
-	bot.Edit(c.Message, fmt.Sprintf(i18n("sms_confirm_service"), c.Data), opts)
+	bot.Edit(c.Message, fmt.Sprintf(i18n("sms_confirm_service"), balance, serviceTitle), opts)
 	bot.Handle(&btn, s.handleNumber)
 	bot.Respond(c, &tb.CallbackResponse{})
 }
 
 func (s *SmsReg) handleNumber(c *tb.Callback) {
-	logger.Infof("Requesting number for service: %s", c.Data)
+	logger.Infof("Requesting number step: %s", c.Data)
+	data := strings.Split(c.Data, "|")
+	balance, serviceID, serviceTitle := data[0], data[1], data[2]
 	opts := &tb.SendOptions{ParseMode: tb.ModeMarkdown}
-	bot.Edit(c.Message, fmt.Sprintf(i18n("sms_number_requested"), c.Data), opts)
+	bot.Edit(c.Message, fmt.Sprintf(i18n("sms_number_requested"), balance, serviceTitle), opts)
 	bot.Respond(c, &tb.CallbackResponse{})
-	num, _ := client.getNum(c.Data)
+	num, _ := client.getNum(serviceID)
 	loop := 0
 
 	for {
@@ -93,12 +97,12 @@ func (s *SmsReg) handleNumber(c *tb.Callback) {
 		}
 
 		if tz.Base.Response == "TZ_NUM_PREPARE" {
-			btn := tb.InlineButton{Unique: "sms_number_ready_btn", Text: i18n("sms_number_ready_btn"), Data: num.ID}
+			btn := tb.InlineButton{Unique: "sms_number_ready_btn", Text: i18n("sms_number_ready_btn"), Data: c.Data + "|" + num.ID}
 			keyboard := [][]tb.InlineButton{[]tb.InlineButton{btn}}
 			menu := &tb.ReplyMarkup{InlineKeyboard: keyboard}
 			opts := &tb.SendOptions{ParseMode: tb.ModeMarkdown, ReplyMarkup: menu}
 			bot.Handle(&btn, s.handleSms)
-			bot.Send(c.Message.Chat, fmt.Sprintf(i18n("sms_number_received"), tz.Number), opts)
+			bot.Edit(c.Message, fmt.Sprintf(i18n("sms_number_received"), balance, serviceTitle, tz.Number), opts)
 			return
 		}
 
@@ -107,16 +111,19 @@ func (s *SmsReg) handleNumber(c *tb.Callback) {
 			return
 		}
 
-		bot.Edit(c.Message, fmt.Sprintf(i18n("sms_number_requested_sec"), c.Data, loop*sleepTimeout), opts)
+		bot.Edit(c.Message, fmt.Sprintf(i18n("sms_number_requested_sec"), balance, serviceTitle, loop*sleepTimeout), opts)
 	}
 }
 
 func (s *SmsReg) handleSms(c *tb.Callback) {
-	logger.Infof("Awaiting for sms for tzid: %s", c.Data)
-	_, _ = client.setReady(c.Data)
-	tz, _ := client.getState(c.Data)
+	logger.Infof("Awaiting for sms step: %s", c.Data)
+	data := strings.Split(c.Data, "|")
+	balance, _, serviceTitle, tzid := data[0], data[1], data[2], data[3]
+	_, _ = client.setReady(tzid)
+	tz, _ := client.getState(tzid)
+	number := tz.Number // For some reason TZ_NUM_ANSWER erases the number
 	opts := &tb.SendOptions{ParseMode: tb.ModeMarkdown}
-	bot.Edit(c.Message, fmt.Sprintf(i18n("sms_await_for_message"), tz.Number), opts)
+	bot.Edit(c.Message, fmt.Sprintf(i18n("sms_await_for_message"), balance, serviceTitle, number), opts)
 	bot.Respond(c, &tb.CallbackResponse{})
 	loop := 0
 	shouldSetupKeyboard := true
@@ -124,45 +131,40 @@ func (s *SmsReg) handleSms(c *tb.Callback) {
 	for {
 		loop++
 		time.Sleep(sleepTimeout * time.Second)
-		tz, _ := client.getState(c.Data)
+		tz, _ := client.getState(tzid)
 		logger.Info(tz)
-
-		if shouldSetupKeyboard {
-			shouldSetupKeyboard = false
-			btnUsed := tb.InlineButton{Unique: "sms_feedback_used_btn", Text: i18n("sms_feedback_used_btn"), Data: c.Data}
-			keyboard := [][]tb.InlineButton{[]tb.InlineButton{btnUsed}}
-			menu := &tb.ReplyMarkup{ResizeReplyKeyboard: true, InlineKeyboard: keyboard}
-			opts = &tb.SendOptions{ParseMode: tb.ModeMarkdown, ReplyMarkup: menu}
-			bot.Handle(&btnUsed, s.handleFeedbackUsed)
-		}
-		// drop the keyboard on success
-		if tz.Base.Response == "TZ_NUM_ANSWER" {
-			opts = &tb.SendOptions{ParseMode: tb.ModeMarkdown}
-		}
-
-		bot.Edit(c.Message, fmt.Sprintf(i18n("sms_await_for_message_sec"), tz.Number, loop*sleepTimeout), opts)
 		// success
 		if tz.Base.Response == "TZ_NUM_ANSWER" {
-			btnOkay := tb.InlineButton{Unique: "sms_feedback_okay_btn", Text: i18n("sms_feedback_okay_btn"), Data: c.Data}
-			btnUsed := tb.InlineButton{Unique: "sms_feedback_used_btn", Text: i18n("sms_feedback_used_btn"), Data: c.Data}
+			btnOkay := tb.InlineButton{Unique: "sms_feedback_okay_btn", Text: i18n("sms_feedback_okay_btn"), Data: tzid}
+			btnUsed := tb.InlineButton{Unique: "sms_feedback_used_btn", Text: i18n("sms_feedback_used_btn"), Data: tzid}
 			keyboard := [][]tb.InlineButton{[]tb.InlineButton{btnOkay}, []tb.InlineButton{btnUsed}}
 			menu := &tb.ReplyMarkup{ResizeReplyKeyboard: true, InlineKeyboard: keyboard}
 			opts := &tb.SendOptions{ParseMode: tb.ModeMarkdown, ReplyMarkup: menu}
 			bot.Handle(&btnOkay, s.handleFeedbackOkay)
 			bot.Handle(&btnUsed, s.handleFeedbackUsed)
-			bot.Send(c.Message.Chat, fmt.Sprintf(i18n("sms_message_received"), tz.Number, tz.Service, tz.Message), opts)
+			bot.Edit(c.Message, fmt.Sprintf(i18n("sms_message_received"), balance, serviceTitle, number, tz.Message), opts)
 			return
 		}
 		// timeout
 		if tz.Base.Response == "TZ_OVER_NR" {
-			bot.Edit(c.Message, fmt.Sprintf(i18n("sms_message_timeout"), tz.Number), opts)
+			bot.Edit(c.Message, fmt.Sprintf(i18n("sms_message_timeout"), balance, serviceTitle, number), opts)
 			return
 		}
-
+		// Unexpected response
 		if tz.Base.Response != "TZ_NUM_WAIT" {
 			bot.Send(c.Message.Chat, "unexpected response: "+tz.Base.Response)
 			return
 		}
+		// Status update
+		if shouldSetupKeyboard {
+			shouldSetupKeyboard = false
+			btnUsed := tb.InlineButton{Unique: "sms_feedback_used_btn", Text: i18n("sms_feedback_used_btn"), Data: tzid}
+			keyboard := [][]tb.InlineButton{[]tb.InlineButton{btnUsed}}
+			menu := &tb.ReplyMarkup{ResizeReplyKeyboard: true, InlineKeyboard: keyboard}
+			opts = &tb.SendOptions{ParseMode: tb.ModeMarkdown, ReplyMarkup: menu}
+			bot.Handle(&btnUsed, s.handleFeedbackUsed)
+		}
+		bot.Edit(c.Message, fmt.Sprintf(i18n("sms_await_for_message_sec"), balance, serviceTitle, number, loop*sleepTimeout), opts)
 	}
 }
 
