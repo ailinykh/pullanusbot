@@ -86,6 +86,13 @@ func (s *SmsReg) handleNumber(c *tb.Callback) {
 	num, _ := client.getNum(serviceID)
 	loop := 0
 
+	if num.Base.Response == "ERROR" {
+		if num.Base.Error == "WARNING_LOW_BALANCE" {
+			bot.Send(c.Message.Chat, i18n("sms_balance_insufficient"))
+			return
+		}
+	}
+
 	for {
 		loop++
 		time.Sleep(sleepTimeout * time.Second)
@@ -97,16 +104,19 @@ func (s *SmsReg) handleNumber(c *tb.Callback) {
 		}
 
 		if tz.Base.Response == "TZ_NUM_PREPARE" {
-			btn := tb.InlineButton{Unique: "sms_number_ready_btn", Text: i18n("sms_number_ready_btn"), Data: c.Data + "|" + num.ID}
-			keyboard := [][]tb.InlineButton{[]tb.InlineButton{btn}}
-			menu := &tb.ReplyMarkup{InlineKeyboard: keyboard}
+			btnReady := tb.InlineButton{Unique: "sms_number_ready_btn", Text: i18n("sms_number_ready_btn"), Data: c.Data + "|" + num.ID}
+			btnUsed := tb.InlineButton{Unique: "sms_feedback_used_btn", Text: i18n("sms_feedback_used_btn"), Data: num.ID}
+			keyboard := [][]tb.InlineButton{[]tb.InlineButton{btnReady}, []tb.InlineButton{btnUsed}}
+			menu := &tb.ReplyMarkup{ResizeReplyKeyboard: true, InlineKeyboard: keyboard}
 			opts := &tb.SendOptions{ParseMode: tb.ModeMarkdown, ReplyMarkup: menu}
-			bot.Handle(&btn, s.handleSms)
+			bot.Handle(&btnReady, s.handleSms)
+			bot.Handle(&btnUsed, s.handleFeedbackUsed)
 			bot.Edit(c.Message, fmt.Sprintf(i18n("sms_number_received"), balance, serviceTitle, tz.Number), opts)
 			return
 		}
 
 		if tz.Base.Response != "TZ_INPOOL" {
+			logger.Error(tz)
 			bot.Send(c.Message.Chat, "unknown response: "+tz.Base.Response)
 			return
 		}
@@ -126,7 +136,6 @@ func (s *SmsReg) handleSms(c *tb.Callback) {
 	bot.Edit(c.Message, fmt.Sprintf(i18n("sms_await_for_message"), balance, serviceTitle, number), opts)
 	bot.Respond(c, &tb.CallbackResponse{})
 	loop := 0
-	shouldSetupKeyboard := true
 
 	for {
 		loop++
@@ -156,14 +165,6 @@ func (s *SmsReg) handleSms(c *tb.Callback) {
 			return
 		}
 		// Status update
-		if shouldSetupKeyboard {
-			shouldSetupKeyboard = false
-			btnUsed := tb.InlineButton{Unique: "sms_feedback_used_btn", Text: i18n("sms_feedback_used_btn"), Data: tzid}
-			keyboard := [][]tb.InlineButton{[]tb.InlineButton{btnUsed}}
-			menu := &tb.ReplyMarkup{ResizeReplyKeyboard: true, InlineKeyboard: keyboard}
-			opts = &tb.SendOptions{ParseMode: tb.ModeMarkdown, ReplyMarkup: menu}
-			bot.Handle(&btnUsed, s.handleFeedbackUsed)
-		}
 		bot.Edit(c.Message, fmt.Sprintf(i18n("sms_await_for_message_sec"), balance, serviceTitle, number, loop*sleepTimeout), opts)
 	}
 }

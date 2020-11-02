@@ -3,6 +3,7 @@ package smsreg
 // Base is a basic response container
 type Base struct {
 	Response string `json:"response"`
+	Error    string `json:"error_msg,omitempty"`
 }
 
 // Service represents social network / another service
