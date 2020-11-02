@@ -10,10 +10,8 @@ type Bot interface {
 	ChatMemberOf(*tb.Chat, *tb.User) (*tb.ChatMember, error)
 	Delete(tb.Editable) error
 	Download(*tb.File, string) error
-	Edit(tb.Editable, interface{}, ...interface{}) (*tb.Message, error)
 	Handle(interface{}, interface{})
 	Notify(tb.Recipient, tb.ChatAction) error
-	Respond(*tb.Callback, ...*tb.CallbackResponse) error
 	Send(tb.Recipient, interface{}, ...interface{}) (*tb.Message, error)
 	SendAlbum(tb.Recipient, tb.Album, ...interface{}) ([]tb.Message, error)
 	Start()
