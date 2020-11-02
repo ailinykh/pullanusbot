@@ -47,9 +47,9 @@ func (s *SmsReg) start(m *tb.Message) {
 	keyboard := [][]tb.InlineButton{}
 
 	for _, service := range list.Services {
-		if service.enabled() {
+		if service.price() > 0 {
 			lastIdx := len(keyboard) - 1
-			nextBtn := tb.InlineButton{Unique: service.ID, Text: service.Title, Data: fmt.Sprintf("%s|%s|%s", balance.Amount, service.ID, service.Title)}
+			nextBtn := tb.InlineButton{Unique: service.ID, Text: fmt.Sprintf("%s ₽%.02f", service.Title, service.price()), Data: fmt.Sprintf("%s|%s|%s", balance.Amount, service.ID, service.Title)}
 			bot.Handle(&nextBtn, s.handleService)
 			if lastIdx >= 0 && len(keyboard[lastIdx]) == 1 {
 				keyboard[lastIdx] = append(keyboard[lastIdx], nextBtn)

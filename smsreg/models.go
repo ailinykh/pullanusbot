@@ -13,45 +13,43 @@ type Service struct {
 	Title string `json:"description"`
 }
 
-func (s *Service) enabled() bool {
-	enabled := []string{
-		// "aol",
-		"gmail",
-		"facebook",
-		"mailru",
-		"vk",
-		"classmates",
-		"twitter",
-		// "mamba",
-		// "uber",
-		"telegram",
-		// "badoo",
-		// "drugvokrug",
-		"avito",
-		// "olx",
-		// "steam",
-		// "fotostrana",
-		"microsoft",
-		"viber",
-		"whatsapp",
-		// "wechat",
-		// "seosprint",
-		"instagram",
-		// "yahoo",
-		// "lineme",
-		// "kakaotalk",
-		// "meetme",
-		// "tinder",
-		// "nimses",
-		// "youla",
-		"other",
+func (s *Service) price() float32 {
+	priceMap := map[string]float32{
+		// "aol": 3,
+		"gmail":      9,
+		"facebook":   4,
+		"mailru":     3,
+		"vk":         45,
+		"classmates": 4,
+		"twitter":    3,
+		// "mamba":      2,
+		// "uber":       3,
+		"telegram": 8,
+		// "badoo":      5,
+		// "drugvokrug": 5,
+		"avito": 6,
+		// "olx":        19,
+		// "steam":      4,
+		// "fotostrana": 4,
+		"microsoft": 4,
+		"viber":     8,
+		"whatsapp":  9,
+		// "wechat":    15,
+		// "seosprint": 3,
+		"instagram": 6,
+		// "yahoo":     3,
+		// "lineme":    3,
+		// "kakaotalk": 5,
+		// "meetme":    9,
+		// "tinder":    3,
+		// "nimses":    5,
+		// "youla":     4,
+		"other": 7,
 	}
-	for _, e := range enabled {
-		if e == s.ID {
-			return true
-		}
+	if val, ok := priceMap[s.ID]; ok {
+		return val
 	}
-	return false
+	return 0
 }
 
 // Balance of current account
