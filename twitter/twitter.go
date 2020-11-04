@@ -112,7 +112,7 @@ func (t *Twitter) processTweet(tweetID string, m *tb.Message) {
 
 		_, err = bot.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true})
 	case 1:
-		if media[0].Type == "video" {
+		if media[0].Type == "video" || media[0].Type == "animated_gif" {
 			file := &tb.Video{File: tb.FromURL(media[0].VideoInfo.best().URL)}
 			file.Caption = caption
 			logger.Infof("Sending as Video %s", file.FileURL)
@@ -125,7 +125,7 @@ func (t *Twitter) processTweet(tweetID string, m *tb.Message) {
 			bot.Notify(m.Chat, tb.UploadingPhoto)
 			_, err = file.Send(bot.(*tb.Bot), m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
 		} else {
-			logger.Infof("Unknown type: %s", media[0].Type)
+			logger.Errorf("Unknown type: %s", media[0].Type)
 			bot.Send(m.Chat, fmt.Sprintf("Unknown type: %s", media[0].Type), &tb.SendOptions{ReplyTo: m})
 			return
 		}
