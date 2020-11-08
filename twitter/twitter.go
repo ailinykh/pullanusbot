@@ -144,7 +144,7 @@ func (t *Twitter) processTweet(tweetID string, m *tb.Message) {
 	} else {
 		logger.Error(err)
 
-		if strings.HasSuffix(err.Error(), "failed to get HTTP URL content") || strings.HasSuffix(err.Error(), "wrong file identifier/HTTP URL specified") {
+		if strings.Contains(err.Error(), "failed to get HTTP URL content") || strings.Contains(err.Error(), "wrong file identifier/HTTP URL specified") {
 			// Try to upload file to telegram
 			logger.Info("Sending by uploading")
 
