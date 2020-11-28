@@ -72,13 +72,12 @@ func (y *Youtube) processURL(url string, m *tb.Message) {
 			continue
 		}
 		text := fmt.Sprintf("%dx%d (%s) - %.02fMiB", f.Width, f.Height, f.FormatNote, mbSize)
-		logger.Info(text)
 		btn := tb.InlineButton{Text: text, Unique: "_" + f.FormatID, Data: video.ID + "|" + f.FormatID}
 		bot.Handle(&btn, y.handleDlCb)
 		keyboard = append(keyboard, []tb.InlineButton{btn})
 	}
 
-	btn := tb.InlineButton{Text: "❌ Cancel", Unique: "cancel"}
+	btn := tb.InlineButton{Text: "❌ Cancel", Unique: "cancel", Data: "cancel"}
 	bot.Handle(&btn, y.handleDlCb)
 	keyboard = append(keyboard, []tb.InlineButton{btn})
 
