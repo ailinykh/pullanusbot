@@ -68,7 +68,7 @@ func (s *SmsReg) handleService(c *tb.Callback) {
 	data := strings.Split(c.Data, "|")
 	balance, _, serviceTitle := data[0], data[1], data[2]
 	btn := tb.InlineButton{Unique: "sms_get_number_btn", Text: i18n("sms_get_number_btn"), Data: c.Data}
-	keyboard := [][]tb.InlineButton{[]tb.InlineButton{btn}}
+	keyboard := [][]tb.InlineButton{{btn}}
 	menu := &tb.ReplyMarkup{InlineKeyboard: keyboard}
 	opts := &tb.SendOptions{ParseMode: tb.ModeMarkdown, ReplyMarkup: menu}
 	bot.Edit(c.Message, i18n("sms_confirm_service", balance, serviceTitle), opts)
@@ -106,7 +106,7 @@ func (s *SmsReg) handleNumber(c *tb.Callback) {
 		if tz.Base.Response == "TZ_NUM_PREPARE" {
 			btnReady := tb.InlineButton{Unique: "sms_number_ready_btn", Text: i18n("sms_number_ready_btn"), Data: c.Data + "|" + num.ID}
 			btnUsed := tb.InlineButton{Unique: "sms_feedback_used_btn", Text: i18n("sms_feedback_used_btn"), Data: num.ID}
-			keyboard := [][]tb.InlineButton{[]tb.InlineButton{btnReady}, []tb.InlineButton{btnUsed}}
+			keyboard := [][]tb.InlineButton{{btnReady}, {btnUsed}}
 			menu := &tb.ReplyMarkup{ResizeReplyKeyboard: true, InlineKeyboard: keyboard}
 			opts := &tb.SendOptions{ParseMode: tb.ModeMarkdown, ReplyMarkup: menu}
 			bot.Handle(&btnReady, s.handleSms)
@@ -146,7 +146,7 @@ func (s *SmsReg) handleSms(c *tb.Callback) {
 		if tz.Base.Response == "TZ_NUM_ANSWER" {
 			btnOkay := tb.InlineButton{Unique: "sms_feedback_okay_btn", Text: i18n("sms_feedback_okay_btn"), Data: tzid}
 			btnUsed := tb.InlineButton{Unique: "sms_feedback_used_btn", Text: i18n("sms_feedback_used_btn"), Data: tzid}
-			keyboard := [][]tb.InlineButton{[]tb.InlineButton{btnOkay}, []tb.InlineButton{btnUsed}}
+			keyboard := [][]tb.InlineButton{{btnOkay}, {btnUsed}}
 			menu := &tb.ReplyMarkup{ResizeReplyKeyboard: true, InlineKeyboard: keyboard}
 			opts := &tb.SendOptions{ParseMode: tb.ModeMarkdown, ReplyMarkup: menu}
 			bot.Handle(&btnOkay, s.handleFeedbackOkay)
