@@ -72,6 +72,7 @@ func (y *Youtube) processURL(url string, m *tb.Message) {
 			continue
 		}
 		text := fmt.Sprintf("%dx%d (%s) - %.02fMiB", f.Width, f.Height, f.FormatNote, mbSize)
+		// logger.Infof("%#v", f)
 		btn := tb.InlineButton{Text: text, Unique: "_" + f.FormatID, Data: video.ID + "|" + f.FormatID}
 		bot.Handle(&btn, y.handleDlCb)
 		keyboard = append(keyboard, []tb.InlineButton{btn})
@@ -145,7 +146,7 @@ func (y *Youtube) uploadVideo(video *Video, formatID string, m *tb.Message) {
 
 	logger.Infof("Uploading %s format %s", video.ID, formatID)
 
-	filepath := path.Join(os.TempDir(), "youtube-"+video.ID+".mp4")
+	filepath := path.Join(os.TempDir(), fmt.Sprintf("youtube-%s-%s.mp4", video.ID, formatID))
 	defer os.Remove(filepath)
 
 	cmd := fmt.Sprintf("youtube-dl -f %s+140 %s -o %s", formatID, video.ID, filepath)

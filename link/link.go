@@ -56,7 +56,7 @@ func (l *Link) processLink(link string, m *tb.Message) {
 
 	switch resp.Header["Content-Type"][0] {
 	case "video/mp4":
-		bot.Notify(m.Chat, tb.UploadingVideo)
+		go bot.Notify(m.Chat, tb.UploadingVideo)
 		logger.Infof("found mp4 file %s", link)
 		video := &tb.Video{File: tb.FromURL(resp.Request.URL.String())}
 		video.Caption = fmt.Sprintf(`<a href="%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, link, path.Base(resp.Request.URL.Path), m.Sender.Username)
@@ -90,7 +90,6 @@ func (l *Link) downloadAndSend(link string, m *tb.Message) {
 		logger.Error(err)
 	}
 
-	bot.Notify(m.Chat, tb.UploadingVideo)
 	filename := path.Base(resp.Request.URL.Path)
 	srcPath := path.Join(os.TempDir(), filename)
 	dstPath := path.Join(os.TempDir(), filename+".mp4")

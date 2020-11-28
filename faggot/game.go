@@ -16,7 +16,7 @@ import (
 var (
 	bot   i.Bot
 	db    *gorm.DB
-	games = concurrentSlice{}
+	games = ConcurrentSlice{}
 )
 
 // Game is a faggot game logic

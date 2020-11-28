@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"pullanusbot/faggot"
 	i "pullanusbot/interfaces"
 	"strings"
+	"time"
 
 	"github.com/google/logger"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
+
+var uploadsInProgress = faggot.ConcurrentSlice{}
 
 // VideoFile is a simple struct for a video file representation
 type VideoFile struct {
@@ -96,8 +100,10 @@ func (v *VideoFile) Upload(bot i.Bot, m *tb.Message, caption string, cb func(i.B
 
 	logger.Infof("Uploading %dx%d %ds %.02fMB %s", video.Width, video.Height, video.Duration, float64(v.ffpInfo.Format.size())/1024/1024, strings.ReplaceAll(v.filepath, os.TempDir(), "$TMPDIR/"))
 
-	bot.Notify(m.Chat, tb.UploadingVideo)
+	go v.notify(m.Chat.ID)
 	_, err := video.Send(bot.(*tb.Bot), m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
+	uploadsInProgress.Remove(m.Chat.ID)
+
 	if err == nil {
 		logger.Info("Video sent successfully")
 		cb(bot, m)
@@ -117,4 +123,16 @@ func (v *VideoFile) Dispose() {
 // Duration of video in seconds
 func (v *VideoFile) Duration() int {
 	return v.ffpInfo.Format.duration()
+}
+
+func (v *VideoFile) notify(id int64) {
+	uploadsInProgress.Add(id)
+	for {
+		if uploadsInProgress.Index(id) == -1 {
+			return
+		}
+		chat := &tb.Chat{ID: id}
+		bot.Notify(chat, tb.UploadingVideo)
+		time.Sleep(time.Duration(10) * time.Second)
+	}
 }
