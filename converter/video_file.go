@@ -69,7 +69,7 @@ func NewVideoFile(path string) (*VideoFile, error) {
 }
 
 func (v *VideoFile) getFFProbeInfo(file string) (*ffpResponse, error) {
-	cmd := fmt.Sprintf("ffprobe -v error -of json -show_streams -show_format \"%s\"", file)
+	cmd := fmt.Sprintf(`ffprobe -v error -of json -show_streams -show_format "%s"`, file)
 	out, err := exec.Command("/bin/sh", "-c", cmd).Output()
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (v *VideoFile) Upload(bot i.Bot, m *tb.Message, caption string, cb func(i.B
 	video.SupportsStreaming = true
 	video.Thumbnail = &tb.Photo{File: tb.FromDisk(v.thumbpath)}
 
-	logger.Infof("Uploading %dx%d %ds %dB %s", video.Width, video.Height, video.Duration, v.ffpInfo.Format.size(), strings.ReplaceAll(v.filepath, os.TempDir(), "$TMPDIR/"))
+	logger.Infof("Uploading %dx%d %ds %.02fMB %s", video.Width, video.Height, video.Duration, float64(v.ffpInfo.Format.size())/1024/1024, strings.ReplaceAll(v.filepath, os.TempDir(), "$TMPDIR/"))
 
 	bot.Notify(m.Chat, tb.UploadingVideo)
 	_, err := video.Send(bot.(*tb.Bot), m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
@@ -103,7 +103,6 @@ func (v *VideoFile) Upload(bot i.Bot, m *tb.Message, caption string, cb func(i.B
 		cb(bot, m)
 	} else {
 		logger.Error(err)
-		bot.Send(m.Chat, fmt.Sprint(err), &tb.SendOptions{ReplyTo: m})
 		return err
 	}
 	return nil
