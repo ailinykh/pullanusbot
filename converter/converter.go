@@ -37,21 +37,22 @@ func (c *Converter) checkMessage(m *tb.Message) {
 
 		logger.Infof("Got video! \"%s\" of type %s from %s", m.Document.FileName, m.Document.MIME, m.Sender.Username)
 
-		if m.Document.FileSize > 20*1024*1024 {
-			logger.Errorf("File is greater than 20 MB :(%d)", m.Document.FileSize)
-			return
-		}
-
 		srcPath := path.Join(os.TempDir(), m.Document.FileName)
 		dstPath := path.Join(os.TempDir(), "converted_"+m.Document.FileName)
 		defer os.Remove(srcPath)
 		defer os.Remove(dstPath)
 
-		logger.Infof("Downloading video to %s", srcPath)
+		logger.Infof("Downloading video %s", m.Document.File.FileID)
 		err := bot.Download(&m.Document.File, srcPath)
 		if err != nil {
 			logger.Error(err)
-			return
+			// Check FilePath for local bot server
+			if len(m.Document.FilePath) > 0 {
+				logger.Warning("Fallback to local FilePath ", m.Document.FilePath)
+				srcPath = m.Document.FilePath
+			} else {
+				return
+			}
 		}
 
 		logger.Info("Video downloaded")
