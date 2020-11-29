@@ -37,7 +37,7 @@ jobs:
         token: ${{secrets.github_token}}
 
     - name: Setup tag
-      run: echo "::set-env name=TAG::0.3.$BUILD_NUMBER"
+      run: echo "::set-env name=TAG::0.4.$BUILD_NUMBER"
     
     - name: Build docker container
       run: |
