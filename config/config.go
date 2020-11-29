@@ -24,7 +24,7 @@ func Get() *Config {
 
 	reportChatID, err := strconv.ParseInt(os.Getenv("ADMIN_CHAT_ID"), 10, 64)
 	if err != nil {
-		panic(err)
+		panic("ADMIN_CHAT_ID required")
 	}
 
 	debug, err := strconv.ParseBool(os.Getenv("DEV"))
@@ -34,7 +34,7 @@ func Get() *Config {
 
 	workingDir := os.Getenv("WORKING_DIR")
 	if len(workingDir) == 0 {
-		workingDir = "data"
+		workingDir = "pullanusbot-data"
 	}
 
 	c := &Config{
