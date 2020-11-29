@@ -94,6 +94,7 @@ func setupBot(token string) {
 	bot, err = tb.NewBot(tb.Settings{
 		Token:  token,
 		Poller: poller,
+		URL:    os.Getenv("API_URL"),
 	})
 
 	if err != nil {
