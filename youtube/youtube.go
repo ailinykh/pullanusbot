@@ -92,7 +92,7 @@ func (y *Youtube) processURL(url string, m *tb.Message) {
 	// _, err = bot.Send(m.Chat, caption, opts)
 	if err != nil {
 		logger.Error(err)
-		logger.Infof("upload image %s", thumb.URL)
+		logger.Infof("downloading %s", thumb.URL)
 
 		filepath := path.Join(os.TempDir(), "youtube-"+video.ID+".jpg")
 		defer os.Remove(filepath)
@@ -102,6 +102,7 @@ func (y *Youtube) processURL(url string, m *tb.Message) {
 			logger.Error(err)
 		}
 
+		logger.Infof("send as image %s", filepath)
 		file = &tb.Photo{File: tb.FromDisk(filepath), Width: thumb.Width, Height: thumb.Height, Caption: caption}
 		_, err = file.Send(bot.(*tb.Bot), m.Chat, opts)
 		if err != nil {
@@ -111,7 +112,6 @@ func (y *Youtube) processURL(url string, m *tb.Message) {
 }
 
 func (y *Youtube) handleDlCb(c *tb.Callback) {
-	bot.Respond(c, &tb.CallbackResponse{})
 	data := strings.Split(c.Data, "|")
 	logger.Infof("%#v", data)
 
@@ -121,6 +121,7 @@ func (y *Youtube) handleDlCb(c *tb.Callback) {
 		if err != nil {
 			logger.Error(err)
 		}
+		bot.Respond(c, &tb.CallbackResponse{})
 		return
 	}
 
@@ -130,6 +131,7 @@ func (y *Youtube) handleDlCb(c *tb.Callback) {
 	if err != nil {
 		logger.Error(err)
 		bot.Edit(c.Message, &tb.Photo{File: c.Message.Photo.File, Caption: err.Error()})
+		bot.Respond(c, &tb.CallbackResponse{})
 		return
 	}
 
@@ -139,9 +141,11 @@ func (y *Youtube) handleDlCb(c *tb.Callback) {
 	_, err = bot.Edit(c.Message, &tb.Photo{File: c.Message.Photo.File, Caption: caption}, opts)
 	if err != nil {
 		logger.Error(err)
+		bot.Respond(c, &tb.CallbackResponse{})
 		return
 	}
 
+	bot.Respond(c, &tb.CallbackResponse{})
 	y.uploadVideo(video, formatID, c.Message)
 }
 
