@@ -93,9 +93,15 @@ func (y *Youtube) processURL(url string, m *tb.Message) {
 	if err != nil {
 		logger.Error(err)
 		logger.Infof("upload image %s", thumb.URL)
+
 		filepath := path.Join(os.TempDir(), "youtube-"+video.ID+".jpg")
 		defer os.Remove(filepath)
-		downloadFile(filepath, thumb.URL)
+
+		err = downloadFile(filepath, thumb.URL)
+		if err != nil {
+			logger.Error(err)
+		}
+
 		file = &tb.Photo{File: tb.FromDisk(filepath), Width: thumb.Width, Height: thumb.Height, Caption: caption}
 		_, err = file.Send(bot.(*tb.Bot), m.Chat, opts)
 		if err != nil {
