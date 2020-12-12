@@ -13,6 +13,7 @@ import (
 	"pullanusbot/info"
 	i "pullanusbot/interfaces"
 	"pullanusbot/link"
+	"pullanusbot/publisher"
 	"pullanusbot/report"
 	"pullanusbot/smsreg"
 	"pullanusbot/telegraph"
@@ -63,6 +64,7 @@ func main() {
 		&converter.Converter{},
 		&info.Info{},
 		&link.Link{},
+		&publisher.Publisher{},
 		&report.Report{},
 		&smsreg.SmsReg{},
 		&telegraph.Telegraph{},
@@ -78,6 +80,14 @@ func main() {
 		for _, adapter := range adapters {
 			if handler, ok := adapter.(i.TextMessageHandler); ok {
 				handler.HandleTextMessage(m)
+			}
+		}
+	})
+
+	bot.Handle(tb.OnPhoto, func(m *tb.Message) {
+		for _, adapter := range adapters {
+			if handler, ok := adapter.(i.PhotoHandler); ok {
+				handler.HandlePhoto(m)
 			}
 		}
 	})
