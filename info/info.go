@@ -3,6 +3,7 @@ package info
 import (
 	"fmt"
 	i "pullanusbot/interfaces"
+	"strings"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 	"gorm.io/gorm"
@@ -28,6 +29,39 @@ func (i *Info) proxy(m *tb.Message) {
 }
 
 func (i *Info) info(m *tb.Message) {
-	info := fmt.Sprintf("💬 Chat\nID: *%d*\nTitle: *%s*\nType: *%s*\n\n👤 User\nID: *%d*\nFirst: *%s*\nLast: *%s*\n", m.Chat.ID, m.Chat.Title, m.Chat.Type, m.Sender.ID, m.Sender.FirstName, m.Sender.LastName)
-	bot.Send(m.Chat, info, &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+	info := []string{
+		"💬 Chat",
+		fmt.Sprintf("ID: *%d*", m.Chat.ID),
+		fmt.Sprintf("Title: *%s*", m.Chat.Title),
+		fmt.Sprintf("Type: *%s*", m.Chat.Type),
+		"",
+		"👤 Sender",
+		fmt.Sprintf("ID: *%d*", m.Sender.ID),
+		fmt.Sprintf("First: *%s*", m.Sender.FirstName),
+		fmt.Sprintf("Last: *%s*", m.Sender.LastName),
+		"",
+	}
+
+	if m.ReplyTo != nil {
+		if m.ReplyTo.OriginalChat != nil {
+			info = append(info,
+				"💬 OriginalChat",
+				fmt.Sprintf("ID: *%d*", m.ReplyTo.OriginalChat.ID),
+				fmt.Sprintf("Title: *%s*", m.ReplyTo.OriginalChat.Title),
+				fmt.Sprintf("Type: *%s*", m.ReplyTo.OriginalChat.Type),
+				"",
+			)
+		}
+		if m.ReplyTo.OriginalSender != nil {
+			info = append(info,
+				"👤 OriginalSender",
+				fmt.Sprintf("ID: *%d*", m.ReplyTo.OriginalSender.ID),
+				fmt.Sprintf("First: *%s*", m.ReplyTo.OriginalSender.FirstName),
+				fmt.Sprintf("Last: *%s*", m.ReplyTo.OriginalSender.LastName),
+				"",
+			)
+		}
+	}
+
+	bot.Send(m.Chat, strings.Join(info, "\n"), &tb.SendOptions{ParseMode: tb.ModeMarkdown})
 }
