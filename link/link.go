@@ -30,7 +30,7 @@ type Link struct {
 // Setup all nesessary command handlers
 func (l *Link) Setup(b i.Bot, conn *gorm.DB) {
 	bot = b
-	logger.Info("Successfully initialized")
+	logger.Info("successfully initialized")
 }
 
 // HandleTextMessage is an i.TextMessageHandler interface implementation

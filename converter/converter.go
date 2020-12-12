@@ -26,7 +26,7 @@ type Converter struct {
 func (c *Converter) Setup(b i.Bot, conn *gorm.DB) {
 	bot = b
 	bot.Handle(tb.OnDocument, c.checkMessage)
-	logger.Info("Successfully initialized")
+	logger.Info("successfully initialized")
 }
 
 func (c *Converter) checkMessage(m *tb.Message) {

@@ -32,7 +32,7 @@ type Twitter struct {
 // Setup all nesessary command handlers
 func (*Twitter) Setup(b i.Bot, conn *gorm.DB) {
 	bot = b
-	logger.Info("Successfully initialized")
+	logger.Info("successfully initialized")
 }
 
 // HandleTextMessage is an i.TextMessageHandler interface implementation

@@ -29,7 +29,7 @@ type Youtube struct {
 func (y *Youtube) Setup(b i.Bot, conn *gorm.DB) {
 	bot = b
 	bot.Handle("/yt", y.processMessage)
-	logger.Info("Successfully initialized")
+	logger.Info("successfully initialized")
 }
 
 // HandleTextMessage is an i.TextMessageHandler interface implementation

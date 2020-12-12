@@ -38,7 +38,7 @@ func (s *SmsReg) Setup(b i.Bot, conn *gorm.DB) {
 	client = NewClient(key)
 
 	bot.Handle("/sms", s.start)
-	logger.Info("Successfully initialized")
+	logger.Info("successfully initialized")
 }
 
 func (s *SmsReg) start(m *tb.Message) {
