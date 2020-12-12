@@ -28,3 +28,8 @@ type IBotAdapter interface {
 type TextMessageHandler interface {
 	HandleTextMessage(*tb.Message)
 }
+
+// PhotoHandler is interface to receive `photos`
+type PhotoHandler interface {
+	HandlePhoto(*tb.Message)
+}

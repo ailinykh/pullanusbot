@@ -33,11 +33,11 @@ type Telegraph struct {
 // Setup all nesessary command handlers
 func (t *Telegraph) Setup(b i.Bot, conn *gorm.DB) {
 	bot = b
-	bot.Handle(tb.OnPhoto, t.upload)
-	logger.Info("Successfully initialized")
+	logger.Info("successfully initialized")
 }
 
-func (t *Telegraph) upload(m *tb.Message) {
+// HandlePhoto is an i.PhotoHandler interface implementation
+func (t *Telegraph) HandlePhoto(m *tb.Message) {
 	if !m.Private() {
 		return
 	}
