@@ -58,13 +58,17 @@ func (p *Publisher) Setup(b i.Bot, conn *gorm.DB) {
 
 // HandlePhoto is an i.PhotoHandler interface implementation
 func (p *Publisher) HandlePhoto(m *tb.Message) {
-	if m.Sender.ID != p.userID || m.Chat.ID != p.chatID {
+	if m.Chat.ID != p.chatID || m.Sender.ID != p.userID {
 		return
 	}
 	p.photoChan <- m
 }
 
 func (p *Publisher) loh666(m *tb.Message) {
+	if m.Chat.ID != p.chatID {
+		return
+	}
+
 	const timeount = 30 // seconds before message dissapears
 	switch count := len(p.actual); count {
 	case 0:
