@@ -20,9 +20,8 @@ type Publisher struct {
 	chatID int64
 	userID int
 
-	photoChan    chan tb.Message
-	requestChan  chan tb.Message
-	disposalChan chan tb.Message
+	photoChan   chan tb.Message
+	requestChan chan tb.Message
 }
 
 // Setup all nesessary command handlers
@@ -42,12 +41,10 @@ func (p *Publisher) Setup(b i.Bot, conn *gorm.DB) {
 	p.userID = userID
 	p.photoChan = make(chan tb.Message)
 	p.requestChan = make(chan tb.Message)
-	p.disposalChan = make(chan tb.Message)
 	bot = b
 	bot.Handle("/loh666", p.loh666)
 
-	go p.startListener()
-	go p.startDisposal()
+	go p.runLoop()
 
 	logger.Info("successfully initialized")
 }
@@ -69,9 +66,19 @@ func (p *Publisher) loh666(m *tb.Message) {
 	p.requestChan <- *m
 }
 
-func (p *Publisher) startListener() {
+func (p *Publisher) runLoop() {
+	const timeout = 30 // seconds before message dissapears
 	photos := []string{}
 	queue := []string{}
+
+	disposal := func(m tb.Message) {
+		time.Sleep(timeout * time.Second)
+		logger.Infof("disposing %d %d", m.Chat.ID, m.ID)
+		err := bot.Delete(&m)
+		if err != nil {
+			logger.Error(err)
+		}
+	}
 
 	for {
 		select {
@@ -97,7 +104,7 @@ func (p *Publisher) startListener() {
 				if err != nil {
 					logger.Error(err)
 				} else {
-					p.disposalChan <- *sent
+					go disposal(*sent)
 				}
 			default:
 				logger.Infof("have %d actual photos", count)
@@ -111,27 +118,10 @@ func (p *Publisher) startListener() {
 					logger.Error(err)
 				} else {
 					for _, m := range sent {
-						p.disposalChan <- m
+						go disposal(m)
 					}
 				}
 			}
-		}
-	}
-}
-
-func (p *Publisher) startDisposal() {
-	const timeout = 30 // seconds before message dissapears
-	for {
-		select {
-		case m := <-p.disposalChan:
-			logger.Infof("disposing %d %d", m.Chat.ID, m.ID)
-			go func(m tb.Message) {
-				time.Sleep(timeout * time.Second)
-				err := bot.Delete(&m)
-				if err != nil {
-					logger.Error(err)
-				}
-			}(m)
 		}
 	}
 }
