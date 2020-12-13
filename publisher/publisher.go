@@ -17,22 +17,16 @@ var (
 
 // Publisher is ...
 type Publisher struct {
-	chanID int64
 	chatID int64
 	userID int
 
-	photoChan chan *tb.Message
-	actual    []tb.Message
+	photoChan    chan tb.Message
+	requestChan  chan tb.Message
+	disposalChan chan tb.Message
 }
 
 // Setup all nesessary command handlers
 func (p *Publisher) Setup(b i.Bot, conn *gorm.DB) {
-	chanID, err := strconv.ParseInt(os.Getenv("PUBLISER_CHANNEL_ID"), 10, 64)
-	if err != nil {
-		logger.Error("PUBLISER_CHANNEL_ID not set")
-		return
-	}
-
 	chatID, err := strconv.ParseInt(os.Getenv("PUBLISER_CHAT_ID"), 10, 64)
 	if err != nil {
 		logger.Error("PUBLISER_CHAT_ID not set")
@@ -44,14 +38,16 @@ func (p *Publisher) Setup(b i.Bot, conn *gorm.DB) {
 		logger.Error("PUBLISER_USER_ID not set")
 		return
 	}
-	p.chanID = chanID
 	p.chatID = chatID
 	p.userID = userID
-	p.photoChan = make(chan *tb.Message)
+	p.photoChan = make(chan tb.Message)
+	p.requestChan = make(chan tb.Message)
+	p.disposalChan = make(chan tb.Message)
 	bot = b
 	bot.Handle("/loh666", p.loh666)
 
-	go p.startLoop()
+	go p.startListener()
+	go p.startDisposal()
 
 	logger.Info("successfully initialized")
 }
@@ -61,7 +57,8 @@ func (p *Publisher) HandlePhoto(m *tb.Message) {
 	if m.Chat.ID != p.chatID || m.Sender.ID != p.userID {
 		return
 	}
-	p.photoChan <- m
+
+	p.photoChan <- *m
 }
 
 func (p *Publisher) loh666(m *tb.Message) {
@@ -69,85 +66,72 @@ func (p *Publisher) loh666(m *tb.Message) {
 		return
 	}
 
-	const timeount = 30 // seconds before message dissapears
-	switch count := len(p.actual); count {
-	case 0:
-		bot.Send(m.Chat, "I have nothing for you comrade major")
-	case 1:
-		logger.Info("have one actual photo")
-		sent, err := bot.Send(m.Chat, p.actual[0].Photo)
-		if err != nil {
-			logger.Error(err)
-		} else {
-			time.Sleep(time.Duration(timeount) * time.Second)
-			bot.Delete(sent)
-		}
-	default:
-		logger.Infof("have %d actual photos", count)
-		album := tb.Album{}
-		for _, m := range p.actual {
-			album = append(album, m.Photo)
-		}
-		sent, err := bot.SendAlbum(m.Chat, album)
-		if err != nil {
-			logger.Error(err)
-		} else {
-			time.Sleep(time.Duration(timeount) * time.Second)
-			for _, m := range sent {
-				bot.Delete(&m)
+	p.requestChan <- *m
+}
+
+func (p *Publisher) startListener() {
+	photos := []string{}
+	queue := []string{}
+
+	for {
+		select {
+		case m := <-p.photoChan:
+			logger.Infof("got album %s photo %s", m.AlbumID, m.Photo.FileID)
+			queue = append(queue, m.Photo.FileID)
+
+		case <-time.After(1 * time.Second):
+			if len(queue) > 0 {
+				logger.Infof("had %d actual photo(s)", len(queue))
+				photos = queue
+				queue = []string{}
+			}
+
+		case m := <-p.requestChan:
+			switch count := len(photos); count {
+			case 0:
+				bot.Send(m.Chat, "I have nothing for you comrade major")
+			case 1:
+				logger.Info("have one actual photo")
+				photo := &tb.Photo{File: tb.File{FileID: photos[0]}}
+				sent, err := bot.Send(m.Chat, photo)
+				if err != nil {
+					logger.Error(err)
+				} else {
+					p.disposalChan <- *sent
+				}
+			default:
+				logger.Infof("have %d actual photos", count)
+				album := tb.Album{}
+				for _, p := range photos {
+					photo := &tb.Photo{File: tb.File{FileID: p}}
+					album = append(album, photo)
+				}
+				sent, err := bot.SendAlbum(m.Chat, album)
+				if err != nil {
+					logger.Error(err)
+				} else {
+					for _, m := range sent {
+						p.disposalChan <- m
+					}
+				}
 			}
 		}
 	}
 }
 
-func (p *Publisher) startLoop() {
-	queue := map[string][]*tb.Message{}
-
+func (p *Publisher) startDisposal() {
+	const timeout = 30 // seconds before message dissapears
 	for {
 		select {
-		case m := <-p.photoChan:
-			logger.Infof("got album: '%s' photo '%s'", m.AlbumID, m.Photo.FileID)
-			key := m.AlbumID
-			if key == "" {
-				key = m.Photo.UniqueID
-			}
-			queue[key] = append(queue[key], m)
-
-		case <-time.After(1 * time.Second):
-			for _, messages := range queue {
-				if len(messages) > 1 {
-					album := tb.Album{}
-					// No reason to sort it cause the Unixtime is
-					// always the same for every Photo in Album
-					// sort.Slice(messages, func(i, j int) bool {
-					// 	return messages[i].Unixtime > messages[j].Unixtime
-					// })
-					for _, m := range messages {
-						album = append(album, m.Photo)
-					}
-					var err error
-					p.actual, err = bot.SendAlbum(&tb.Chat{ID: p.chanID}, album)
-					if err != nil {
-						logger.Error(err)
-					} else {
-						logger.Info("album published")
-						for _, m := range messages {
-							bot.Delete(m)
-						}
-					}
-				} else {
-					m := messages[0]
-					sent, err := bot.Send(&tb.Chat{ID: p.chanID}, m.Photo)
-					if err != nil {
-						logger.Error(err)
-					} else {
-						logger.Info("photo published")
-						p.actual = []tb.Message{*sent}
-						bot.Delete(m)
-					}
+		case m := <-p.disposalChan:
+			logger.Infof("disposing %d %d", m.Chat.ID, m.ID)
+			go func(m tb.Message) {
+				time.Sleep(timeout * time.Second)
+				err := bot.Delete(&m)
+				if err != nil {
+					logger.Error(err)
 				}
-			}
-			queue = map[string][]*tb.Message{}
+			}(m)
 		}
 	}
 }
