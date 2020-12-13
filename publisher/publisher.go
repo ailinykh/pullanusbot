@@ -106,37 +106,43 @@ func (p *Publisher) startLoop() {
 	for {
 		select {
 		case m := <-p.photoChan:
-			if m.AlbumID == "" {
-				sent, err := m.Photo.Send(bot.(*tb.Bot), &tb.Chat{ID: p.chanID}, &tb.SendOptions{})
-				if err != nil {
-					logger.Error(err)
-				} else {
-					logger.Info("photo published")
-					p.actual = []tb.Message{*sent}
-					bot.Delete(m)
-				}
-			} else {
-				queue[m.AlbumID] = append(queue[m.AlbumID], m)
+			logger.Infof("got album: '%s' photo '%s'", m.AlbumID, m.Photo.FileID)
+			key := m.AlbumID
+			if key == "" {
+				key = m.Photo.UniqueID
 			}
+			queue[key] = append(queue[key], m)
 
 		case <-time.After(1 * time.Second):
 			for _, messages := range queue {
-				album := tb.Album{}
-				// No reason to sort it cause the Unixtime is
-				// always the same for every Photo in Album
-				// sort.Slice(messages, func(i, j int) bool {
-				// 	return messages[i].Unixtime > messages[j].Unixtime
-				// })
-				for _, m := range messages {
-					album = append(album, m.Photo)
-				}
-				var err error
-				p.actual, err = bot.SendAlbum(&tb.Chat{ID: p.chanID}, album)
-				if err != nil {
-					logger.Error(err)
-				} else {
-					logger.Info("album published")
+				if len(messages) > 1 {
+					album := tb.Album{}
+					// No reason to sort it cause the Unixtime is
+					// always the same for every Photo in Album
+					// sort.Slice(messages, func(i, j int) bool {
+					// 	return messages[i].Unixtime > messages[j].Unixtime
+					// })
 					for _, m := range messages {
+						album = append(album, m.Photo)
+					}
+					var err error
+					p.actual, err = bot.SendAlbum(&tb.Chat{ID: p.chanID}, album)
+					if err != nil {
+						logger.Error(err)
+					} else {
+						logger.Info("album published")
+						for _, m := range messages {
+							bot.Delete(m)
+						}
+					}
+				} else {
+					m := messages[0]
+					sent, err := bot.Send(&tb.Chat{ID: p.chanID}, m.Photo)
+					if err != nil {
+						logger.Error(err)
+					} else {
+						logger.Info("photo published")
+						p.actual = []tb.Message{*sent}
 						bot.Delete(m)
 					}
 				}
