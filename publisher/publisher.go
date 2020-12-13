@@ -67,12 +67,18 @@ func (p *Publisher) loh666(m *tb.Message) {
 }
 
 func (p *Publisher) runLoop() {
-	const timeout = 30 // seconds before message dissapears
 	photos := []string{}
 	queue := []string{}
 
-	disposal := func(m tb.Message) {
-		time.Sleep(timeout * time.Second)
+	disposal := func(m tb.Message, args ...interface{}) {
+		timeout := 30 // default timeout in seconds before message dissapears
+		for _, arg := range args {
+			switch opt := arg.(type) {
+			case int:
+				timeout = opt
+			}
+		}
+		time.Sleep(time.Duration(timeout) * time.Second)
 		logger.Infof("disposing %d %d", m.Chat.ID, m.ID)
 		err := bot.Delete(&m)
 		if err != nil {
@@ -94,9 +100,13 @@ func (p *Publisher) runLoop() {
 			}
 
 		case m := <-p.requestChan:
+			go disposal(m, 1)
 			switch count := len(photos); count {
 			case 0:
-				bot.Send(m.Chat, "I have nothing for you comrade major")
+				_, err := bot.Send(m.Chat, "I have nothing for you comrade major")
+				if err != nil {
+					logger.Error(err)
+				}
 			case 1:
 				logger.Info("have one actual photo")
 				photo := &tb.Photo{File: tb.File{FileID: photos[0]}}
