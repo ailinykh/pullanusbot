@@ -15,29 +15,56 @@ import (
 
 	"github.com/google/logger"
 	tb "gopkg.in/tucnak/telebot.v2"
-	"gorm.io/gorm"
 )
 
-var (
-	bot    i.Bot
-	helper IHelper
-)
+var helper IHelper = Helper{}
 
 // Twitter ...
 type Twitter struct {
+	bot     i.Bot
+	matcher *regexp.Regexp
 }
 
+/*
+Ну так-то ничего вопиющего не вижу. Но по-хорошему надо разобраться с обработкой ошибок и логированием.
+
+Я бы не занимался обработкой ошибок в виде логирования в каждом методе, а оборачивал бы чем-то навроде
+как в этом мануале https://medium.com/nuances-of-programming/b0db0c2131e8 - то есть кроме непосредственных
+сообщений добавлял бы параметры и типизацию ошибки. И в итоге метод HandleTextMessage так же возвращал бы
+ошибку вызывающему. И там уже можно было бы логировать или как-то иначе обрабатывать ошибки. Это может
+пригодиться, например, если кроме бота этот функционал будет привязан например к REST где надо будет
+возвращать ошибку юзеру, а не просто логировать.
+
+По поводу логирования - по-хорошему в метод Setup нужно пробрасывать указатель на настроенный логгер.
+И я бы склонился к https://godoc.org/github.com/sirupsen/logrus - он хорошо себя зарекомендовал.
+Профит в том, что ты можешь пробросить какие-то кастомные парметры для логирования, чтобы потом
+было проще найти кто высрал сообщение. Ну типа:
+
+twitterLogger := logrus.WithField("serviceName", "twitter")
+
+и потом например инициализируешь twitter.Setup(bot, twitterLogger)
+И везде потом этот сервис будет срать указывая свой serviceName.
+
+Если ошибки не высирать в лог прям на месте, а отправлять выше - то в коде остаются только логирования
+уровня info или debug. И при случае можно будет включить логи только для конкретного сервиса, передав ему
+инстанс с более низким LogLevel, оставив для всего приложения целиком какой-нибудь Warning level - будет
+легче дебажить.
+
+Вообще надо бы конечно мне это всё закнотрибутить, может осмелюсь на выходных как раз.
+*/
+
 // Setup all nesessary command handlers
-func (*Twitter) Setup(b i.Bot, conn *gorm.DB) {
-	bot = b
-	helper = Helper{}
+func (t *Twitter) Setup(b i.Bot) {
+	// Выпилим из глобальной видимости в инстанс, иначе каждая инициализация переписывает переменную bot
+	t.bot = b
+	// Компиляция регулярки это дорогая операция, сделаем ее при инициализации, а не на каждый запрос
+	t.matcher, _ = regexp.Compile(`twitter\.com.+/(\d+)\S*$`)
 	logger.Info("successfully initialized")
 }
 
 // HandleTextMessage is an i.TextMessageHandler interface implementation
 func (t *Twitter) HandleTextMessage(m *tb.Message) {
-	r, _ := regexp.Compile(`twitter\.com.+/(\d+)\S*$`)
-	match := r.FindStringSubmatch(m.Text)
+	match := t.matcher.FindStringSubmatch(m.Text)
 	if len(match) > 1 {
 		t.processTweet(match[1], m)
 	}
@@ -68,14 +95,15 @@ func (t *Twitter) processTweet(tweetID string, m *tb.Message) {
 	case 0:
 		t.sendText(tweet, m)
 	case 1:
-		if media[0].Type == "video" || media[0].Type == "animated_gif" {
+		switch media[0].Type {
+		case "video", "animated_gif":
 			t.sendVideo(media[0], tweet, m)
-		} else if media[0].Type == "photo" {
+		case "photo":
 			t.sendPhoto(media[0], tweet, m)
-		} else {
-			// Should not be there
+		default:
+			// Вопиюще
 			logger.Errorf("Unknown type: %s", media[0].Type)
-			bot.Send(m.Chat, fmt.Sprintf("Unknown type: %s", media[0].Type), &tb.SendOptions{ReplyTo: m})
+			t.bot.Send(m.Chat, fmt.Sprintf("Unknown type: %s", media[0].Type), &tb.SendOptions{ReplyTo: m})
 		}
 	default:
 		t.sendAlbum(media, tweet, m)
@@ -101,7 +129,7 @@ func (t *Twitter) processError(tweet Tweet, m *tb.Message) {
 
 	logger.Error(tweet.Errors)
 	logger.Info(tweet.Header)
-	bot.Send(m.Chat, fmt.Sprint(tweet.Errors), &tb.SendOptions{ReplyTo: m})
+	t.bot.Send(m.Chat, fmt.Sprint(tweet.Errors), &tb.SendOptions{ReplyTo: m})
 }
 
 func (t *Twitter) sendText(tweet Tweet, m *tb.Message) {
@@ -110,37 +138,37 @@ func (t *Twitter) sendText(tweet Tweet, m *tb.Message) {
 	for _, url := range tweet.Entities.Urls {
 		caption += "\n" + url.ExpandedURL
 	}
-	_, err := bot.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true})
+	_, err := t.bot.Send(m.Chat, caption, &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true})
 	if err != nil {
 		logger.Error(err)
-	} else {
-		t.deleteMessage(m)
+		return
 	}
+	t.deleteMessage(m)
 }
 
 func (t *Twitter) sendPhoto(media Media, tweet Tweet, m *tb.Message) {
 	file := &tb.Photo{File: tb.FromURL(media.MediaURL)}
 	file.Caption = helper.makeCaption(m, tweet)
 	logger.Infof("Sending as Photo %s", file.FileURL)
-	bot.Notify(m.Chat, tb.UploadingPhoto)
-	_, err := bot.Send(m.Chat, file, &tb.SendOptions{ParseMode: tb.ModeHTML})
+	t.bot.Notify(m.Chat, tb.UploadingPhoto)
+	_, err := t.bot.Send(m.Chat, file, &tb.SendOptions{ParseMode: tb.ModeHTML})
 	if err != nil {
 		logger.Error(err)
-	} else {
-		t.deleteMessage(m)
+		return
 	}
+	t.deleteMessage(m)
 }
 
 func (t *Twitter) sendAlbum(media []Media, tweet Tweet, m *tb.Message) {
 	logger.Infof("Sending as Album")
 	caption := helper.makeCaption(m, tweet)
-	bot.Notify(m.Chat, tb.UploadingPhoto)
-	_, err := bot.SendAlbum(m.Chat, helper.makeAlbum(media, caption))
+	t.bot.Notify(m.Chat, tb.UploadingPhoto)
+	_, err := t.bot.SendAlbum(m.Chat, helper.makeAlbum(media, caption))
 	if err != nil {
 		logger.Error(err)
-	} else {
-		t.deleteMessage(m)
+		return
 	}
+	t.deleteMessage(m)
 }
 
 func (t *Twitter) sendVideo(media Media, tweet Tweet, m *tb.Message) {
@@ -148,40 +176,40 @@ func (t *Twitter) sendVideo(media Media, tweet Tweet, m *tb.Message) {
 	caption := helper.makeCaption(m, tweet)
 	file.Caption = caption
 	logger.Infof("Sending as Video %s", file.FileURL)
-	bot.Notify(m.Chat, tb.UploadingVideo)
-	_, err := bot.Send(m.Chat, file, &tb.SendOptions{ParseMode: tb.ModeHTML})
-	if err != nil {
-		if strings.Contains(err.Error(), "failed to get HTTP URL content") || strings.Contains(err.Error(), "wrong file identifier/HTTP URL specified") {
-			// Try to upload file to telegram
-			logger.Info("Sending by uploading")
-
-			filename := path.Base(media.VideoInfo.best().URL)
-			filepath := path.Join(os.TempDir(), filename)
-			defer os.Remove(filepath)
-
-			err = u.DownloadFile(filepath, media.VideoInfo.best().URL)
-			if err != nil {
-				logger.Errorf("video download error: %v", err)
-				return
-			}
-
-			videofile, err := c.NewVideoFile(filepath)
-			if err != nil {
-				logger.Errorf("Can't create video file for %s, %v", filepath, err)
-				return
-			}
-			defer videofile.Dispose()
-			videofile.Upload(bot, m, caption, c.UploadFinishedCallback)
-		} else {
-			logger.Error(err)
-		}
-	} else {
+	t.bot.Notify(m.Chat, tb.UploadingVideo)
+	_, err := t.bot.Send(m.Chat, file, &tb.SendOptions{ParseMode: tb.ModeHTML})
+	if err == nil {
 		t.deleteMessage(m)
+		return
 	}
+	if !(strings.Contains(err.Error(), "failed to get HTTP URL content") || strings.Contains(err.Error(), "wrong file identifier/HTTP URL specified")) {
+		logger.Error(err)
+		return
+	}
+	// Try to upload file to telegram
+	logger.Info("Sending by uploading")
+
+	filename := path.Base(media.VideoInfo.best().URL)
+	filepath := path.Join(os.TempDir(), filename)
+	defer os.Remove(filepath)
+
+	err = u.DownloadFile(filepath, media.VideoInfo.best().URL)
+	if err != nil {
+		logger.Errorf("video download error: %v", err)
+		return
+	}
+
+	videofile, err := c.NewVideoFile(filepath)
+	if err != nil {
+		logger.Errorf("Can't create video file for %s, %v", filepath, err)
+		return
+	}
+	defer videofile.Dispose()
+	videofile.Upload(t.bot, m, caption, c.UploadFinishedCallback)
 }
 
-func (Twitter) deleteMessage(m *tb.Message) {
-	err := bot.Delete(m)
+func (t *Twitter) deleteMessage(m *tb.Message) {
+	err := t.bot.Delete(m)
 	if err != nil {
 		logger.Warningf("Can't delete original message: %v", err)
 	}

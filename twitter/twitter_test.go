@@ -14,6 +14,7 @@ import (
 
 var (
 	messages []tb.Message
+	bot      Bot
 )
 
 type Bot struct{}
@@ -87,6 +88,7 @@ func TestRateLimitErrorInvokesGetTweetAfterTimeout(t *testing.T) {
 func TestSendsTextAsText(t *testing.T) {
 	tearUp(t)
 	tw := Twitter{}
+	tw.Setup(bot)
 	tw.processTweet("single_text", &tb.Message{Sender: &tb.User{Username: ""}})
 	assert.Contains(t, messages[0].Text, "Happy Birthday, Go!")
 	assert.Nil(t, messages[0].Photo)
@@ -96,6 +98,7 @@ func TestSendsTextAsText(t *testing.T) {
 func TestSendsSingleImageAsImageWithCaption(t *testing.T) {
 	tearUp(t)
 	tw := Twitter{}
+	tw.Setup(bot)
 	tw.processTweet("image_and_text", &tb.Message{Sender: &tb.User{Username: ""}})
 	assert.Empty(t, messages[0].Text)
 	assert.Contains(t, messages[0].Photo.Caption, "dog had my")
@@ -105,6 +108,7 @@ func TestSendsSingleImageAsImageWithCaption(t *testing.T) {
 func TestSendsMultipleImagesAsAlbumCommand(t *testing.T) {
 	tearUp(t)
 	tw := Twitter{}
+	tw.Setup(bot)
 	tw.processTweet("multiple_images", &tb.Message{Sender: &tb.User{Username: ""}})
 	assert.Len(t, messages, 3)
 }
@@ -112,6 +116,7 @@ func TestSendsMultipleImagesAsAlbumCommand(t *testing.T) {
 func TestSendsGIFAsVideoWithCaption(t *testing.T) {
 	tearUp(t)
 	tw := Twitter{}
+	tw.Setup(bot)
 	tw.processTweet("gif_and_text", &tb.Message{Sender: &tb.User{Username: ""}})
 	assert.Empty(t, messages[0].Text)
 	assert.Contains(t, messages[0].Video.Caption, "Telegram")
@@ -121,6 +126,7 @@ func TestSendsGIFAsVideoWithCaption(t *testing.T) {
 func TestSendsVideoAsVideoWithCaption(t *testing.T) {
 	tearUp(t)
 	tw := Twitter{}
+	tw.Setup(bot)
 	tw.processTweet("video_and_text", &tb.Message{Sender: &tb.User{Username: ""}})
 	assert.Empty(t, messages[0].Text)
 	assert.Contains(t, messages[0].Video.Caption, "Space_Station in low-Earth orbit this year")

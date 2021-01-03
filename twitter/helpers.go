@@ -24,9 +24,10 @@ type (
 	}
 )
 
-func (h Helper) getTweet(tweetID string) (Tweet, error) {
+func (Helper) getTweet(tweetID string) (Tweet, error) {
 	client := http.DefaultClient
 	req, _ := http.NewRequest("GET", fmt.Sprintf("https://api.twitter.com/1.1/statuses/show.json?id=%s&tweet_mode=extended", tweetID), nil)
+	// Не ссыкотно в открытом репозитории хранить?
 	req.Header.Add("Authorization", "Bearer AAAAAAAAAAAAAAAAAAAAAPYXBAAAAAAACLXUNDekMxqa8h%2F40K4moUkGsoc%3DTYfbDKbT3jJPCEVnMYqilB28NHfOPqkca3qaAxGfsyKCs0wRbw")
 	res, err := client.Do(req)
 	if err != nil {
@@ -48,7 +49,7 @@ func (h Helper) getTweet(tweetID string) (Tweet, error) {
 	return tweet, err
 }
 
-func (h Helper) makeAlbum(media []Media, caption string) tb.Album {
+func (Helper) makeAlbum(media []Media, caption string) tb.Album {
 	var photo *tb.Photo
 	var album = tb.Album{}
 
@@ -64,7 +65,7 @@ func (h Helper) makeAlbum(media []Media, caption string) tb.Album {
 	return album
 }
 
-func (h Helper) makeCaption(m *tb.Message, tweet Tweet) string {
+func (Helper) makeCaption(m *tb.Message, tweet Tweet) string {
 	re := regexp.MustCompile(`\s?http\S+$`)
 	text := re.ReplaceAllString(tweet.FullText, "")
 	return fmt.Sprintf("<a href='https://twitter.com/%s/status/%s'>🐦</a> <b>%s</b> <i>(by %s)</i>\n%s", tweet.User.ScreenName, tweet.ID, tweet.User.Name, m.Sender.Username, text)
