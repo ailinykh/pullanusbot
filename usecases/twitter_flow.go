@@ -12,21 +12,21 @@ type ITweetHandler interface {
 }
 
 // CreateTwitterFlow is a basic TwitterFlow factory
-func CreateTwitterFlow(l core.ILogger, mf core.IMediaFactory, sms core.ISendMediaStrategy) *TwitterFlow {
-	return &TwitterFlow{l, mf, sms}
+func CreateTwitterFlow(l core.ILogger, mediaFactory core.IMediaFactory, sendMediaStrategy core.ISendMediaStrategy) *TwitterFlow {
+	return &TwitterFlow{l, mediaFactory, sendMediaStrategy}
 }
 
 // TwitterFlow represents tweet processing logic
 type TwitterFlow struct {
-	l   core.ILogger
-	mf  core.IMediaFactory
-	sms core.ISendMediaStrategy
+	l                 core.ILogger
+	mediaFactory      core.IMediaFactory
+	sendMediaStrategy core.ISendMediaStrategy
 }
 
 // HandleTweet is a ITweetHandler protocol implementation
 func (flow *TwitterFlow) HandleTweet(tweetID string, message *core.Message, bot core.IBot) error {
 	flow.l.Infof("processing tweet %s", tweetID)
-	media, err := flow.mf.CreateMedia(tweetID)
+	media, err := flow.mediaFactory.CreateMedia(tweetID)
 	if err != nil {
 		flow.l.Error(err)
 		return err
@@ -38,7 +38,7 @@ func (flow *TwitterFlow) HandleTweet(tweetID string, message *core.Message, bot 
 		m.Caption = fmt.Sprintf("<a href='%s'>🐦</a> <b>%s</b> <i>(by %s)</i>\n%s", m.URL, m.Title, message.Sender.DisplayName(), text)
 	}
 
-	err = flow.sms.SendMedia(media, bot)
+	err = flow.sendMediaStrategy.SendMedia(media, bot)
 	if err != nil {
 		flow.l.Error(err)
 		return err
