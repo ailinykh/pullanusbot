@@ -3,15 +3,15 @@ package usecases
 import "github.com/ailinykh/pullanusbot/v2/core"
 
 // CreateImageFlow is a basic ImageFlow factory
-func CreateImageFlow(l core.ILogger, fu core.IFileUploader, id core.IImageDownloader) *ImageFlow {
-	return &ImageFlow{l, fu, id}
+func CreateImageFlow(l core.ILogger, fileUploader core.IFileUploader, imageDownloader core.IImageDownloader) *ImageFlow {
+	return &ImageFlow{l, fileUploader, imageDownloader}
 }
 
 // ImageFlow represents convert image to hotlink logic
 type ImageFlow struct {
-	l  core.ILogger
-	fu core.IFileUploader
-	id core.IImageDownloader
+	l               core.ILogger
+	fileUploader    core.IFileUploader
+	imageDownloader core.IImageDownloader
 }
 
 // HandleImage is a core.IImageHandler protocol implementation
@@ -20,14 +20,14 @@ func (flow *ImageFlow) HandleImage(image *core.Image, message *core.Message, bot
 		return nil
 	}
 
-	file, err := f.id.Download(image)
+	file, err := flow.imageDownloader.Download(image)
 	if err != nil {
 		return err
 	}
 	//TODO: memory management
 	defer file.Dispose()
 
-	url, err := flow.fu.Upload(file)
+	url, err := flow.fileUploader.Upload(file)
 	if err != nil {
 		return err
 	}
