@@ -15,7 +15,7 @@ type ImageFlow struct {
 }
 
 // HandleImage is a core.IImageHandler protocol implementation
-func (f *ImageFlow) HandleImage(image *core.Image, message *core.Message, bot core.IBot) error {
+func (flow *ImageFlow) HandleImage(image *core.Image, message *core.Message, bot core.IBot) error {
 	if !message.IsPrivate {
 		return nil
 	}
@@ -27,12 +27,12 @@ func (f *ImageFlow) HandleImage(image *core.Image, message *core.Message, bot co
 	//TODO: memory management
 	defer file.Dispose()
 
-	url, err := f.fu.Upload(file)
+	url, err := flow.fu.Upload(file)
 	if err != nil {
 		return err
 	}
 
-	f.l.Info(url)
+	flow.l.Info(url)
 	_, err = bot.SendText(url)
 	return err
 }
