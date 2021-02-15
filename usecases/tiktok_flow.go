@@ -7,16 +7,16 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateTikTokFlow(l core.ILogger, hc core.IHttpClient, mf core.IMediaFactory, sms core.ISendMediaStrategy) *TikTokFlow {
-	hc.SetHeader("Referrer", "https://www.tiktok.com/")
-	return &TikTokFlow{l, hc, mf, sms}
+func CreateTikTokFlow(l core.ILogger, httpClient core.IHttpClient, mediaFactory core.IMediaFactory, sendMediaStrategy core.ISendMediaStrategy) *TikTokFlow {
+	httpClient.SetHeader("Referrer", "https://www.tiktok.com/")
+	return &TikTokFlow{l, httpClient, mediaFactory, sendMediaStrategy}
 }
 
 type TikTokFlow struct {
-	l   core.ILogger
-	hc  core.IHttpClient
-	mf  core.IMediaFactory
-	sms core.ISendMediaStrategy
+	l                 core.ILogger
+	httpClient        core.IHttpClient
+	mediaFactory      core.IMediaFactory
+	sendMediaStrategy core.ISendMediaStrategy
 }
 
 // HandleText is a core.ITextHandler protocol implementation
@@ -38,7 +38,7 @@ func (flow *TikTokFlow) HandleText(message *core.Message, bot core.IBot) error {
 
 func (flow *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBot) error {
 	flow.l.Infof("processing %s", url)
-	fullURL, err := flow.hc.GetRedirectLocation(url)
+	fullURL, err := flow.httpClient.GetRedirectLocation(url)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (flow *TikTokFlow) handleURL(url string, message *core.Message, bot core.IB
 	originalURL := "https://www.tiktok.com/" + match[1] + "/video/" + match[2]
 	flow.l.Infof("original: %s", originalURL)
 
-	media, err := flow.mf.CreateMedia(originalURL)
+	media, err := flow.mediaFactory.CreateMedia(originalURL)
 	if err != nil {
 		if err.Error() == "Video currently unavailable" {
 			_, err := bot.SendText(originalURL + "\nV" + err.Error())
@@ -68,5 +68,5 @@ func (flow *TikTokFlow) handleURL(url string, message *core.Message, bot core.IB
 		m.Caption = fmt.Sprintf("<a href='%s'>🎵</a> <b>%s</b> (by %s)\n%s", url, m.Title, message.Sender.DisplayName(), m.Description)
 	}
 
-	return flow.sms.SendMedia(media, bot)
+	return flow.sendMediaStrategy.SendMedia(media, bot)
 }
