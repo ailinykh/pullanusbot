@@ -72,8 +72,8 @@ type FakeTweetHandler struct {
 	err    error
 }
 
-// HandleTweet is a ITweetHandler protocol implementation
-func (fth *FakeTweetHandler) HandleTweet(tweetID string, message *core.Message, bot core.IBot) error {
+// Process is a ITweetHandler protocol implementation
+func (fth *FakeTweetHandler) Process(tweetID string, message *core.Message, bot core.IBot) error {
 	fth.tweets = append(fth.tweets, tweetID)
 	return fth.err
 }

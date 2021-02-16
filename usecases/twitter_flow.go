@@ -8,7 +8,7 @@ import (
 )
 
 type ITweetHandler interface {
-	HandleTweet(string, *core.Message, core.IBot) error
+	Process(string, *core.Message, core.IBot) error
 }
 
 // CreateTwitterFlow is a basic TwitterFlow factory
@@ -23,8 +23,8 @@ type TwitterFlow struct {
 	sendMediaStrategy core.ISendMediaStrategy
 }
 
-// HandleTweet is a ITweetHandler protocol implementation
-func (flow *TwitterFlow) HandleTweet(tweetID string, message *core.Message, bot core.IBot) error {
+// Process is a ITweetHandler protocol implementation
+func (flow *TwitterFlow) Process(tweetID string, message *core.Message, bot core.IBot) error {
 	flow.l.Infof("processing tweet %s", tweetID)
 	media, err := flow.mediaFactory.CreateMedia(tweetID)
 	if err != nil {

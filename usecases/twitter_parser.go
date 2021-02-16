@@ -28,7 +28,7 @@ func (parser *TwitterParser) HandleText(message *core.Message, bot core.IBot) er
 	}
 
 	for _, m := range match {
-		err := parser.tweetHandler.HandleTweet(m[1], message, bot)
+		err := parser.tweetHandler.Process(m[1], message, bot)
 		if err != nil {
 			return err
 		}
