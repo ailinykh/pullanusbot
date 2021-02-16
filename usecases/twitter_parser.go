@@ -7,28 +7,28 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateTwitterParser(l core.ILogger, th ITweetHandler) *TwitterParser {
-	return &TwitterParser{l, th}
+func CreateTwitterParser(l core.ILogger, tweetHandler ITweetHandler) *TwitterParser {
+	return &TwitterParser{l, tweetHandler}
 }
 
 type TwitterParser struct {
-	l  core.ILogger
-	th ITweetHandler
+	l            core.ILogger
+	tweetHandler ITweetHandler
 }
 
 // HandleText is a core.ITextHandler protocol implementation
-func (tp *TwitterParser) HandleText(message *core.Message, bot core.IBot) error {
+func (parser *TwitterParser) HandleText(message *core.Message, bot core.IBot) error {
 	r := regexp.MustCompile(`https://twitter\.com\S+/(\d+)\S*`)
 	match := r.FindAllStringSubmatch(message.Text, -1)
 
 	if len(match) > 0 {
-		tp.l.Infof("Processing %s", match[0][0])
+		parser.l.Infof("Processing %s", match[0][0])
 	} else {
 		return fmt.Errorf("not implemented")
 	}
 
 	for _, m := range match {
-		err := tp.th.HandleTweet(m[1], message, bot)
+		err := parser.tweetHandler.HandleTweet(m[1], message, bot)
 		if err != nil {
 			return err
 		}
