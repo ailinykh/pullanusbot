@@ -12,30 +12,30 @@ import (
 )
 
 // CreateTwitterFlow is a basic TwitterFlow factory
-func CreateTwitterTimeout(l core.ILogger, th ITweetHandler) *TwitterTimeout {
-	return &TwitterTimeout{l, th, make(map[core.Message]core.Message)}
+func CreateTwitterTimeout(l core.ILogger, tweetHandler ITweetHandler) *TwitterTimeout {
+	return &TwitterTimeout{l, tweetHandler, make(map[core.Message]core.Message)}
 }
 
 // TwitterTimeout is a decorator for TwitterFlow to handle API timeouts gracefully
 type TwitterTimeout struct {
-	l       core.ILogger
-	th      ITweetHandler
-	replies map[core.Message]core.Message
+	l            core.ILogger
+	tweetHandler ITweetHandler
+	replies      map[core.Message]core.Message
 }
 
 // Process is a ITweetHandler protocol implementation
-func (tt *TwitterTimeout) Process(tweetID string, message *core.Message, bot core.IBot) error {
-	err := tt.th.Process(tweetID, message, bot)
+func (twitterTimeout *TwitterTimeout) Process(tweetID string, message *core.Message, bot core.IBot) error {
+	err := twitterTimeout.tweetHandler.Process(tweetID, message, bot)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Rate limit exceeded") {
-			timeout, err := tt.parseTimeout(err)
+			timeout, err := twitterTimeout.parseTimeout(err)
 			if err != nil {
 				return err
 			}
 
 			go func() {
 				time.Sleep(time.Duration(timeout) * time.Second)
-				_ = tt.Process(tweetID, message, bot)
+				_ = twitterTimeout.Process(tweetID, message, bot)
 			}()
 
 			minutes := timeout / 60
@@ -45,19 +45,19 @@ func (tt *TwitterTimeout) Process(tweetID string, message *core.Message, bot cor
 			if err != nil {
 				return err
 			}
-			tt.replies[*message] = *sent
+			twitterTimeout.replies[*message] = *sent
 			//TODO: delay original message removing somehow
 			return nil
 		}
-		tt.l.Error(err)
-	} else if sent, ok := tt.replies[*message]; ok {
+		twitterTimeout.l.Error(err)
+	} else if sent, ok := twitterTimeout.replies[*message]; ok {
 		_ = bot.Delete(&sent)
-		delete(tt.replies, *message)
+		delete(twitterTimeout.replies, *message)
 	}
 	return err
 }
 
-func (tt *TwitterTimeout) parseTimeout(err error) (int64, error) {
+func (twitterTimeout *TwitterTimeout) parseTimeout(err error) (int64, error) {
 	r := regexp.MustCompile(`(\-?\d+)$`)
 	match := r.FindStringSubmatch(err.Error())
 	if len(match) < 2 {
@@ -70,7 +70,7 @@ func (tt *TwitterTimeout) parseTimeout(err error) (int64, error) {
 	}
 
 	timeout := limit - time.Now().Unix()
-	tt.l.Infof("Twitter api timeout %d seconds", timeout)
+	twitterTimeout.l.Infof("Twitter api timeout %d seconds", timeout)
 	timeout = int64(math.Max(float64(timeout), 2)) // Twitter api timeout might be negative
 	return timeout, nil
 }
