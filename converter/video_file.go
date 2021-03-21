@@ -54,9 +54,9 @@ func NewVideoFile(path string) (*VideoFile, error) {
 
 	thumbpath := path + ".jpg"
 	cmd := fmt.Sprintf(`ffmpeg -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, path, streamInfo.scale(), thumbpath)
-	out, err := exec.Command("/bin/sh", "-c", cmd).Output()
+	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
-		logger.Error(out)
+		logger.Error(string(out))
 		logger.Error(err)
 		return nil, err
 	}

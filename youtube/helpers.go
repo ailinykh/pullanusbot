@@ -13,9 +13,9 @@ import (
 
 func getVideo(id string) (*Video, error) {
 	cmd := fmt.Sprintf(`youtube-dl -j %s`, id)
-	out, err := exec.Command("/bin/sh", "-c", cmd).Output()
+	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
-		logger.Error(cmd)
+		logger.Error(string(out))
 		logger.Error(err)
 		return nil, err
 	}

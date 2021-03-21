@@ -190,9 +190,10 @@ func (y *Youtube) uploadVideo(video *Video, formatID string, m *tb.Message) {
 				nextFilePath := fmt.Sprintf("%s-%d.mp4", filepath, n)
 				cmd := fmt.Sprintf(`ffmpeg -i %s -ss %d -fs %d %s`, filepath, duration, SizeLimit, nextFilePath)
 				logger.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
-				out, err := exec.Command("/bin/sh", "-c", cmd).Output()
+				out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 				if err != nil {
-					logger.Error(out, " - ", err)
+					logger.Error(string(out))
+					logger.Error(err)
 					return
 				}
 				nextVideoFile, err := c.NewVideoFile(nextFilePath)
