@@ -9,6 +9,8 @@
 *.dll
 *.so
 *.dylib
+*.db
+cover.txt
 
 # Test binary, built with `go test -c`
 *.test
