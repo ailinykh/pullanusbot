@@ -1,0 +1,43 @@
+version: '2'
+services:
+  bot:
+    # image: ailinykh/pullanusbot
+    build: .
+    container_name: pullanusbot
+    environment:
+      API_ID: 0
+      API_HASH: hash
+      BOT_TOKEN: token
+      ADMIN_CHAT_ID: 0
+      SMS_API_KEY: key
+      VPN_ADMIN_CHAT_ID: 0
+      # API_URL: http://localhost:8081
+    volumes:
+      - ./pullanusbot-data:/usr/local/share/pullanusbot-data
+      - ./ssh/bot/id_rsa:/root/.ssh/id_rsa
+      - ./ssh/bot/id_rsa.pub:/root/.ssh/id_rsa.pub
+    restart: always
+    networks:
+      - pullanusbot
+
+  openvpn:
+    cap_add:
+      - NET_ADMIN
+    # image: ailinykh/openvpn-ssh
+    build: ../../../Documents/openvpn-ssh
+    container_name: openvpn-ssh
+    environment:
+      EASYRSA_PASSIN: pass:test
+    ports:
+      - "1194:1194/udp"
+    restart: always
+    volumes:
+      - ./openvpn-data/conf:/etc/openvpn
+      - ./ssh/vpn/authorized_keys:/root/.ssh/authorized_keys
+      - ./ssh/vpn/id_rsa:/root/.ssh/id_rsa
+      - ./ssh/vpn/id_rsa.pub:/root/.ssh/id_rsa.pub
+    networks:
+      - pullanusbot
+
+networks:
+  pullanusbot:
