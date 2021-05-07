@@ -7,13 +7,13 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func CreateGameStorage(gameID int64, factory IPlayerFactory) GameStorage {
 	dbFile := path.Join(".", "pullanusbot.db")
-	// logger.Info("Using database: ", dbFile)
 	conn, err := gorm.Open(sqlite.Open(dbFile+"?cache=shared"), &gorm.Config{
-		// Logger: loger.Default.LogMode(loger.Error),
+		Logger: logger.Default.LogMode(logger.Error),
 	})
 	if err != nil {
 		log.Fatal(err)

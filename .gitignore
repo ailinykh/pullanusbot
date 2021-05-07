@@ -11,6 +11,7 @@
 *.dylib
 *.db
 cover.txt
+.env
 
 # Test binary, built with `go test -c`
 *.test

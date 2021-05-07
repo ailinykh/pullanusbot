@@ -3,14 +3,16 @@ package api
 import (
 	"time"
 
+	"github.com/ailinykh/pullanusbot/v2/core"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 type Telebot struct {
-	bot *tb.Bot
+	bot    *tb.Bot
+	logger core.ILogger
 }
 
-func CreateTelebot(token string) *Telebot {
+func CreateTelebot(token string, logger core.ILogger) *Telebot {
 	poller := tb.NewMiddlewarePoller(&tb.LongPoller{Timeout: 10 * time.Second}, func(upd *tb.Update) bool {
 		return true
 	})
@@ -25,7 +27,7 @@ func CreateTelebot(token string) *Telebot {
 		panic(err)
 	}
 
-	return &Telebot{bot}
+	return &Telebot{bot, logger}
 }
 
 func (t *Telebot) Run() {

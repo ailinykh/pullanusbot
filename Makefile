@@ -1,3 +1,5 @@
+-include .env
+
 .PHONY: test run build clean
 
 run: build
