@@ -17,12 +17,18 @@ func main() {
 
 	logger, close := createLogger()
 	defer close()
+
+	converter := infrastructure.CreateFfmpegConverter()
+	telebot := api.CreateTelebot(os.Getenv("BOT_TOKEN"), logger, converter)
+
 	localizer := infrastructure.GameLocalizer{}
 	game := use_cases.CreateGameFlow(localizer)
-	telebot := api.CreateTelebot(os.Getenv("BOT_TOKEN"), logger)
-
 	telebot.SetupGame(game)
+
 	telebot.SetupInfo()
+
+	video_flow := use_cases.CreateVideoFlow(logger, converter, converter)
+	telebot.SetupVideo(video_flow)
 	// Start endless loop
 	telebot.Run()
 }
