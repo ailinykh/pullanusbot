@@ -52,13 +52,13 @@ func (s *GameStorage) GetRounds() ([]core.Round, error) {
 }
 
 func (s *GameStorage) AddPlayer(player core.Player) error {
-	dbPlayer := s.playerFactory.Make(player.Username)
+	dbPlayer := s.playerFactory.CreatePlayer(player.Username)
 	s.conn.Create(&dbPlayer)
 	return nil
 }
 
 func (s *GameStorage) AddRound(round core.Round) error {
-	player := s.playerFactory.Make(round.Winner.Username)
+	player := s.playerFactory.CreatePlayer(round.Winner.Username)
 	dbRound := Round{
 		GameID:   s.gameID,
 		UserID:   player.UserID,

@@ -19,7 +19,7 @@ func (t *Telebot) SetupGame(g use_cases.GameFlow) {
 	})
 
 	t.bot.Handle("/pidoreg", func(m *tb.Message) {
-		text := g.Add(makePlayer(m), makeStorage(m))
+		text := g.Add(makePlayer(m), makeStorage(m, t))
 		t.bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeHTML})
 	})
 
@@ -29,7 +29,7 @@ func (t *Telebot) SetupGame(g use_cases.GameFlow) {
 		mutex.Lock()
 		defer mutex.Unlock()
 
-		messages := g.Play(makePlayer(m), makeStorage(m))
+		messages := g.Play(makePlayer(m), makeStorage(m, t))
 		if len(messages) > 1 {
 			for _, msg := range messages {
 				t.bot.Send(m.Chat, msg, &tb.SendOptions{ParseMode: tb.ModeHTML})
@@ -42,17 +42,17 @@ func (t *Telebot) SetupGame(g use_cases.GameFlow) {
 	})
 
 	t.bot.Handle("/pidorall", func(m *tb.Message) {
-		text := g.All(makeStorage(m))
+		text := g.All(makeStorage(m, t))
 		t.bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeHTML})
 	})
 
 	t.bot.Handle("/pidorstats", func(m *tb.Message) {
-		text := g.Stats(makeStorage(m))
+		text := g.Stats(makeStorage(m, t))
 		t.bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeHTML})
 	})
 
 	t.bot.Handle("/pidorme", func(m *tb.Message) {
-		text := g.Me(makePlayer(m), makeStorage(m))
+		text := g.Me(makePlayer(m), makeStorage(m, t))
 		t.bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeHTML})
 	})
 }
@@ -61,8 +61,7 @@ func makePlayer(m *tb.Message) core.Player {
 	return core.Player{Username: m.Sender.Username}
 }
 
-func makeStorage(m *tb.Message) core.IGameStorage {
-	factory := PlayerFactory{m}
-	storage := infrastructure.CreateGameStorage(m.Chat.ID, &factory)
+func makeStorage(m *tb.Message, t *Telebot) core.IGameStorage {
+	storage := infrastructure.CreateGameStorage(m.Chat.ID, &TelebotAdapter{m, t})
 	return &storage
 }

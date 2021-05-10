@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/ailinykh/pullanusbot/v2/core"
+	"github.com/ailinykh/pullanusbot/v2/infrastructure"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -26,4 +27,15 @@ func (a *TelebotAdapter) SendVideo(vf *core.VideoFile, caption string) error {
 func (a *TelebotAdapter) SendText(text string) error {
 	_, err := a.t.bot.Send(a.m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeHTML})
 	return err
+}
+
+func (a *TelebotAdapter) CreatePlayer(string) infrastructure.Player {
+	return infrastructure.Player{
+		GameID:       a.m.Chat.ID,
+		UserID:       a.m.Sender.ID,
+		FirstName:    a.m.Sender.FirstName,
+		LastName:     a.m.Sender.LastName,
+		Username:     a.m.Sender.Username,
+		LanguageCode: a.m.Sender.LanguageCode,
+	}
 }
