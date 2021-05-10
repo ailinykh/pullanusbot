@@ -31,7 +31,7 @@ func Test_RulesCommand_DeliversRulesInDifferentTranslations(t *testing.T) {
 func Test_Add_ReturnsErrorOnStorageError(t *testing.T) {
 	game, storage, _ := makeSUT()
 	storage.err = errors.New("Unexpected error")
-	player := core.Player{Username: "Faggot"}
+	player := &core.User{Username: "Faggot"}
 	message := game.Add(player, storage)
 
 	assert.Equal(t, message, storage.err.Error())
@@ -42,16 +42,16 @@ func Test_Add_AppendsPlayerInGameOnlyOnce(t *testing.T) {
 		"faggot_added_to_game":   "Player added",
 		"faggot_already_in_game": "Player already in game",
 	})
-	player := core.Player{Username: "Faggot"}
+	player := &core.User{Username: "Faggot"}
 
 	message := game.Add(player, storage)
 
-	assert.Equal(t, storage.players, []core.Player{player})
+	assert.Equal(t, storage.players, []*core.User{player})
 	assert.Equal(t, message, localizer.I18n("faggot_added_to_game"))
 
 	message = game.Add(player, storage)
 
-	assert.Equal(t, storage.players, []core.Player{player})
+	assert.Equal(t, storage.players, []*core.User{player})
 	assert.Equal(t, message, localizer.I18n("faggot_already_in_game"))
 }
 
@@ -59,7 +59,7 @@ func Test_Play_RespondsWithNoPlayers(t *testing.T) {
 	game, storage, localizer := makeSUT(LocalizerDict{
 		"faggot_no_players": "Nobody in game. So you win, %s!",
 	})
-	player := core.Player{Username: "Faggot"}
+	player := &core.User{Username: "Faggot"}
 	messages := game.Play(player, storage)
 	expected := []string{localizer.I18n("faggot_no_players", player.Username)}
 	assert.Equal(t, messages, expected)
@@ -69,7 +69,7 @@ func Test_Play_RespondsNotEnoughPlayers(t *testing.T) {
 	game, storage, localizer := makeSUT(LocalizerDict{
 		"faggot_not_enough_players": "Not enough players",
 	})
-	player := core.Player{Username: "Faggot"}
+	player := &core.User{Username: "Faggot"}
 	game.Add(player, storage)
 
 	messages := game.Play(player, storage)
@@ -85,8 +85,8 @@ func Test_Play_RespondsWinnerAlreadyKnown(t *testing.T) {
 		"faggot_game_3_0":     "3 %s",
 		"faggot_winner_known": "Winner already known %s",
 	})
-	player1 := core.Player{Username: "Faggot1"}
-	player2 := core.Player{Username: "Faggot2"}
+	player1 := &core.User{Username: "Faggot1"}
+	player2 := &core.User{Username: "Faggot2"}
 	game.Add(player1, storage)
 	game.Add(player2, storage)
 
@@ -117,11 +117,11 @@ func Test_Stats_RespondsWithDescendingResultsForCurrentYear(t *testing.T) {
 		"total_players:3",
 	}
 
-	player1 := core.Player{Username: "Faggot1"}
-	player2 := core.Player{Username: "Faggot2"}
-	player3 := core.Player{Username: "Faggot3"}
+	player1 := &core.User{Username: "Faggot1"}
+	player2 := &core.User{Username: "Faggot2"}
+	player3 := &core.User{Username: "Faggot3"}
 
-	storage.rounds = []core.Round{
+	storage.rounds = []*core.Round{
 		{Day: year + "-01-01", Winner: player2},
 		{Day: "2020-01-02", Winner: player3},
 		{Day: year + "-01-02", Winner: player3},
@@ -152,11 +152,11 @@ func Test_All_RespondsWithDescendingResultsForAllTime(t *testing.T) {
 		"total_players:3",
 	}
 
-	player1 := core.Player{Username: "Faggot1"}
-	player2 := core.Player{Username: "Faggot2"}
-	player3 := core.Player{Username: "Faggot3"}
+	player1 := &core.User{Username: "Faggot1"}
+	player2 := &core.User{Username: "Faggot2"}
+	player3 := &core.User{Username: "Faggot3"}
 
-	storage.rounds = []core.Round{
+	storage.rounds = []*core.Round{
 		{Day: "2021-01-01", Winner: player2},
 		{Day: "2020-01-02", Winner: player3},
 		{Day: "2020-01-02", Winner: player3},
@@ -175,10 +175,10 @@ func Test_Me_RespondsWithPersonalStat(t *testing.T) {
 		"faggot_me": "username:%s,scores:%d",
 	})
 
-	player1 := core.Player{Username: "Faggot1"}
-	player2 := core.Player{Username: "Faggot2"}
+	player1 := &core.User{Username: "Faggot1"}
+	player2 := &core.User{Username: "Faggot2"}
 
-	storage.rounds = []core.Round{
+	storage.rounds = []*core.Round{
 		{Day: "2021-01-01", Winner: player2},
 		{Day: "2021-01-05", Winner: player1},
 		{Day: "2021-01-06", Winner: player1},
@@ -196,7 +196,7 @@ func Test_Me_RespondsWithPersonalStat(t *testing.T) {
 
 func makeSUT(args ...interface{}) (*GameFlow, *GameStorageMock, *LocalizerMock) {
 	dict := LocalizerDict{}
-	storage := &GameStorageMock{players: []core.Player{}}
+	storage := &GameStorageMock{players: []*core.User{}}
 
 	for _, arg := range args {
 		switch opt := arg.(type) {
@@ -236,12 +236,12 @@ func (l *LocalizerMock) AllKeys() []string {
 // GameStorageMock
 
 type GameStorageMock struct {
-	players []core.Player
-	rounds  []core.Round
+	players []*core.User
+	rounds  []*core.Round
 	err     error
 }
 
-func (s *GameStorageMock) AddPlayer(player core.Player) error {
+func (s *GameStorageMock) AddPlayer(player *core.User) error {
 	if s.err != nil {
 		return s.err
 	}
@@ -250,15 +250,15 @@ func (s *GameStorageMock) AddPlayer(player core.Player) error {
 	return nil
 }
 
-func (s *GameStorageMock) GetPlayers() ([]core.Player, error) {
+func (s *GameStorageMock) GetPlayers() ([]*core.User, error) {
 	if s.err != nil {
-		return []core.Player{}, s.err
+		return []*core.User{}, s.err
 	}
 
 	return s.players, nil
 }
 
-func (s *GameStorageMock) AddRound(round core.Round) error {
+func (s *GameStorageMock) AddRound(round *core.Round) error {
 	if s.err != nil {
 		return s.err
 	}
@@ -267,9 +267,9 @@ func (s *GameStorageMock) AddRound(round core.Round) error {
 	return nil
 }
 
-func (s *GameStorageMock) GetRounds() ([]core.Round, error) {
+func (s *GameStorageMock) GetRounds() ([]*core.Round, error) {
 	if s.err != nil {
-		return []core.Round{}, s.err
+		return []*core.Round{}, s.err
 	}
 
 	return s.rounds, nil

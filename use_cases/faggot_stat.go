@@ -5,7 +5,7 @@ import (
 )
 
 type Stat struct {
-	Player core.Player
+	Player *core.User
 	Score  int
 }
 

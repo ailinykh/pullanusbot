@@ -30,7 +30,9 @@ func main() {
 	video_flow := use_cases.CreateVideoFlow(logger, converter, converter)
 	telebot.AddHandler(video_flow)
 
-	twitter_flow := use_cases.CreateTwitterFlow(logger)
+	file_downloader := infrastructure.CreateFileDownloader()
+	twitter_api := api.CreateTwitterAPI()
+	twitter_flow := use_cases.CreateTwitterFlow(logger, twitter_api, file_downloader, converter)
 	telebot.AddHandler(twitter_flow)
 	// telebot.SetupVideo(video_flow)
 	// Start endless loop

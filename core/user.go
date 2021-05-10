@@ -1,5 +1,5 @@
 package core
 
-type Player struct {
+type User struct {
 	Username string
 }

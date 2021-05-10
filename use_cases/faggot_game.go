@@ -23,7 +23,7 @@ func (flow *GameFlow) Rules() string {
 	return flow.l.I18n("faggot_rules")
 }
 
-func (flow *GameFlow) Add(player core.Player, storage core.IGameStorage) string {
+func (flow *GameFlow) Add(player *core.User, storage core.IGameStorage) string {
 	players, _ := storage.GetPlayers()
 	for _, p := range players {
 		if p == player {
@@ -40,7 +40,7 @@ func (flow *GameFlow) Add(player core.Player, storage core.IGameStorage) string 
 	return flow.l.I18n("faggot_added_to_game")
 }
 
-func (flow *GameFlow) Play(player core.Player, storage core.IGameStorage) []string {
+func (flow *GameFlow) Play(player *core.User, storage core.IGameStorage) []string {
 	players, _ := storage.GetPlayers()
 	switch len(players) {
 	case 0:
@@ -60,7 +60,7 @@ func (flow *GameFlow) Play(player core.Player, storage core.IGameStorage) []stri
 	}
 
 	winner := players[rand.Intn(len(players))]
-	round := core.Round{Day: day, Winner: winner}
+	round := &core.Round{Day: day, Winner: winner}
 	storage.AddRound(round)
 
 	phrases := make([]string, 0, 4)
@@ -125,7 +125,7 @@ func (flow *GameFlow) Stats(storage core.IGameStorage) string {
 	return strings.Join(messages, "\n")
 }
 
-func (flow *GameFlow) Me(player core.Player, storage core.IGameStorage) string {
+func (flow *GameFlow) Me(player *core.User, storage core.IGameStorage) string {
 	entries, _ := flow.getStat(storage)
 	score := 0
 	for _, e := range entries {

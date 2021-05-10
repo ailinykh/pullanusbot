@@ -1,8 +1,8 @@
 package core
 
 type IGameStorage interface {
-	GetPlayers() ([]Player, error)
-	GetRounds() ([]Round, error)
-	AddPlayer(Player) error
-	AddRound(Round) error
+	GetPlayers() ([]*User, error)
+	GetRounds() ([]*Round, error)
+	AddPlayer(*User) error
+	AddRound(*Round) error
 }

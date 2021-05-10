@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"sync"
@@ -37,7 +38,10 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 
 	bot.Handle(tb.OnText, func(m *tb.Message) {
 		for _, h := range telebot.textHandlers {
-			h.HandleText(m.Text, &TelebotAdapter{m, telebot})
+			err := h.HandleText(m.Text, makeUser(m), &TelebotAdapter{m, telebot})
+			if err != nil {
+				logger.Errorf("TextHandler %#v error: %s", h, err)
+			}
 		}
 	})
 
@@ -90,6 +94,8 @@ func (t *Telebot) AddHandler(handlers ...interface{}) {
 		t.bot.Handle(h, func(m *tb.Message) {
 			handlers[1].(core.ICommandHandler).HandleCommand(m.Text, &TelebotAdapter{m, t})
 		})
+	default:
+		panic(fmt.Sprintf("something wrong with %s", h))
 	}
 }
 

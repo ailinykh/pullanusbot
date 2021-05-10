@@ -2,5 +2,5 @@ package core
 
 type Round struct {
 	Day    string
-	Winner Player
+	Winner *User
 }
