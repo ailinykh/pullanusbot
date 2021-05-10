@@ -1,5 +1,7 @@
 package core
 
+import "os"
+
 type VideoFile struct {
 	Width     int
 	Height    int
@@ -9,4 +11,9 @@ type VideoFile struct {
 	FileName  string
 	FilePath  string
 	ThumbPath string
+}
+
+func (vf *VideoFile) Dispose() {
+	os.Remove(vf.FilePath)
+	os.Remove(vf.ThumbPath)
 }

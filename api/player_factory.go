@@ -19,3 +19,14 @@ func (p *PlayerFactory) Make(string) infrastructure.Player {
 		LanguageCode: p.m.Sender.LanguageCode,
 	}
 }
+
+// func makePlayer(m *tb.Message) infrastructure.Player {
+// 	return infrastructure.Player{
+// 		GameID:       m.Chat.ID,
+// 		UserID:       m.Sender.ID,
+// 		FirstName:    m.Sender.FirstName,
+// 		LastName:     m.Sender.LastName,
+// 		Username:     m.Sender.Username,
+// 		LanguageCode: m.Sender.LanguageCode,
+// 	}
+// }

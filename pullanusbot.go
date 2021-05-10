@@ -18,8 +18,7 @@ func main() {
 	logger, close := createLogger()
 	defer close()
 
-	converter := infrastructure.CreateFfmpegConverter()
-	telebot := api.CreateTelebot(os.Getenv("BOT_TOKEN"), logger, converter)
+	telebot := api.CreateTelebot(os.Getenv("BOT_TOKEN"), logger)
 
 	localizer := infrastructure.GameLocalizer{}
 	game := use_cases.CreateGameFlow(localizer)
@@ -27,8 +26,13 @@ func main() {
 
 	telebot.SetupInfo()
 
+	converter := infrastructure.CreateFfmpegConverter()
 	video_flow := use_cases.CreateVideoFlow(logger, converter, converter)
-	telebot.SetupVideo(video_flow)
+	telebot.AddHandler(video_flow)
+
+	twitter_flow := use_cases.CreateTwitterFlow(logger)
+	telebot.AddHandler(twitter_flow)
+	// telebot.SetupVideo(video_flow)
 	// Start endless loop
 	telebot.Run()
 }
