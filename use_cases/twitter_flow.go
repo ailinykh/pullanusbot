@@ -28,7 +28,7 @@ func (tf *TwitterFlow) HandleText(text string, author *core.User, bot core.IBot)
 	r := regexp.MustCompile(`twitter\.com.+/(\d+)\S*$`)
 	match := r.FindStringSubmatch(text)
 	if len(match) < 2 {
-		return errors.New("tweet not found")
+		return nil // no tweet
 	}
 	return tf.process(match[1], author, bot)
 }
