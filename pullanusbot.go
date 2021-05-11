@@ -34,13 +34,16 @@ func main() {
 	twitter_api := api.CreateTwitterAPI()
 	twitter_flow := use_cases.CreateTwitterFlow(logger, twitter_api, file_downloader, converter)
 	telebot.AddHandler(twitter_flow)
-	// telebot.SetupVideo(video_flow)
+
+	link_flow := use_cases.CreateLinkFlow(logger, file_downloader, converter, converter)
+	telebot.AddHandler(link_flow)
+
 	// Start endless loop
 	telebot.Run()
 }
 
 func createLogger() (core.ILogger, func()) {
-	lf, err := os.OpenFile("pullanusbot.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
+	lf, err := os.OpenFile("pullanusbot.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
 	if err != nil {
 		panic(err)
 	}
