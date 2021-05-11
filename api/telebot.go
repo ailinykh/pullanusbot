@@ -40,7 +40,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		for _, h := range telebot.textHandlers {
 			err := h.HandleText(m.Text, makeUser(m), &TelebotAdapter{m, telebot})
 			if err != nil {
-				logger.Errorf("TextHandler %#v error: %s", h, err)
+				logger.Error(err)
 			}
 		}
 	})

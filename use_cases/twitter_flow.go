@@ -103,6 +103,13 @@ func (tf *TwitterFlow) sendByUploading(media *core.Media, bot core.IBot) error {
 		return err
 	}
 
+	stat, err := os.Stat(filepath)
+	if err != nil {
+		return err
+	}
+
+	tf.l.Infof("File downloaded: %s %0.2fMB", filename, float64(stat.Size())/1024/1024)
+
 	vf, err := tf.vff.CreateVideoFile(filepath)
 	if err != nil {
 		tf.l.Errorf("Can't create video file for %s, %v", filepath, err)
