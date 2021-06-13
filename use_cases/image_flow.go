@@ -12,8 +12,8 @@ type ImageFlow struct {
 }
 
 // IImageHandler
-func (f *ImageFlow) HandleImage(file *core.File, bot core.IBot) error {
-	if !bot.IsPrivate() {
+func (f *ImageFlow) HandleImage(file *core.File, message core.Message, bot core.IBot) error {
+	if !message.IsPrivate {
 		return nil
 	}
 

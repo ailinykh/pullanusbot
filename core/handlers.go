@@ -13,5 +13,5 @@ type ITextHandler interface {
 }
 
 type IImageHandler interface {
-	HandleImage(*File, IBot) error
+	HandleImage(*File, Message, IBot) error
 }

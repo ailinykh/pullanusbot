@@ -93,7 +93,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 			h.HandleImage(&core.File{
 				Name: name,
 				Path: path,
-			}, &TelebotAdapter{m, telebot})
+			}, core.Message{ID: m.ID, IsPrivate: m.Private()}, &TelebotAdapter{m, telebot})
 		}
 	})
 
