@@ -6,7 +6,7 @@ import (
 )
 
 func makeVideoFile(vf *core.VideoFile, caption string) tb.Video {
-	video := tb.Video{File: tb.FromDisk(vf.FilePath)}
+	video := tb.Video{File: tb.FromDisk(vf.Path)}
 	video.Width = vf.Width
 	video.Height = vf.Height
 	video.Caption = caption

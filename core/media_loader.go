@@ -1,5 +1,7 @@
 package core
 
-type IMediaLoader interface {
-	Load(string, *User) ([]*Media, error)
+type URL = string
+
+type IMediaFactory interface {
+	CreateMedia(URL, *User) ([]*Media, error)
 }

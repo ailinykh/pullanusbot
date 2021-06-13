@@ -84,25 +84,24 @@ func (lf *LinkFlow) sendByUploading(media *core.Media, bot core.IBot) error {
 }
 
 func (lf *LinkFlow) downloadMedia(media *core.Media) (*core.VideoFile, error) {
-	filename := path.Base(media.URL)
-	filepath := path.Join(os.TempDir(), filename)
-
-	err := lf.fd.Download(media.URL, filepath)
+	file, err := lf.fd.Download(media.URL)
 	if err != nil {
 		lf.l.Errorf("video download error: %v", err)
 		return nil, err
 	}
 
-	stat, err := os.Stat(filepath)
+	defer os.Remove(file.Path)
+
+	stat, err := os.Stat(file.Path)
 	if err != nil {
 		return nil, err
 	}
 
-	lf.l.Infof("File downloaded: %s %0.2fMB", filename, float64(stat.Size())/1024/1024)
+	lf.l.Infof("File downloaded: %s %0.2fMB", file.Name, float64(stat.Size())/1024/1024)
 
-	vf, err := lf.vff.CreateVideoFile(filepath)
+	vf, err := lf.vff.CreateVideoFile(file.Path)
 	if err != nil {
-		lf.l.Errorf("Can't create video file for %s, %v", filepath, err)
+		lf.l.Errorf("Can't create video file for %s, %v", file.Path, err)
 		return nil, err
 	}
 	return vf, nil

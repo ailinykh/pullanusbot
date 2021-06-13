@@ -4,7 +4,6 @@ import (
 	"errors"
 	"math"
 	"os"
-	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -13,13 +12,13 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateTwitterFlow(l core.ILogger, ml core.IMediaLoader, fd core.IFileDownloader, vff core.IVideoFileFactory) *TwitterFlow {
-	return &TwitterFlow{l, ml, fd, vff}
+func CreateTwitterFlow(l core.ILogger, mf core.IMediaFactory, fd core.IFileDownloader, vff core.IVideoFileFactory) *TwitterFlow {
+	return &TwitterFlow{l, mf, fd, vff}
 }
 
 type TwitterFlow struct {
 	l   core.ILogger
-	ml  core.IMediaLoader
+	mf  core.IMediaFactory
 	fd  core.IFileDownloader
 	vff core.IVideoFileFactory
 }
@@ -35,7 +34,7 @@ func (tf *TwitterFlow) HandleText(text string, author *core.User, bot core.IBot)
 
 func (tf *TwitterFlow) process(tweetID string, author *core.User, bot core.IBot) error {
 	tf.l.Infof("processing tweet %s", tweetID)
-	medias, err := tf.ml.Load(tweetID, author)
+	medias, err := tf.mf.CreateMedia(tweetID, author)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Rate limit exceeded") {
 			return tf.handleTimeout(err, tweetID, author, bot)
@@ -92,27 +91,24 @@ func (tf *TwitterFlow) handleTimeout(err error, tweetID string, author *core.Use
 func (tf *TwitterFlow) sendByUploading(media *core.Media, bot core.IBot) error {
 	// Try to upload file to telegram
 	tf.l.Info("Sending by uploading")
-
-	filename := path.Base(media.URL)
-	filepath := path.Join(os.TempDir(), filename)
-	defer os.Remove(filepath)
-
-	err := tf.fd.Download(media.URL, filepath)
+	file, err := tf.fd.Download(media.URL)
 	if err != nil {
 		tf.l.Errorf("video download error: %v", err)
 		return err
 	}
 
-	stat, err := os.Stat(filepath)
+	defer os.Remove(file.Path)
+
+	stat, err := os.Stat(file.Path)
 	if err != nil {
 		return err
 	}
 
-	tf.l.Infof("File downloaded: %s %0.2fMB", filename, float64(stat.Size())/1024/1024)
+	tf.l.Infof("File downloaded: %s %0.2fMB", file.Name, float64(stat.Size())/1024/1024)
 
-	vf, err := tf.vff.CreateVideoFile(filepath)
+	vf, err := tf.vff.CreateVideoFile(file.Path)
 	if err != nil {
-		tf.l.Errorf("Can't create video file for %s, %v", filepath, err)
+		tf.l.Errorf("Can't create video file for %s, %v", file.Path, err)
 		return err
 	}
 	defer vf.Dispose()

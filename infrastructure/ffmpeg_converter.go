@@ -18,11 +18,12 @@ func CreateFfmpegConverter() *FfmpegConverter {
 
 type FfmpegConverter struct{}
 
+// core.IVideoFileConverter
 func (c *FfmpegConverter) Convert(vf *core.VideoFile, bitrate int) (*core.VideoFile, error) {
-	convertedVideoFilePath := path.Join(os.TempDir(), vf.FileName+"_converted.mp4")
-	cmd := fmt.Sprintf(`ffmpeg -y -i "%s" -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "%s"`, vf.FilePath, convertedVideoFilePath)
+	convertedVideoFilePath := path.Join(os.TempDir(), vf.Name+"_converted.mp4")
+	cmd := fmt.Sprintf(`ffmpeg -y -i "%s" -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "%s"`, vf.Path, convertedVideoFilePath)
 	if bitrate > 0 {
-		cmd = fmt.Sprintf(`ffmpeg -v error -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 1 -b:a 128k -f mp4 /dev/null && ffmpeg -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 2 -b:a 128k "%s"`, vf.FilePath, bitrate/1024, vf.FilePath, bitrate/1024, convertedVideoFilePath)
+		cmd = fmt.Sprintf(`ffmpeg -v error -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 1 -b:a 128k -f mp4 /dev/null && ffmpeg -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 2 -b:a 128k "%s"`, vf.Path, bitrate/1024, vf.Path, bitrate/1024, convertedVideoFilePath)
 	}
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
@@ -69,13 +70,12 @@ func (c *FfmpegConverter) CreateVideoFile(path string) (*core.VideoFile, error) 
 	}
 
 	return &core.VideoFile{
+		File:      core.File{Name: stat.Name(), Path: path},
 		Width:     stream.Width,
 		Height:    stream.Height,
 		Bitrate:   bitrate,
 		Duration:  int(duration),
 		Codec:     stream.CodecName,
-		FileName:  stat.Name(),
-		FilePath:  path,
 		ThumbPath: thumbpath}, nil
 }
 

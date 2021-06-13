@@ -56,7 +56,7 @@ func (a *TelebotAdapter) SendVideoFile(vf *core.VideoFile, caption string) error
 	if err != nil {
 		return err
 	} else {
-		a.t.logger.Infof("%s sent successfully", vf.FileName)
+		a.t.logger.Infof("%s sent successfully", vf.Name)
 		a.t.bot.Delete(a.m)
 	}
 	return nil
