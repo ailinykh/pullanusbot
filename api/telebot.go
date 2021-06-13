@@ -17,6 +17,7 @@ type Telebot struct {
 	commandHandlers  []string
 	textHandlers     []core.ITextHandler
 	documentHandlers []core.IDocumentHandler
+	imageHandlers    []core.IImageHandler
 }
 
 func CreateTelebot(token string, logger core.ILogger) *Telebot {
@@ -34,7 +35,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		panic(err)
 	}
 
-	telebot := &Telebot{bot, logger, []string{}, []core.ITextHandler{}, []core.IDocumentHandler{}}
+	telebot := &Telebot{bot, logger, []string{}, []core.ITextHandler{}, []core.IDocumentHandler{}, []core.IImageHandler{}}
 
 	bot.Handle(tb.OnText, func(m *tb.Message) {
 		for _, h := range telebot.textHandlers {
@@ -75,6 +76,27 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 			}
 		}
 	})
+
+	bot.Handle(tb.OnPhoto, func(m *tb.Message) {
+		name := path.Base(m.Photo.FileURL)
+		path := path.Join(os.TempDir(), m.Photo.File.FileID+".jpg")
+		err := bot.Download(&m.Photo.File, path)
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+
+		logger.Infof("Downloaded to %s", path)
+		defer os.Remove(path)
+
+		for _, h := range telebot.imageHandlers {
+			h.HandleImage(&core.File{
+				Name: name,
+				Path: path,
+			}, &TelebotAdapter{m, telebot})
+		}
+	})
+
 	return telebot
 }
 
@@ -84,6 +106,8 @@ func (t *Telebot) AddHandler(handlers ...interface{}) {
 		t.documentHandlers = append(t.documentHandlers, h)
 	case core.ITextHandler:
 		t.textHandlers = append(t.textHandlers, h)
+	case core.IImageHandler:
+		t.imageHandlers = append(t.imageHandlers, h)
 	case string:
 		for _, command := range t.commandHandlers {
 			if command == h {

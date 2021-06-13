@@ -38,6 +38,9 @@ func main() {
 	link_flow := use_cases.CreateLinkFlow(logger, file_downloader, converter, converter)
 	telebot.AddHandler(link_flow)
 
+	file_uploader := api.CreateTelegraphAPI()
+	image_flow := use_cases.CreateImageFlow(logger, file_uploader)
+	telebot.AddHandler(image_flow)
 	// Start endless loop
 	telebot.Run()
 }

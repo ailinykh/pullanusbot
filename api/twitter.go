@@ -46,7 +46,7 @@ func (Twitter) get(tweetID string) (*Tweet, error) {
 	return &tweet, err
 }
 
-func (t *Twitter) Load(tweetID string, author *core.User) ([]*core.Media, error) {
+func (t *Twitter) CreateMedia(tweetID string, author *core.User) ([]*core.Media, error) {
 	tweet, err := t.get(tweetID)
 	if err != nil {
 		return nil, err

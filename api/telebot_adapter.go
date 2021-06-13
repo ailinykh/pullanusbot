@@ -11,6 +11,10 @@ type TelebotAdapter struct {
 	t *Telebot
 }
 
+func (a *TelebotAdapter) IsPrivate() bool {
+	return a.m.Private()
+}
+
 func (a *TelebotAdapter) SendText(text string) error {
 	_, err := a.t.bot.Send(a.m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true})
 	return err
