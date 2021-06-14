@@ -13,10 +13,7 @@ type TelebotAdapter struct {
 
 func (a *TelebotAdapter) SendText(text string) (*core.Message, error) {
 	sent, err := a.t.bot.Send(a.m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true})
-	if err != nil {
-		return nil, err
-	}
-	return makeMessage(sent), nil
+	return makeMessage(sent), err
 }
 
 func (a *TelebotAdapter) Delete(message *core.Message) error {
@@ -26,10 +23,7 @@ func (a *TelebotAdapter) Delete(message *core.Message) error {
 func (a *TelebotAdapter) SendImage(image *core.Image) (*core.Message, error) {
 	photo := &tb.Photo{File: tb.File{FileID: image.ID}}
 	sent, err := a.t.bot.Send(a.m.Chat, photo)
-	if err != nil {
-		return nil, err
-	}
-	return makeMessage(sent), nil
+	return makeMessage(sent), err
 }
 
 func (a *TelebotAdapter) SendAlbum(images []*core.Image) ([]*core.Message, error) {
@@ -51,12 +45,12 @@ func (a *TelebotAdapter) SendAlbum(images []*core.Image) ([]*core.Message, error
 	return messages, nil
 }
 
-func (a *TelebotAdapter) SendPhoto(media *core.Media) error {
+func (a *TelebotAdapter) SendPhoto(media *core.Media) (*core.Message, error) {
 	file := &tb.Photo{File: tb.FromURL(media.URL)}
 	file.Caption = media.Caption
 	a.t.bot.Notify(a.m.Chat, tb.UploadingPhoto)
-	_, err := a.t.bot.Send(a.m.Chat, file, &tb.SendOptions{ParseMode: tb.ModeHTML})
-	return err
+	sent, err := a.t.bot.Send(a.m.Chat, file, &tb.SendOptions{ParseMode: tb.ModeHTML})
+	return makeMessage(sent), err
 }
 
 func (a *TelebotAdapter) SendPhotoAlbum(medias []*core.Media) error {

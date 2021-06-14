@@ -52,7 +52,8 @@ func (tf *TwitterFlow) process(tweetID string, author *core.User, bot core.IBot)
 			_, err := bot.SendText(medias[0].Caption)
 			return err
 		case core.Photo:
-			return bot.SendPhoto(medias[0])
+			_, err := bot.SendPhoto(medias[0])
+			return err
 		case core.Video:
 			err := bot.SendVideo(medias[0])
 			if err != nil {
