@@ -16,6 +16,38 @@ func (a *TelebotAdapter) SendText(text string) error {
 	return err
 }
 
+func (a *TelebotAdapter) Delete(message *core.Message) error {
+	return a.t.bot.Delete(&tb.Message{ID: message.ID, Chat: &tb.Chat{ID: message.ChatID}})
+}
+
+func (a *TelebotAdapter) SendImage(image *core.Image) (*core.Message, error) {
+	photo := &tb.Photo{File: tb.File{FileID: image.ID}}
+	sent, err := a.t.bot.Send(a.m.Chat, photo)
+	if err != nil {
+		return nil, err
+	}
+	return createMessage(sent), nil
+}
+
+func (a *TelebotAdapter) SendAlbum(images []*core.Image) ([]*core.Message, error) {
+	album := tb.Album{}
+	for _, i := range images {
+		photo := &tb.Photo{File: tb.File{FileID: i.ID}}
+		album = append(album, photo)
+	}
+
+	sent, err := a.t.bot.SendAlbum(a.m.Chat, album)
+	if err != nil {
+		return nil, err
+	}
+
+	var messages []*core.Message
+	for _, m := range sent {
+		messages = append(messages, createMessage(&m))
+	}
+	return messages, nil
+}
+
 func (a *TelebotAdapter) SendPhoto(media *core.Media) error {
 	file := &tb.Photo{File: tb.FromURL(media.URL)}
 	file.Caption = media.Caption
