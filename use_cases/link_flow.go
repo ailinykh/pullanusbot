@@ -22,10 +22,10 @@ type LinkFlow struct {
 }
 
 // core.ITextHandler
-func (lf *LinkFlow) HandleText(text string, author *core.User, bot core.IBot) error {
+func (lf *LinkFlow) HandleText(message *core.Message, author *core.User, bot core.IBot) error {
 	r := regexp.MustCompile(`^http(\S+)$`)
-	if r.MatchString(text) {
-		return lf.processLink(text, author, bot)
+	if r.MatchString(message.Text) {
+		return lf.processLink(message.Text, author, bot)
 	}
 	return nil
 }

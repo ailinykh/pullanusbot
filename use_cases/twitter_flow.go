@@ -24,9 +24,9 @@ type TwitterFlow struct {
 }
 
 // core.ITextHandler
-func (tf *TwitterFlow) HandleText(text string, author *core.User, bot core.IBot) error {
+func (tf *TwitterFlow) HandleText(message *core.Message, author *core.User, bot core.IBot) error {
 	r := regexp.MustCompile(`twitter\.com.+/(\d+)\S*$`)
-	match := r.FindStringSubmatch(text)
+	match := r.FindStringSubmatch(message.Text)
 	if len(match) < 2 {
 		return nil // no tweet
 	}
