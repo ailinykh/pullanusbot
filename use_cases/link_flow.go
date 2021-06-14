@@ -44,7 +44,7 @@ func (lf *LinkFlow) processLink(link string, author *core.User, bot core.IBot) e
 	switch resp.Header["Content-Type"][0] {
 	case "video/mp4":
 		lf.l.Infof("found mp4 file %s", link)
-		_, err := bot.SendVideo(media)
+		_, err := bot.SendMedia(media)
 
 		if err != nil {
 			lf.l.Errorf("%s. Fallback to uploading", err)

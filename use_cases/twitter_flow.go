@@ -47,27 +47,17 @@ func (tf *TwitterFlow) process(tweetID string, author *core.User, bot core.IBot)
 	case 0:
 		return errors.New("unexpected 0 media count")
 	case 1:
-		switch medias[0].Type {
-		case core.Text:
-			_, err := bot.SendText(medias[0].Caption)
-			return err
-		case core.Photo:
-			_, err := bot.SendPhoto(medias[0])
-			return err
-		case core.Video:
-			_, err := bot.SendVideo(medias[0])
-			if err != nil {
-				if strings.Contains(err.Error(), "failed to get HTTP URL content") || strings.Contains(err.Error(), "wrong file identifier/HTTP URL specified") {
-					return tf.sendByUploading(medias[0], bot)
-				}
+		_, err := bot.SendMedia(medias[0])
+		if err != nil && medias[0].Type == core.Video {
+			if strings.Contains(err.Error(), "failed to get HTTP URL content") || strings.Contains(err.Error(), "wrong file identifier/HTTP URL specified") {
+				return tf.sendByUploading(medias[0], bot)
 			}
-			return err
 		}
+		return err
 	default:
 		_, err := bot.SendPhotoAlbum(medias)
 		return err
 	}
-	return nil
 }
 
 func (tf *TwitterFlow) handleTimeout(err error, tweetID string, author *core.User, bot core.IBot) error {

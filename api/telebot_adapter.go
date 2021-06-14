@@ -41,11 +41,24 @@ func (a *TelebotAdapter) SendAlbum(images []*core.Image) ([]*core.Message, error
 	return messages, err
 }
 
-func (a *TelebotAdapter) SendPhoto(media *core.Media) (*core.Message, error) {
-	file := &tb.Photo{File: tb.FromURL(media.URL)}
-	file.Caption = media.Caption
-	a.t.bot.Notify(a.m.Chat, tb.UploadingPhoto)
-	sent, err := a.t.bot.Send(a.m.Chat, file, &tb.SendOptions{ParseMode: tb.ModeHTML})
+func (a *TelebotAdapter) SendMedia(media *core.Media) (*core.Message, error) {
+	var sent *tb.Message
+	var err error
+	switch media.Type {
+	case core.Photo:
+		file := &tb.Photo{File: tb.FromURL(media.URL)}
+		file.Caption = media.Caption
+		a.t.bot.Notify(a.m.Chat, tb.UploadingPhoto)
+		sent, err = a.t.bot.Send(a.m.Chat, file, &tb.SendOptions{ParseMode: tb.ModeHTML})
+	case core.Video:
+		file := &tb.Video{File: tb.FromURL(media.URL)}
+		file.Caption = media.Caption
+		a.t.bot.Notify(a.m.Chat, tb.UploadingVideo)
+		sent, err = a.t.bot.Send(a.m.Chat, file, &tb.SendOptions{ParseMode: tb.ModeHTML})
+	case core.Text:
+		sent, err = a.t.bot.Send(a.m.Chat, media.Caption, &tb.SendOptions{ParseMode: tb.ModeHTML})
+	}
+
 	return makeMessage(sent), err
 }
 
@@ -68,14 +81,6 @@ func (a *TelebotAdapter) SendPhotoAlbum(medias []*core.Media) ([]*core.Message, 
 		messages = append(messages, makeMessage(&m))
 	}
 	return messages, err
-}
-
-func (a *TelebotAdapter) SendVideo(media *core.Media) (*core.Message, error) {
-	file := &tb.Video{File: tb.FromURL(media.URL)}
-	file.Caption = media.Caption
-	a.t.bot.Notify(a.m.Chat, tb.UploadingVideo)
-	sent, err := a.t.bot.Send(a.m.Chat, file, &tb.SendOptions{ParseMode: tb.ModeHTML})
-	return makeMessage(sent), err
 }
 
 func (a *TelebotAdapter) SendVideoFile(vf *core.VideoFile, caption string) (*core.Message, error) {
