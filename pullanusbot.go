@@ -41,6 +41,10 @@ func main() {
 	file_uploader := api.CreateTelegraphAPI()
 	image_flow := use_cases.CreateImageFlow(logger, file_uploader)
 	telebot.AddHandler(image_flow)
+
+	publisher_flow := use_cases.CreatePublisherFlow(logger)
+	telebot.AddHandler(publisher_flow)
+	telebot.AddHandler("/loh666", publisher_flow)
 	// Start endless loop
 	telebot.Run()
 }
