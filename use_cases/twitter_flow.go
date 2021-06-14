@@ -23,6 +23,7 @@ type TwitterFlow struct {
 	vff core.IVideoFileFactory
 }
 
+// core.ITextHandler
 func (tf *TwitterFlow) HandleText(text string, author *core.User, bot core.IBot) error {
 	r := regexp.MustCompile(`twitter\.com.+/(\d+)\S*$`)
 	match := r.FindStringSubmatch(text)

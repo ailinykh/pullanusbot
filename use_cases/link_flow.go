@@ -21,6 +21,7 @@ type LinkFlow struct {
 	vfc core.IVideoFileConverter
 }
 
+// core.ITextHandler
 func (lf *LinkFlow) HandleText(text string, author *core.User, bot core.IBot) error {
 	r := regexp.MustCompile(`^http(\S+)$`)
 	if r.MatchString(text) {
