@@ -49,21 +49,19 @@ type msgSource struct {
 
 // core.IImageHandler
 func (p *PublisherFlow) HandleImage(image *core.Image, message *core.Message, bot core.IBot) error {
-	if message.ChatID != p.chatID || message.Sender.Username != p.username {
-		return nil
+	if message.ChatID == p.chatID && message.Sender.Username == p.username {
+		p.imageChan <- imgSource{image.ID, bot}
 	}
 
-	p.imageChan <- imgSource{image.ID, bot}
 	return nil
 }
 
 // core.ICommandHandler
 func (p *PublisherFlow) HandleCommand(message *core.Message, bot core.IBot) error {
-	if message.ChatID != p.chatID {
-		return nil
+	if message.ChatID == p.chatID {
+		p.requestChan <- msgSource{*message, bot}
 	}
 
-	p.requestChan <- msgSource{*message, bot}
 	return nil
 }
 
@@ -97,7 +95,7 @@ func (p *PublisherFlow) runLoop() {
 			go disposal(ms.message, ms.bot, 0)
 			switch count := len(photos); count {
 			case 0:
-				err := ms.bot.SendText("I have nothing for you comrade major")
+				_, err := ms.bot.SendText("I have nothing for you comrade major")
 				if err != nil {
 					p.l.Error(err)
 				}

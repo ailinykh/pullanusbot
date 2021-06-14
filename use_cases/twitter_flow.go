@@ -49,7 +49,8 @@ func (tf *TwitterFlow) process(tweetID string, author *core.User, bot core.IBot)
 	case 1:
 		switch medias[0].Type {
 		case core.Text:
-			return bot.SendText(medias[0].Caption)
+			_, err := bot.SendText(medias[0].Caption)
+			return err
 		case core.Photo:
 			return bot.SendPhoto(medias[0])
 		case core.Video:

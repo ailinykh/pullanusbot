@@ -28,5 +28,6 @@ func (f *ImageFlow) HandleImage(image *core.Image, message *core.Message, bot co
 	}
 
 	f.l.Info(url)
-	return bot.SendText(url)
+	_, err = bot.SendText(url)
+	return err
 }

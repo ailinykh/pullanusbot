@@ -11,9 +11,12 @@ type TelebotAdapter struct {
 	t *Telebot
 }
 
-func (a *TelebotAdapter) SendText(text string) error {
-	_, err := a.t.bot.Send(a.m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true})
-	return err
+func (a *TelebotAdapter) SendText(text string) (*core.Message, error) {
+	sent, err := a.t.bot.Send(a.m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true})
+	if err != nil {
+		return nil, err
+	}
+	return makeMessage(sent), nil
 }
 
 func (a *TelebotAdapter) Delete(message *core.Message) error {

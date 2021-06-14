@@ -22,7 +22,8 @@ func (f *VideoFlow) HandleDocument(document *core.Document, b core.IBot) error {
 	vf, err := f.f.CreateVideoFile(document.FilePath)
 	if err != nil {
 		f.l.Error(err)
-		return b.SendText(err.Error())
+		b.SendText(err.Error())
+		return err
 	}
 	defer vf.Dispose()
 
