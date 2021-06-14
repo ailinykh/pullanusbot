@@ -22,16 +22,16 @@ type LinkFlow struct {
 }
 
 // core.ITextHandler
-func (lf *LinkFlow) HandleText(message *core.Message, author *core.User, bot core.IBot) error {
+func (lf *LinkFlow) HandleText(message *core.Message, bot core.IBot) error {
 	r := regexp.MustCompile(`^http(\S+)$`)
 	if r.MatchString(message.Text) {
-		return lf.processLink(message.Text, author, bot)
+		return lf.processLink(message, bot)
 	}
 	return nil
 }
 
-func (lf *LinkFlow) processLink(link string, author *core.User, bot core.IBot) error {
-	resp, err := http.Get(link)
+func (lf *LinkFlow) processLink(message *core.Message, bot core.IBot) error {
+	resp, err := http.Get(message.Text)
 
 	if err != nil {
 		lf.l.Error(err)
@@ -39,11 +39,11 @@ func (lf *LinkFlow) processLink(link string, author *core.User, bot core.IBot) e
 	}
 
 	media := &core.Media{URL: resp.Request.URL.String()}
-	media.Caption = fmt.Sprintf(`<a href="%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, link, path.Base(resp.Request.URL.Path), author.Username)
+	media.Caption = fmt.Sprintf(`<a href="%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, message.Text, path.Base(resp.Request.URL.Path), message.Sender.Username)
 
 	switch resp.Header["Content-Type"][0] {
 	case "video/mp4":
-		lf.l.Infof("found mp4 file %s", link)
+		lf.l.Infof("found mp4 file %s", message.Text)
 		_, err := bot.SendMedia(media)
 
 		if err != nil {

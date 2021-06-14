@@ -24,21 +24,21 @@ type TwitterFlow struct {
 }
 
 // core.ITextHandler
-func (tf *TwitterFlow) HandleText(message *core.Message, author *core.User, bot core.IBot) error {
+func (tf *TwitterFlow) HandleText(message *core.Message, bot core.IBot) error {
 	r := regexp.MustCompile(`twitter\.com.+/(\d+)\S*$`)
 	match := r.FindStringSubmatch(message.Text)
 	if len(match) < 2 {
 		return nil // no tweet id found
 	}
-	return tf.process(match[1], author, bot)
+	return tf.process(match[1], message, bot)
 }
 
-func (tf *TwitterFlow) process(tweetID string, author *core.User, bot core.IBot) error {
+func (tf *TwitterFlow) process(tweetID string, message *core.Message, bot core.IBot) error {
 	tf.l.Infof("processing tweet %s", tweetID)
-	medias, err := tf.mf.CreateMedia(tweetID, author)
+	medias, err := tf.mf.CreateMedia(tweetID, message.Sender)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Rate limit exceeded") {
-			return tf.handleTimeout(err, tweetID, author, bot)
+			return tf.handleTimeout(err, tweetID, message, bot)
 		}
 		return err
 	}
@@ -60,7 +60,7 @@ func (tf *TwitterFlow) process(tweetID string, author *core.User, bot core.IBot)
 	}
 }
 
-func (tf *TwitterFlow) handleTimeout(err error, tweetID string, author *core.User, bot core.IBot) error {
+func (tf *TwitterFlow) handleTimeout(err error, tweetID string, message *core.Message, bot core.IBot) error {
 	r := regexp.MustCompile(`(\-?\d+)$`)
 	match := r.FindStringSubmatch(err.Error())
 	if len(match) < 2 {
@@ -77,7 +77,7 @@ func (tf *TwitterFlow) handleTimeout(err error, tweetID string, author *core.Use
 	timeout = int64(math.Max(float64(timeout), 1)) // Twitter api timeout might be negative
 	go func() {
 		time.Sleep(time.Duration(timeout) * time.Second)
-		tf.process(tweetID, author, bot)
+		tf.process(tweetID, message, bot)
 	}()
 	return nil // TODO: is it ok?
 }

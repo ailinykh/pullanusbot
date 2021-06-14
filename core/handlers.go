@@ -9,7 +9,7 @@ type IDocumentHandler interface {
 }
 
 type ITextHandler interface {
-	HandleText(*Message, *User, IBot) error
+	HandleText(*Message, IBot) error
 }
 
 type IImageHandler interface {

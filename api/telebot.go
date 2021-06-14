@@ -39,7 +39,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 
 	bot.Handle(tb.OnText, func(m *tb.Message) {
 		for _, h := range telebot.textHandlers {
-			err := h.HandleText(makeMessage(m), makeUser(m), &TelebotAdapter{m, telebot})
+			err := h.HandleText(makeMessage(m), &TelebotAdapter{m, telebot})
 			if err != nil {
 				logger.Error(err)
 			}
