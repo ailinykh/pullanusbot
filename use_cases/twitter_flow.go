@@ -35,7 +35,7 @@ func (tf *TwitterFlow) HandleText(message *core.Message, bot core.IBot) error {
 
 func (tf *TwitterFlow) process(tweetID string, message *core.Message, bot core.IBot) error {
 	tf.l.Infof("processing tweet %s", tweetID)
-	medias, err := tf.mf.CreateMedia(tweetID, message.Sender)
+	media, err := tf.mf.CreateMedia(tweetID, message.Sender)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Rate limit exceeded") {
 			return tf.handleTimeout(err, tweetID, message, bot)
@@ -43,19 +43,23 @@ func (tf *TwitterFlow) process(tweetID string, message *core.Message, bot core.I
 		return err
 	}
 
-	switch len(medias) {
+	return tf.handleMedia(media, message, bot)
+}
+
+func (tf *TwitterFlow) handleMedia(media []*core.Media, message *core.Message, bot core.IBot) error {
+	switch len(media) {
 	case 0:
 		return errors.New("unexpected 0 media count")
 	case 1:
-		_, err := bot.SendMedia(medias[0])
-		if err != nil && medias[0].Type == core.Video {
+		_, err := bot.SendMedia(media[0])
+		if err != nil && media[0].Type == core.Video {
 			if strings.Contains(err.Error(), "failed to get HTTP URL content") || strings.Contains(err.Error(), "wrong file identifier/HTTP URL specified") {
-				return tf.sendByUploading(medias[0], bot)
+				return tf.fallbackToUploading(media[0], bot)
 			}
 		}
 		return err
 	default:
-		_, err := bot.SendPhotoAlbum(medias)
+		_, err := bot.SendPhotoAlbum(media)
 		return err
 	}
 }
@@ -82,7 +86,7 @@ func (tf *TwitterFlow) handleTimeout(err error, tweetID string, message *core.Me
 	return nil // TODO: is it ok?
 }
 
-func (tf *TwitterFlow) sendByUploading(media *core.Media, bot core.IBot) error {
+func (tf *TwitterFlow) fallbackToUploading(media *core.Media, bot core.IBot) error {
 	// Try to upload file to telegram
 	tf.l.Info("Sending by uploading")
 	file, err := tf.fd.Download(media.URL)
