@@ -1,7 +1,7 @@
 package core
 
 type ICommandHandler interface {
-	HandleCommand(string, IBot) error
+	HandleCommand(*Message, IBot) error
 }
 
 type IDocumentHandler interface {
@@ -13,5 +13,5 @@ type ITextHandler interface {
 }
 
 type IImageHandler interface {
-	HandleImage(*File, Message, IBot) error
+	HandleImage(*Image, *Message, IBot) error
 }

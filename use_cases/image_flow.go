@@ -12,15 +12,21 @@ type ImageFlow struct {
 }
 
 // IImageHandler
-func (f *ImageFlow) HandleImage(file *core.File, message core.Message, bot core.IBot) error {
+func (f *ImageFlow) HandleImage(image *core.Image, message *core.Message, bot core.IBot) error {
 	if !message.IsPrivate {
 		return nil
 	}
 
-	url, err := f.fu.Upload(file)
+	err := image.Download()
 	if err != nil {
 		return err
 	}
 
+	url, err := f.fu.Upload(&image.File)
+	if err != nil {
+		return err
+	}
+
+	f.l.Info(url)
 	return bot.SendText(url)
 }

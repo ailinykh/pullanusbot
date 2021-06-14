@@ -78,22 +78,22 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 	})
 
 	bot.Handle(tb.OnPhoto, func(m *tb.Message) {
-		name := path.Base(m.Photo.FileURL)
-		path := path.Join(os.TempDir(), m.Photo.File.FileID+".jpg")
-		err := bot.Download(&m.Photo.File, path)
-		if err != nil {
-			logger.Error(err)
-			return
-		}
 
-		logger.Infof("Downloaded to %s", path)
-		defer os.Remove(path)
+		image := core.CreateImage(m.Photo.FileID, func() (string, error) {
+			path := path.Join(os.TempDir(), m.Photo.File.UniqueID+".jpg")
+			err := bot.Download(&m.Photo.File, path)
+			if err != nil {
+				logger.Error(err)
+				return "", err
+			}
+
+			logger.Infof("image %s downloaded to %s", m.Photo.UniqueID, path)
+			return path, nil
+		})
+		defer image.Dispose()
 
 		for _, h := range telebot.imageHandlers {
-			h.HandleImage(&core.File{
-				Name: name,
-				Path: path,
-			}, core.Message{ID: m.ID, IsPrivate: m.Private()}, &TelebotAdapter{m, telebot})
+			h.HandleImage(&image, createMessage(m), &TelebotAdapter{m, telebot})
 		}
 	})
 
@@ -109,15 +109,14 @@ func (t *Telebot) AddHandler(handlers ...interface{}) {
 	case core.IImageHandler:
 		t.imageHandlers = append(t.imageHandlers, h)
 	case string:
-		for _, command := range t.commandHandlers {
-			if command == h {
-				panic("Handler for " + command + " already set!")
-			}
+		t.registerCommand(h)
+		if handler, ok := handlers[1].(core.ICommandHandler); ok {
+			t.bot.Handle(h, func(m *tb.Message) {
+				handler.HandleCommand(createMessage(m), &TelebotAdapter{m, t})
+			})
+		} else {
+			panic("interface must implement core.ICommandHandler")
 		}
-		t.commandHandlers = append(t.commandHandlers, h)
-		t.bot.Handle(h, func(m *tb.Message) {
-			handlers[1].(core.ICommandHandler).HandleCommand(m.Text, &TelebotAdapter{m, t})
-		})
 	default:
 		panic(fmt.Sprintf("something wrong with %s", h))
 	}
@@ -125,4 +124,23 @@ func (t *Telebot) AddHandler(handlers ...interface{}) {
 
 func (t *Telebot) Run() {
 	t.bot.Start()
+}
+
+func (t *Telebot) registerCommand(command string) {
+	for _, c := range t.commandHandlers {
+		if c == command {
+			panic("Handler for " + command + " already set!")
+		}
+	}
+	t.commandHandlers = append(t.commandHandlers, command)
+}
+
+func createMessage(m *tb.Message) *core.Message {
+	return &core.Message{
+		ID:        m.ID,
+		ChatID:    m.Chat.ID,
+		IsPrivate: m.Private(),
+		Sender:    &core.User{Username: m.Sender.Username},
+		Text:      m.Text,
+	}
 }
