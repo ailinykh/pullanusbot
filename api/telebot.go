@@ -39,7 +39,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 
 	bot.Handle(tb.OnText, func(m *tb.Message) {
 		for _, h := range telebot.textHandlers {
-			err := h.HandleText(createMessage(m), makeUser(m), &TelebotAdapter{m, telebot})
+			err := h.HandleText(makeMessage(m), makeUser(m), &TelebotAdapter{m, telebot})
 			if err != nil {
 				logger.Error(err)
 			}
@@ -93,7 +93,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		defer image.Dispose()
 
 		for _, h := range telebot.imageHandlers {
-			h.HandleImage(&image, createMessage(m), &TelebotAdapter{m, telebot})
+			h.HandleImage(&image, makeMessage(m), &TelebotAdapter{m, telebot})
 		}
 	})
 
@@ -112,7 +112,7 @@ func (t *Telebot) AddHandler(handlers ...interface{}) {
 		t.registerCommand(h)
 		if handler, ok := handlers[1].(core.ICommandHandler); ok {
 			t.bot.Handle(h, func(m *tb.Message) {
-				handler.HandleCommand(createMessage(m), &TelebotAdapter{m, t})
+				handler.HandleCommand(makeMessage(m), &TelebotAdapter{m, t})
 			})
 		} else {
 			panic("interface must implement core.ICommandHandler")
@@ -135,7 +135,7 @@ func (t *Telebot) registerCommand(command string) {
 	t.commandHandlers = append(t.commandHandlers, command)
 }
 
-func createMessage(m *tb.Message) *core.Message {
+func makeMessage(m *tb.Message) *core.Message {
 	return &core.Message{
 		ID:        m.ID,
 		ChatID:    m.Chat.ID,

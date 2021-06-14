@@ -26,7 +26,7 @@ func (a *TelebotAdapter) SendImage(image *core.Image) (*core.Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	return createMessage(sent), nil
+	return makeMessage(sent), nil
 }
 
 func (a *TelebotAdapter) SendAlbum(images []*core.Image) ([]*core.Message, error) {
@@ -43,7 +43,7 @@ func (a *TelebotAdapter) SendAlbum(images []*core.Image) ([]*core.Message, error
 
 	var messages []*core.Message
 	for _, m := range sent {
-		messages = append(messages, createMessage(&m))
+		messages = append(messages, makeMessage(&m))
 	}
 	return messages, nil
 }
