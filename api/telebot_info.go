@@ -19,6 +19,7 @@ func (t *Telebot) SetupInfo() {
 			fmt.Sprintf("ID: *%d*", m.Sender.ID),
 			fmt.Sprintf("First: *%s*", m.Sender.FirstName),
 			fmt.Sprintf("Last: *%s*", m.Sender.LastName),
+			fmt.Sprintf("Username: *%s*", m.Sender.Username),
 			"",
 		}
 
@@ -38,6 +39,8 @@ func (t *Telebot) SetupInfo() {
 					fmt.Sprintf("ID: *%d*", m.ReplyTo.OriginalSender.ID),
 					fmt.Sprintf("First: *%s*", m.ReplyTo.OriginalSender.FirstName),
 					fmt.Sprintf("Last: *%s*", m.ReplyTo.OriginalSender.LastName),
+					fmt.Sprintf("Username: *%s*", m.ReplyTo.OriginalSender.Username),
+					fmt.Sprintf("Name: *%s*", m.ReplyTo.OriginalSenderName),
 					"",
 				)
 			}
