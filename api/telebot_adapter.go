@@ -34,15 +34,11 @@ func (a *TelebotAdapter) SendAlbum(images []*core.Image) ([]*core.Message, error
 	}
 
 	sent, err := a.t.bot.SendAlbum(a.m.Chat, album)
-	if err != nil {
-		return nil, err
-	}
-
 	var messages []*core.Message
 	for _, m := range sent {
 		messages = append(messages, makeMessage(&m))
 	}
-	return messages, nil
+	return messages, err
 }
 
 func (a *TelebotAdapter) SendPhoto(media *core.Media) (*core.Message, error) {
@@ -53,7 +49,7 @@ func (a *TelebotAdapter) SendPhoto(media *core.Media) (*core.Message, error) {
 	return makeMessage(sent), err
 }
 
-func (a *TelebotAdapter) SendPhotoAlbum(medias []*core.Media) error {
+func (a *TelebotAdapter) SendPhotoAlbum(medias []*core.Media) ([]*core.Message, error) {
 	var photo *tb.Photo
 	var album = tb.Album{}
 
@@ -66,8 +62,12 @@ func (a *TelebotAdapter) SendPhotoAlbum(medias []*core.Media) error {
 		album = append(album, photo)
 	}
 
-	_, err := a.t.bot.SendAlbum(a.m.Chat, album)
-	return err
+	sent, err := a.t.bot.SendAlbum(a.m.Chat, album)
+	var messages []*core.Message
+	for _, m := range sent {
+		messages = append(messages, makeMessage(&m))
+	}
+	return messages, err
 }
 
 func (a *TelebotAdapter) SendVideo(media *core.Media) error {

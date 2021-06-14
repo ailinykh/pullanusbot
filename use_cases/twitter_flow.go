@@ -64,7 +64,8 @@ func (tf *TwitterFlow) process(tweetID string, author *core.User, bot core.IBot)
 			return err
 		}
 	default:
-		return bot.SendPhotoAlbum(medias)
+		_, err := bot.SendPhotoAlbum(medias)
+		return err
 	}
 	return nil
 }

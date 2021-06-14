@@ -6,7 +6,7 @@ type IBot interface {
 	SendImage(*Image) (*Message, error)
 	SendAlbum([]*Image) ([]*Message, error)
 	SendPhoto(*Media) (*Message, error)
-	SendPhotoAlbum([]*Media) error
+	SendPhotoAlbum([]*Media) ([]*Message, error)
 	SendVideo(*Media) error
 	SendVideoFile(*VideoFile, string) error
 }
