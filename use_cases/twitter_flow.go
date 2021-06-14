@@ -28,7 +28,7 @@ func (tf *TwitterFlow) HandleText(message *core.Message, author *core.User, bot 
 	r := regexp.MustCompile(`twitter\.com.+/(\d+)\S*$`)
 	match := r.FindStringSubmatch(message.Text)
 	if len(match) < 2 {
-		return nil // no tweet
+		return nil // no tweet id found
 	}
 	return tf.process(match[1], author, bot)
 }
@@ -55,7 +55,7 @@ func (tf *TwitterFlow) process(tweetID string, author *core.User, bot core.IBot)
 			_, err := bot.SendPhoto(medias[0])
 			return err
 		case core.Video:
-			err := bot.SendVideo(medias[0])
+			_, err := bot.SendVideo(medias[0])
 			if err != nil {
 				if strings.Contains(err.Error(), "failed to get HTTP URL content") || strings.Contains(err.Error(), "wrong file identifier/HTTP URL specified") {
 					return tf.sendByUploading(medias[0], bot)
