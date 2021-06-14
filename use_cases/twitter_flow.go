@@ -116,5 +116,6 @@ func (tf *TwitterFlow) sendByUploading(media *core.Media, bot core.IBot) error {
 		return err
 	}
 	defer vf.Dispose()
-	return bot.SendVideoFile(vf, media.Caption)
+	_, err = bot.SendVideoFile(vf, media.Caption)
+	return err
 }

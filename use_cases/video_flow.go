@@ -40,7 +40,8 @@ func (f *VideoFlow) HandleDocument(document *core.Document, b core.IBot) error {
 		fi1, _ := os.Stat(vf.Path)
 		fi2, _ := os.Stat(cvf.Path)
 		caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>\n<i>Original size: %.2f MB (%d kb/s)\nConverted size: %.2f MB (%d kb/s)</i>", vf.Name, document.Author, float32(fi1.Size())/1048576, vf.Bitrate/1024, float32(fi2.Size())/1048576, cvf.Bitrate/1024)
-		return b.SendVideoFile(cvf, caption)
+		_, err = b.SendVideoFile(cvf, caption)
+		return err
 	}
 
 	if vf.Codec != "h264" {
@@ -52,10 +53,12 @@ func (f *VideoFlow) HandleDocument(document *core.Document, b core.IBot) error {
 		}
 		defer cvf.Dispose()
 		caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>", vf.Name, document.Author)
-		return b.SendVideoFile(cvf, caption)
+		_, err = b.SendVideoFile(cvf, caption)
+		return err
 	}
 
 	f.l.Infof("No need to convert %s", vf.Name)
 	caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>", vf.Name, document.Author)
-	return b.SendVideoFile(vf, caption)
+	_, err = b.SendVideoFile(vf, caption)
+	return err
 }

@@ -64,7 +64,8 @@ func (lf *LinkFlow) processLink(link string, author *core.User, bot core.IBot) e
 		}
 		defer vfc.Dispose()
 
-		return bot.SendVideoFile(vfc, media.Caption)
+		_, err = bot.SendVideoFile(vfc, media.Caption)
+		return err
 
 	default:
 		lf.l.Warningf("Unsupported content type: %s", resp.Header["Content-Type"])
@@ -81,7 +82,8 @@ func (lf *LinkFlow) sendByUploading(media *core.Media, bot core.IBot) error {
 		return err
 	}
 	defer vf.Dispose()
-	return bot.SendVideoFile(vf, media.Caption)
+	_, err = bot.SendVideoFile(vf, media.Caption)
+	return err
 }
 
 func (lf *LinkFlow) downloadMedia(media *core.Media) (*core.VideoFile, error) {
