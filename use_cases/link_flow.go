@@ -66,7 +66,7 @@ func (lf *LinkFlow) processLink(message *core.Message, bot core.IBot) error {
 
 		_, err = bot.SendVideoFile(vfc, media.Caption)
 		return err
-
+	case "text/html; charset=utf-8":
 	default:
 		lf.l.Warningf("Unsupported content type: %s", resp.Header["Content-Type"])
 	}
