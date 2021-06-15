@@ -10,15 +10,29 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+var conn *gorm.DB
+
 func CreateGameStorage(gameID int64, factory IPlayerFactory) GameStorage {
-	dbFile := path.Join(".", "pullanusbot.db")
-	conn, err := gorm.Open(sqlite.Open(dbFile+"?cache=shared"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Error),
-	})
-	if err != nil {
-		log.Fatal(err)
+	if conn == nil {
+		dbFile := path.Join(".", "pullanusbot.db")
+		var err error
+		conn, err = gorm.Open(sqlite.Open(dbFile+"?cache=shared"), &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Error),
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if conn.Migrator().HasTable(&Player{}) && conn.Migrator().HasColumn(&Player{}, "chat_id") {
+			log.Println("Extendend migration")
+			conn.Migrator().RenameColumn(&Player{}, "chat_id", "game_id")
+			conn.Migrator().RenameTable("faggot_entries", "faggot_rounds")
+			conn.Migrator().RenameColumn(&Round{}, "chat_id", "game_id")
+		} else {
+			log.Println("Default migration")
+			conn.AutoMigrate(&Player{}, &Round{})
+		}
 	}
-	conn.AutoMigrate(&Player{}, &Round{})
 
 	s := GameStorage{conn, gameID, factory}
 	return s
