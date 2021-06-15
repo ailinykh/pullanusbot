@@ -11,8 +11,17 @@ type TelebotAdapter struct {
 	t *Telebot
 }
 
-func (a *TelebotAdapter) SendText(text string) (*core.Message, error) {
-	sent, err := a.t.bot.Send(a.m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true})
+func (a *TelebotAdapter) SendText(text string, params ...interface{}) (*core.Message, error) {
+	opts := tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true}
+	for _, param := range params {
+		switch m := param.(type) {
+		case *core.Message:
+			opts.ReplyTo = &tb.Message{ID: m.ID}
+		default:
+			break
+		}
+	}
+	sent, err := a.t.bot.Send(a.m.Chat, text, &opts)
 	return makeMessage(sent), err
 }
 
