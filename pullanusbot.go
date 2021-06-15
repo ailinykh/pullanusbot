@@ -66,6 +66,7 @@ func createLogger() (core.ILogger, func()) {
 	return l, close
 }
 
+//TODO: duplicated code
 func getWorkingDir() string {
 	workingDir := os.Getenv("WORKING_DIR")
 	if len(workingDir) == 0 {

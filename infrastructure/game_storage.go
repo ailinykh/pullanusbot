@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"log"
+	"os"
 	"path"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
@@ -14,7 +15,7 @@ var conn *gorm.DB
 
 func CreateGameStorage(gameID int64, factory IPlayerFactory) GameStorage {
 	if conn == nil {
-		dbFile := path.Join(".", "pullanusbot.db")
+		dbFile := path.Join(getWorkingDir(), "pullanusbot.db")
 		var err error
 		conn, err = gorm.Open(sqlite.Open(dbFile+"?cache=shared"), &gorm.Config{
 			Logger: logger.Default.LogMode(logger.Error),
@@ -81,4 +82,13 @@ func (s *GameStorage) AddRound(round *core.Round) error {
 	}
 	s.conn.Create(&dbRound)
 	return nil
+}
+
+//TODO: duplicated code
+func getWorkingDir() string {
+	workingDir := os.Getenv("WORKING_DIR")
+	if len(workingDir) == 0 {
+		return "pullanusbot-data"
+	}
+	return workingDir
 }
