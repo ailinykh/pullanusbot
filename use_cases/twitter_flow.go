@@ -2,6 +2,7 @@ package use_cases
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"os"
 	"regexp"
@@ -13,14 +14,15 @@ import (
 )
 
 func CreateTwitterFlow(l core.ILogger, mf core.IMediaFactory, fd core.IFileDownloader, vff core.IVideoFileFactory) *TwitterFlow {
-	return &TwitterFlow{l, mf, fd, vff}
+	return &TwitterFlow{l, mf, fd, vff, make(map[core.Message]core.Message)}
 }
 
 type TwitterFlow struct {
-	l   core.ILogger
-	mf  core.IMediaFactory
-	fd  core.IFileDownloader
-	vff core.IVideoFileFactory
+	l              core.ILogger
+	mf             core.IMediaFactory
+	fd             core.IFileDownloader
+	vff            core.IVideoFileFactory
+	timeoutReplies map[core.Message]core.Message
 }
 
 // core.ITextHandler
@@ -38,12 +40,27 @@ func (tf *TwitterFlow) process(tweetID string, message *core.Message, bot core.I
 	media, err := tf.mf.CreateMedia(tweetID, message.Sender)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Rate limit exceeded") {
-			return tf.handleTimeout(err, tweetID, message, bot)
+			err := tf.handleTimeout(err, tweetID, message, bot)
+			if strings.HasPrefix(err.Error(), "twitter api timeout") {
+				sent, err := bot.SendText(err.Error(), message)
+				if err != nil {
+					return err
+				}
+				tf.timeoutReplies[*message] = *sent
+			}
 		}
 		return err
 	}
 
-	return tf.handleMedia(media, message, bot)
+	err = tf.handleMedia(media, message, bot)
+	if err == nil {
+		if sent, ok := tf.timeoutReplies[*message]; ok {
+			_ = bot.Delete(&sent)
+			delete(tf.timeoutReplies, *message)
+		}
+		return bot.Delete(message)
+	}
+	return err
 }
 
 func (tf *TwitterFlow) handleMedia(media []*core.Media, message *core.Message, bot core.IBot) error {
@@ -83,7 +100,9 @@ func (tf *TwitterFlow) handleTimeout(err error, tweetID string, message *core.Me
 		time.Sleep(time.Duration(timeout) * time.Second)
 		tf.process(tweetID, message, bot)
 	}()
-	return nil // TODO: is it ok?
+	minutes := timeout / 60
+	seconds := timeout % 60
+	return fmt.Errorf("twitter api timeout %d min %d sec", minutes, seconds)
 }
 
 func (tf *TwitterFlow) fallbackToUploading(media *core.Media, bot core.IBot) error {
