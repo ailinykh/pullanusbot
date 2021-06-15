@@ -29,6 +29,7 @@ func (t *Telebot) SetupGame(g use_cases.GameFlow) {
 		mutex.Lock()
 		defer mutex.Unlock()
 
+		t.logger.Infof("playing game in chat %d", m.Chat.ID)
 		messages := g.Play(makeUser(m), makeStorage(m, t))
 		if len(messages) > 1 {
 			for _, msg := range messages {
