@@ -7,3 +7,7 @@ type IFileDownloader interface {
 type IFileUploader interface {
 	Upload(*File) (URL, error)
 }
+
+type IImageDownloader interface {
+	Download(image *Image) (*File, error)
+}

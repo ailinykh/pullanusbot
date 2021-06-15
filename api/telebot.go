@@ -79,18 +79,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 
 	bot.Handle(tb.OnPhoto, func(m *tb.Message) {
 
-		image := core.CreateImage(m.Photo.FileID, func() (string, error) {
-			path := path.Join(os.TempDir(), m.Photo.File.UniqueID+".jpg")
-			err := bot.Download(&m.Photo.File, path)
-			if err != nil {
-				logger.Error(err)
-				return "", err
-			}
-
-			logger.Infof("image %s downloaded to %s", m.Photo.UniqueID, path)
-			return path, nil
-		})
-		defer image.Dispose()
+		image := core.CreateImage(m.Photo.FileID, m.Photo.FileURL)
 
 		for _, h := range telebot.imageHandlers {
 			h.HandleImage(&image, makeMessage(m), &TelebotAdapter{m, telebot})
@@ -98,6 +87,22 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 	})
 
 	return telebot
+}
+
+func (t *Telebot) Download(image *core.Image) (*core.File, error) {
+	//TODO: potential race condition
+	file := tb.FromURL(image.FileURL)
+	file.FileID = image.ID
+	name := RandStringRunes(4) + ".jpg"
+	path := path.Join(os.TempDir(), name)
+	err := t.bot.Download(&file, path)
+	if err != nil {
+		t.logger.Error(err)
+		return nil, err
+	}
+
+	t.logger.Infof("image %s downloaded to %s", file.UniqueID, path)
+	return makeFile(name, path), nil
 }
 
 func (t *Telebot) AddHandler(handlers ...interface{}) {
@@ -142,5 +147,12 @@ func makeMessage(m *tb.Message) *core.Message {
 		IsPrivate: m.Private(),
 		Sender:    &core.User{Username: m.Sender.Username},
 		Text:      m.Text,
+	}
+}
+
+func makeFile(name string, path string) *core.File {
+	return &core.File{
+		Name: name,
+		Path: path,
 	}
 }

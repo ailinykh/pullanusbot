@@ -2,13 +2,14 @@ package use_cases
 
 import "github.com/ailinykh/pullanusbot/v2/core"
 
-func CreateImageFlow(l core.ILogger, fu core.IFileUploader) *ImageFlow {
-	return &ImageFlow{l, fu}
+func CreateImageFlow(l core.ILogger, fu core.IFileUploader, id core.IImageDownloader) *ImageFlow {
+	return &ImageFlow{l, fu, id}
 }
 
 type ImageFlow struct {
 	l  core.ILogger
 	fu core.IFileUploader
+	id core.IImageDownloader
 }
 
 // IImageHandler
@@ -17,12 +18,14 @@ func (f *ImageFlow) HandleImage(image *core.Image, message *core.Message, bot co
 		return nil
 	}
 
-	err := image.Download()
+	file, err := f.id.Download(image)
 	if err != nil {
 		return err
 	}
+	//TODO: memory management
+	defer file.Dispose()
 
-	url, err := f.fu.Upload(&image.File)
+	url, err := f.fu.Upload(file)
 	if err != nil {
 		return err
 	}

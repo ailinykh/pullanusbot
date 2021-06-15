@@ -39,7 +39,8 @@ func main() {
 	telebot.AddHandler(link_flow)
 
 	file_uploader := api.CreateTelegraphAPI()
-	image_flow := use_cases.CreateImageFlow(logger, file_uploader)
+	//TODO: image_downloader := api.CreateTelebotImageDownloader()
+	image_flow := use_cases.CreateImageFlow(logger, file_uploader, telebot)
 	telebot.AddHandler(image_flow)
 
 	publisher_flow := use_cases.CreatePublisherFlow(logger)
