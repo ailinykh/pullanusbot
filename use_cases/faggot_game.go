@@ -113,6 +113,9 @@ func (flow *GameFlow) Stats(storage core.IGameStorage) string {
 	}
 
 	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].Score == entries[j].Score {
+			return entries[i].Player.Username > entries[j].Player.Username
+		}
 		return entries[i].Score > entries[j].Score
 	})
 
