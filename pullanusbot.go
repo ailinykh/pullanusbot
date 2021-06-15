@@ -3,6 +3,7 @@ package main
 import (
 	"math/rand"
 	"os"
+	"path"
 	"time"
 
 	"github.com/ailinykh/pullanusbot/v2/api"
@@ -51,7 +52,8 @@ func main() {
 }
 
 func createLogger() (core.ILogger, func()) {
-	lf, err := os.OpenFile("pullanusbot.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
+	logFilePath := path.Join(getWorkingDir(), "pullanusbot.log")
+	lf, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
 	if err != nil {
 		panic(err)
 	}
@@ -62,4 +64,12 @@ func createLogger() (core.ILogger, func()) {
 		l.Close()
 	}
 	return l, close
+}
+
+func getWorkingDir() string {
+	workingDir := os.Getenv("WORKING_DIR")
+	if len(workingDir) == 0 {
+		return "pullanusbot-data"
+	}
+	return workingDir
 }
