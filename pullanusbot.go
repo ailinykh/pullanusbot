@@ -11,6 +11,9 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/infrastructure"
 	"github.com/ailinykh/pullanusbot/v2/usecases"
 	"github.com/google/logger"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	loger "gorm.io/gorm/logger"
 )
 
 func main() {
@@ -23,7 +26,7 @@ func main() {
 
 	localizer := infrastructure.GameLocalizer{}
 	game := usecases.CreateGameFlow(localizer)
-	telebot.SetupGame(game)
+	telebot.SetupGame(game, createDatabaseConnection())
 
 	telebot.SetupInfo()
 
@@ -66,7 +69,17 @@ func createLogger() (core.ILogger, func()) {
 	return l, close
 }
 
-//TODO: duplicated code
+func createDatabaseConnection() *gorm.DB {
+	dbFile := path.Join(getWorkingDir(), "pullanusbot.db")
+	conn, err := gorm.Open(sqlite.Open(dbFile+"?cache=shared"), &gorm.Config{
+		Logger: loger.Default.LogMode(loger.Error),
+	})
+	if err != nil {
+		logger.Fatal(err)
+	}
+	return conn
+}
+
 func getWorkingDir() string {
 	workingDir := os.Getenv("WORKING_DIR")
 	if len(workingDir) == 0 {
