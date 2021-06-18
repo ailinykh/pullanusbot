@@ -10,12 +10,12 @@ import (
 
 // CreatePublisherFlow is a basic PublisherFlow factory
 func CreatePublisherFlow(l core.ILogger) *PublisherFlow {
-	chatID, err := strconv.ParseInt(os.Getenv("PUBLISER_CHAT_ID"), 10, 64)
+	chatID, err := strconv.ParseInt(os.Getenv("PUBLISHER_CHAT_ID"), 10, 64)
 	if err != nil {
 		chatID = 0
 	}
 
-	username := os.Getenv("PUBLISER_USERNAME")
+	username := os.Getenv("PUBLISHER_USERNAME")
 
 	publisher := PublisherFlow{
 		l:           l,
