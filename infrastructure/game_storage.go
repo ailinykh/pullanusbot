@@ -5,10 +5,8 @@ import (
 	"gorm.io/gorm"
 )
 
-var conn *gorm.DB
-
 // CreateGameStorage is a default GameStorage factory
-func CreateGameStorage(conn *gorm.DB, gameID int64, factory IPlayerFactory, logger core.ILogger) GameStorage {
+func CreateGameStorage(conn *gorm.DB, gameID int64, factory IPlayerFactory, logger core.ILogger) *GameStorage {
 	if conn.Migrator().HasTable(&Player{}) && conn.Migrator().HasColumn(&Player{}, "chat_id") {
 		logger.Info("Extendend migration")
 		conn.Migrator().RenameColumn(&Player{}, "chat_id", "game_id")
@@ -18,8 +16,7 @@ func CreateGameStorage(conn *gorm.DB, gameID int64, factory IPlayerFactory, logg
 		logger.Info("Default migration")
 		conn.AutoMigrate(&Player{}, &Round{})
 	}
-	s := GameStorage{conn, gameID, factory}
-	return s
+	return &GameStorage{conn, gameID, factory}
 }
 
 // GameStorage implements core.IGameStorage interface

@@ -65,6 +65,5 @@ func makeUser(m *tb.Message) *core.User {
 }
 
 func makeStorage(conn *gorm.DB, m *tb.Message, t *Telebot) core.IGameStorage {
-	storage := infrastructure.CreateGameStorage(conn, m.Chat.ID, &TelebotAdapter{m, t}, t.logger)
-	return &storage
+	return infrastructure.CreateGameStorage(conn, m.Chat.ID, &TelebotAdapter{m, t}, t.logger)
 }
