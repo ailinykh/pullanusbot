@@ -44,7 +44,6 @@ obtain bot token from [@BotFather](https://t.me/BotFather) and your telegram ID 
 
 ```shell
 echo "export BOT_TOKEN:=12345678:XXXXXXXXxxxxxxxxXXXXXXXXxxxxxxxxXXX" > .env
-echo "export ADMIN_CHAT_ID:=123456789" >> .env
 ```
 
 and run!
