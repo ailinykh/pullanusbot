@@ -50,6 +50,7 @@ func (lf *LinkFlow) processLink(message *core.Message, bot core.IBot) error {
 			lf.l.Errorf("%s. Fallback to uploading", err)
 			return lf.sendByUploading(media, bot)
 		}
+		return bot.Delete(message)
 	case "video/webm":
 		vf, err := lf.downloadMedia(media)
 		if err != nil {
