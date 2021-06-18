@@ -12,6 +12,7 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
+// SetupGame ...
 func (t *Telebot) SetupGame(g usecases.GameFlow) {
 	t.bot.Handle("/pidorules", func(m *tb.Message) {
 		text := g.Rules()

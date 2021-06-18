@@ -11,6 +11,7 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
+// Telebot is a telegram API
 type Telebot struct {
 	bot              *tb.Bot
 	logger           core.ILogger
@@ -20,6 +21,7 @@ type Telebot struct {
 	imageHandlers    []core.IImageHandler
 }
 
+// CreateTelebot is a default Telebot factory
 func CreateTelebot(token string, logger core.ILogger) *Telebot {
 	poller := tb.NewMiddlewarePoller(&tb.LongPoller{Timeout: 10 * time.Second}, func(upd *tb.Update) bool {
 		return true
@@ -89,6 +91,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 	return telebot
 }
 
+// Download is a core.IImageDownloader interface implementation
 func (t *Telebot) Download(image *core.Image) (*core.File, error) {
 	//TODO: potential race condition
 	file := tb.FromURL(image.FileURL)
@@ -105,8 +108,9 @@ func (t *Telebot) Download(image *core.Image) (*core.File, error) {
 	return makeFile(name, path), nil
 }
 
-func (t *Telebot) AddHandler(handlers ...interface{}) {
-	switch h := handlers[0].(type) {
+// AddHandler register object as one of core.Handler's
+func (t *Telebot) AddHandler(handler ...interface{}) {
+	switch h := handler[0].(type) {
 	case core.IDocumentHandler:
 		t.documentHandlers = append(t.documentHandlers, h)
 	case core.ITextHandler:
@@ -115,7 +119,7 @@ func (t *Telebot) AddHandler(handlers ...interface{}) {
 		t.imageHandlers = append(t.imageHandlers, h)
 	case string:
 		t.registerCommand(h)
-		if handler, ok := handlers[1].(core.ICommandHandler); ok {
+		if handler, ok := handler[1].(core.ICommandHandler); ok {
 			t.bot.Handle(h, func(m *tb.Message) {
 				handler.HandleCommand(makeMessage(m), &TelebotAdapter{m, t})
 			})
@@ -127,6 +131,7 @@ func (t *Telebot) AddHandler(handlers ...interface{}) {
 	}
 }
 
+// Run bot loop
 func (t *Telebot) Run() {
 	t.bot.Start()
 }

@@ -1,5 +1,6 @@
 package api
 
+// Tweet is a twitter api representation of a single tweet
 type Tweet struct {
 	ID               string  `json:"id_str"`
 	FullText         string  `json:"full_text"`
@@ -10,16 +11,19 @@ type Tweet struct {
 	Errors           []Error `json:"errors,omitempty"`
 }
 
+// User ...
 type User struct {
 	Name       string `json:"name"`
 	ScreenName string `json:"screen_name"`
 }
 
+// Entity ...
 type Entity struct {
 	Urls  []URL   `json:"urls,omitempty"`
 	Media []Media `json:"media"`
 }
 
+// Media ...
 type Media struct {
 	MediaURL      string    `json:"media_url"`
 	MediaURLHTTPS string    `json:"media_url_https"`
@@ -27,14 +31,17 @@ type Media struct {
 	VideoInfo     VideoInfo `json:"video_info,omitempty"`
 }
 
+// URL ...
 type URL struct {
 	ExpandedURL string `json:"expanded_url"`
 }
 
+// VideoInfo ...
 type VideoInfo struct {
 	Variants []VideoInfoVariant `json:"variants"`
 }
 
+// Error ...
 type Error struct {
 	Message string `json:"message"`
 	Code    int    `json:"code"`
@@ -50,6 +57,7 @@ func (info *VideoInfo) best() VideoInfoVariant {
 	return variant
 }
 
+// VideoInfoVariant ...
 type VideoInfoVariant struct {
 	Bitrate     int    `json:"bitrate"`
 	ContentType string `json:"content_type"`

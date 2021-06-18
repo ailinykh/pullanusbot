@@ -6,11 +6,13 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
+// TelebotAdapter combines Telebot and core.IBot
 type TelebotAdapter struct {
 	m *tb.Message
 	t *Telebot
 }
 
+// SendText is a core.IBot interface implementation
 func (a *TelebotAdapter) SendText(text string, params ...interface{}) (*core.Message, error) {
 	opts := tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true}
 	for _, param := range params {
@@ -25,16 +27,19 @@ func (a *TelebotAdapter) SendText(text string, params ...interface{}) (*core.Mes
 	return makeMessage(sent), err
 }
 
+// Delete is a core.IBot interface implementation
 func (a *TelebotAdapter) Delete(message *core.Message) error {
 	return a.t.bot.Delete(&tb.Message{ID: message.ID, Chat: &tb.Chat{ID: message.ChatID}})
 }
 
+// SendImage is a core.IBot interface implementation
 func (a *TelebotAdapter) SendImage(image *core.Image) (*core.Message, error) {
 	photo := &tb.Photo{File: tb.File{FileID: image.ID}}
 	sent, err := a.t.bot.Send(a.m.Chat, photo)
 	return makeMessage(sent), err
 }
 
+// SendAlbum is a core.IBot interface implementation
 func (a *TelebotAdapter) SendAlbum(images []*core.Image) ([]*core.Message, error) {
 	album := tb.Album{}
 	for _, i := range images {
@@ -50,6 +55,7 @@ func (a *TelebotAdapter) SendAlbum(images []*core.Image) ([]*core.Message, error
 	return messages, err
 }
 
+// SendMedia is a core.IBot interface implementation
 func (a *TelebotAdapter) SendMedia(media *core.Media) (*core.Message, error) {
 	var sent *tb.Message
 	var err error
@@ -71,6 +77,7 @@ func (a *TelebotAdapter) SendMedia(media *core.Media) (*core.Message, error) {
 	return makeMessage(sent), err
 }
 
+// SendPhotoAlbum is a core.IBot interface implementation
 func (a *TelebotAdapter) SendPhotoAlbum(medias []*core.Media) ([]*core.Message, error) {
 	var photo *tb.Photo
 	var album = tb.Album{}
@@ -92,6 +99,7 @@ func (a *TelebotAdapter) SendPhotoAlbum(medias []*core.Media) ([]*core.Message, 
 	return messages, err
 }
 
+// SendVideoFile is a core.IBot interface implementation
 func (a *TelebotAdapter) SendVideoFile(vf *core.VideoFile, caption string) (*core.Message, error) {
 	video := makeVideoFile(vf, caption)
 	a.t.bot.Notify(a.m.Chat, tb.UploadingVideo)
@@ -103,6 +111,7 @@ func (a *TelebotAdapter) SendVideoFile(vf *core.VideoFile, caption string) (*cor
 	return makeMessage(sent), err
 }
 
+// CreatePlayer is a core.IPlayerFactory interface implementation
 func (a *TelebotAdapter) CreatePlayer(string) infrastructure.Player {
 	return infrastructure.Player{
 		GameID:       a.m.Chat.ID,

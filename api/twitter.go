@@ -11,10 +11,12 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
+// CreateTwitterAPI is a default Twitter factory
 func CreateTwitterAPI() *Twitter {
 	return &Twitter{}
 }
 
+// Twitter API
 type Twitter struct{}
 
 func (Twitter) get(tweetID string) (*Tweet, error) {
@@ -38,14 +40,14 @@ func (Twitter) get(tweetID string) (*Tweet, error) {
 	if len(tweet.Errors) > 0 {
 		if tweet.Errors[0].Code == 88 { // "Rate limit exceeded 88"
 			return nil, errors.New(tweet.Errors[0].Message + " " + res.Header["X-Rate-Limit-Reset"][0])
-		} else {
-			return nil, errors.New(tweet.Errors[0].Message)
 		}
+		return nil, errors.New(tweet.Errors[0].Message)
 	}
 
 	return &tweet, err
 }
 
+// CreateMedia is a core.IMediaFactory interface implementation
 func (t *Twitter) CreateMedia(tweetID string, author *core.User) ([]*core.Media, error) {
 	tweet, err := t.get(tweetID)
 	if err != nil {

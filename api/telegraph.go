@@ -12,10 +12,12 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
+// CreateTelegraphAPI is a default Telegraph factory
 func CreateTelegraphAPI() *Telegraph {
 	return &Telegraph{}
 }
 
+// Telegraph uploads files to telegra.ph
 type Telegraph struct {
 }
 
@@ -23,7 +25,7 @@ type telegraphImage struct {
 	Src string `json:"src"`
 }
 
-// IFileUploader
+// Upload is a core.IFileUploader interface implementation
 func (t *Telegraph) Upload(file *core.File) (core.URL, error) {
 	fd, err := os.Open(file.Path)
 	if err != nil {

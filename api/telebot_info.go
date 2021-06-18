@@ -7,6 +7,7 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
+// SetupInfo ...
 func (t *Telebot) SetupInfo() {
 	t.bot.Handle("/info", func(m *tb.Message) {
 		info := []string{
