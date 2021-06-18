@@ -2,6 +2,7 @@ package core
 
 import "os"
 
+// VideoFile ...
 type VideoFile struct {
 	File
 	Width     int
@@ -12,6 +13,7 @@ type VideoFile struct {
 	ThumbPath string
 }
 
+// Dispose to cleanup filesystem
 func (vf *VideoFile) Dispose() {
 	os.Remove(vf.Path)
 	os.Remove(vf.ThumbPath)

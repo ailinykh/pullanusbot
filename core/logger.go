@@ -1,5 +1,6 @@
 package core
 
+// ILogger for logging
 type ILogger interface {
 	Error(...interface{})
 	Errorf(string, ...interface{})

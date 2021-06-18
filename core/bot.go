@@ -1,5 +1,6 @@
 package core
 
+// IBot represents abstract bot interface
 type IBot interface {
 	Delete(*Message) error
 	SendText(string, ...interface{}) (*Message, error)

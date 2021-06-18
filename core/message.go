@@ -1,5 +1,6 @@
 package core
 
+// Message from chat
 type Message struct {
 	ID        int
 	ChatID    int64
