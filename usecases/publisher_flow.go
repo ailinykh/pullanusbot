@@ -1,4 +1,4 @@
-package use_cases
+package usecases
 
 import (
 	"os"
@@ -8,6 +8,7 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
+// CreatePublisherFlow is a basic PublisherFlow factory
 func CreatePublisherFlow(l core.ILogger) *PublisherFlow {
 	chatID, err := strconv.ParseInt(os.Getenv("PUBLISER_CHAT_ID"), 10, 64)
 	if err != nil {
@@ -28,6 +29,7 @@ func CreatePublisherFlow(l core.ILogger) *PublisherFlow {
 	return &publisher
 }
 
+// PublisherFlow represents last sent image keeper logic
 type PublisherFlow struct {
 	l core.ILogger
 
@@ -47,7 +49,7 @@ type msgSource struct {
 	bot     core.IBot
 }
 
-// core.IImageHandler
+// HandleImage is a core.IImageHandler protocol implementation
 func (p *PublisherFlow) HandleImage(image *core.Image, message *core.Message, bot core.IBot) error {
 	if message.ChatID == p.chatID && message.Sender.Username == p.username {
 		p.imageChan <- imgSource{image.ID, bot}
@@ -56,7 +58,7 @@ func (p *PublisherFlow) HandleImage(image *core.Image, message *core.Message, bo
 	return nil
 }
 
-// core.ICommandHandler
+// HandleCommand is a core.ICommandHandler protocol implementation
 func (p *PublisherFlow) HandleCommand(message *core.Message, bot core.IBot) error {
 	if message.ChatID == p.chatID {
 		p.requestChan <- msgSource{*message, bot}

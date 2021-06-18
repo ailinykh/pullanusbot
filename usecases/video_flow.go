@@ -1,4 +1,4 @@
-package use_cases
+package usecases
 
 import (
 	"fmt"
@@ -8,16 +8,19 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
+// CreateVideoFlow is a basic VideoFlow factory
+func CreateVideoFlow(l core.ILogger, f core.IVideoFileFactory, c core.IVideoFileConverter) *VideoFlow {
+	return &VideoFlow{c, f, l}
+}
+
+// VideoFlow represents convert file to video logic
 type VideoFlow struct {
 	c core.IVideoFileConverter
 	f core.IVideoFileFactory
 	l core.ILogger
 }
 
-func CreateVideoFlow(l core.ILogger, f core.IVideoFileFactory, c core.IVideoFileConverter) *VideoFlow {
-	return &VideoFlow{c, f, l}
-}
-
+// HandleDocument is a core.IDocumentHandler protocol implementation
 func (f *VideoFlow) HandleDocument(document *core.Document, b core.IBot) error {
 	vf, err := f.f.CreateVideoFile(document.FilePath)
 	if err != nil {

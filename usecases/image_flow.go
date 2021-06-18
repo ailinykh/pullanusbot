@@ -1,18 +1,20 @@
-package use_cases
+package usecases
 
 import "github.com/ailinykh/pullanusbot/v2/core"
 
+// CreateImageFlow is a basic ImageFlow factory
 func CreateImageFlow(l core.ILogger, fu core.IFileUploader, id core.IImageDownloader) *ImageFlow {
 	return &ImageFlow{l, fu, id}
 }
 
+// ImageFlow represents convert image to hotlink logic
 type ImageFlow struct {
 	l  core.ILogger
 	fu core.IFileUploader
 	id core.IImageDownloader
 }
 
-// IImageHandler
+// HandleImage is a core.IImageHandler protocol implementation
 func (f *ImageFlow) HandleImage(image *core.Image, message *core.Message, bot core.IBot) error {
 	if !message.IsPrivate {
 		return nil

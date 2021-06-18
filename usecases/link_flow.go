@@ -1,4 +1,4 @@
-package use_cases
+package usecases
 
 import (
 	"fmt"
@@ -10,10 +10,12 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
+// CreateLinkFlow is a basic LinkFlow factory
 func CreateLinkFlow(l core.ILogger, fd core.IFileDownloader, vff core.IVideoFileFactory, vfc core.IVideoFileConverter) *LinkFlow {
 	return &LinkFlow{l, fd, vff, vfc}
 }
 
+// LinkFlow represents convert hotlink to video file logic
 type LinkFlow struct {
 	l   core.ILogger
 	fd  core.IFileDownloader
@@ -21,7 +23,7 @@ type LinkFlow struct {
 	vfc core.IVideoFileConverter
 }
 
-// core.ITextHandler
+// HandleText is a core.ITextHandler protocol implementation
 func (lf *LinkFlow) HandleText(message *core.Message, bot core.IBot) error {
 	r := regexp.MustCompile(`^http(\S+)$`)
 	if r.MatchString(message.Text) {
@@ -48,7 +50,10 @@ func (lf *LinkFlow) processLink(message *core.Message, bot core.IBot) error {
 
 		if err != nil {
 			lf.l.Errorf("%s. Fallback to uploading", err)
-			return lf.sendByUploading(media, bot)
+			err := lf.sendByUploading(media, bot)
+			if err != nil {
+				return err
+			}
 		}
 		return bot.Delete(message)
 	case "video/webm":
@@ -66,7 +71,10 @@ func (lf *LinkFlow) processLink(message *core.Message, bot core.IBot) error {
 		defer vfc.Dispose()
 
 		_, err = bot.SendVideoFile(vfc, media.Caption)
-		return err
+		if err != nil {
+			return err
+		}
+		return bot.Delete(message)
 	case "text/html; charset=utf-8":
 	default:
 		lf.l.Warningf("Unsupported content type: %s", resp.Header["Content-Type"])

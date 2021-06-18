@@ -7,12 +7,12 @@ import (
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 	"github.com/ailinykh/pullanusbot/v2/infrastructure"
-	"github.com/ailinykh/pullanusbot/v2/use_cases"
+	"github.com/ailinykh/pullanusbot/v2/usecases"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-func (t *Telebot) SetupGame(g use_cases.GameFlow) {
+func (t *Telebot) SetupGame(g usecases.GameFlow) {
 	t.bot.Handle("/pidorules", func(m *tb.Message) {
 		text := g.Rules()
 		t.bot.Send(m.Chat, text, &tb.SendOptions{ParseMode: tb.ModeHTML})

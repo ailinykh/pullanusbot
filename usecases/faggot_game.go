@@ -1,4 +1,4 @@
-package use_cases
+package usecases
 
 import (
 	"fmt"
@@ -11,18 +11,22 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
+// CreateGameFlow is a simple GameFlow factory
 func CreateGameFlow(l core.ILocalizer) GameFlow {
 	return GameFlow{l}
 }
 
+// GameFlow represents faggot game logic
 type GameFlow struct {
 	l core.ILocalizer
 }
 
+// Rules of the game
 func (flow *GameFlow) Rules() string {
 	return flow.l.I18n("faggot_rules")
 }
 
+// Add a new player to game
 func (flow *GameFlow) Add(player *core.User, storage core.IGameStorage) string {
 	players, _ := storage.GetPlayers()
 	for _, p := range players {
@@ -40,6 +44,7 @@ func (flow *GameFlow) Add(player *core.User, storage core.IGameStorage) string {
 	return flow.l.I18n("faggot_added_to_game")
 }
 
+// Play game
 func (flow *GameFlow) Play(player *core.User, storage core.IGameStorage) []string {
 	players, _ := storage.GetPlayers()
 	switch len(players) {
@@ -85,6 +90,7 @@ func (flow *GameFlow) Play(player *core.User, storage core.IGameStorage) []strin
 	return phrases
 }
 
+// All statistics for all time
 func (flow *GameFlow) All(storage core.IGameStorage) string {
 	entries, _ := flow.getStat(storage)
 	messages := []string{flow.l.I18n("faggot_all_top"), ""}
@@ -96,6 +102,7 @@ func (flow *GameFlow) All(storage core.IGameStorage) string {
 	return strings.Join(messages, "\n")
 }
 
+// Stats returns current year statistics
 func (flow *GameFlow) Stats(storage core.IGameStorage) string {
 	year := strconv.Itoa(time.Now().Year())
 	rounds, _ := storage.GetRounds()
@@ -128,6 +135,7 @@ func (flow *GameFlow) Stats(storage core.IGameStorage) string {
 	return strings.Join(messages, "\n")
 }
 
+// Me returns your personal statistics
 func (flow *GameFlow) Me(player *core.User, storage core.IGameStorage) string {
 	entries, _ := flow.getStat(storage)
 	score := 0

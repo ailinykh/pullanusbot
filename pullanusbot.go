@@ -9,7 +9,7 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/api"
 	"github.com/ailinykh/pullanusbot/v2/core"
 	"github.com/ailinykh/pullanusbot/v2/infrastructure"
-	"github.com/ailinykh/pullanusbot/v2/use_cases"
+	"github.com/ailinykh/pullanusbot/v2/usecases"
 	"github.com/google/logger"
 )
 
@@ -22,31 +22,31 @@ func main() {
 	telebot := api.CreateTelebot(os.Getenv("BOT_TOKEN"), logger)
 
 	localizer := infrastructure.GameLocalizer{}
-	game := use_cases.CreateGameFlow(localizer)
+	game := usecases.CreateGameFlow(localizer)
 	telebot.SetupGame(game)
 
 	telebot.SetupInfo()
 
 	converter := infrastructure.CreateFfmpegConverter()
-	video_flow := use_cases.CreateVideoFlow(logger, converter, converter)
-	telebot.AddHandler(video_flow)
+	videoFlow := usecases.CreateVideoFlow(logger, converter, converter)
+	telebot.AddHandler(videoFlow)
 
-	file_downloader := infrastructure.CreateFileDownloader()
-	twitter_api := api.CreateTwitterAPI()
-	twitter_flow := use_cases.CreateTwitterFlow(logger, twitter_api, file_downloader, converter)
-	telebot.AddHandler(twitter_flow)
+	fileDownloader := infrastructure.CreateFileDownloader()
+	twitterAPI := api.CreateTwitterAPI()
+	twitterFlow := usecases.CreateTwitterFlow(logger, twitterAPI, fileDownloader, converter)
+	telebot.AddHandler(twitterFlow)
 
-	link_flow := use_cases.CreateLinkFlow(logger, file_downloader, converter, converter)
-	telebot.AddHandler(link_flow)
+	linkFlow := usecases.CreateLinkFlow(logger, fileDownloader, converter, converter)
+	telebot.AddHandler(linkFlow)
 
-	file_uploader := api.CreateTelegraphAPI()
+	fileUploader := api.CreateTelegraphAPI()
 	//TODO: image_downloader := api.CreateTelebotImageDownloader()
-	image_flow := use_cases.CreateImageFlow(logger, file_uploader, telebot)
-	telebot.AddHandler(image_flow)
+	imageFlow := usecases.CreateImageFlow(logger, fileUploader, telebot)
+	telebot.AddHandler(imageFlow)
 
-	publisher_flow := use_cases.CreatePublisherFlow(logger)
-	telebot.AddHandler(publisher_flow)
-	telebot.AddHandler("/loh666", publisher_flow)
+	publisherFlow := usecases.CreatePublisherFlow(logger)
+	telebot.AddHandler(publisherFlow)
+	telebot.AddHandler("/loh666", publisherFlow)
 	// Start endless loop
 	telebot.Run()
 }

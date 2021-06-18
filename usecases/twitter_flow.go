@@ -1,4 +1,4 @@
-package use_cases
+package usecases
 
 import (
 	"errors"
@@ -13,10 +13,12 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
+// CreateTwitterFlow is a basic TwitterFlow factory
 func CreateTwitterFlow(l core.ILogger, mf core.IMediaFactory, fd core.IFileDownloader, vff core.IVideoFileFactory) *TwitterFlow {
 	return &TwitterFlow{l, mf, fd, vff, make(map[core.Message]core.Message)}
 }
 
+// TwitterFlow represents tweet processing logic
 type TwitterFlow struct {
 	l              core.ILogger
 	mf             core.IMediaFactory
@@ -25,7 +27,7 @@ type TwitterFlow struct {
 	timeoutReplies map[core.Message]core.Message
 }
 
-// core.ITextHandler
+// HandleText is a core.ITextHandler protocol implementation
 func (tf *TwitterFlow) HandleText(message *core.Message, bot core.IBot) error {
 	r := regexp.MustCompile(`twitter\.com.+/(\d+)\S*$`)
 	match := r.FindStringSubmatch(message.Text)
