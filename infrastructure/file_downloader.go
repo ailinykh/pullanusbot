@@ -9,13 +9,15 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
+// CreateFileDownloader is a default FileDownloader factory
 func CreateFileDownloader() *FileDownloader {
 	return &FileDownloader{}
 }
 
+// FileDownloader is a default implementation for core.IFileDownloader
 type FileDownloader struct{}
 
-// core.IFileDownloader
+// Download is a core.IFileDownloader interface implementation
 func (FileDownloader) Download(url core.URL) (*core.File, error) {
 	name := path.Base(url)
 	path := path.Join(os.TempDir(), name)

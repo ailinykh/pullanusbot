@@ -12,13 +12,15 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
+// CreateFfmpegConverter is a basic FfmpegConverter factory
 func CreateFfmpegConverter() *FfmpegConverter {
 	return &FfmpegConverter{}
 }
 
+// FfmpegConverter implements core.IVideoFileConverter and core.IVideoFileFactory using ffmpeg
 type FfmpegConverter struct{}
 
-// core.IVideoFileConverter
+// Convert is a core.IVideoFileConverter interface implementation
 func (c *FfmpegConverter) Convert(vf *core.VideoFile, bitrate int) (*core.VideoFile, error) {
 	convertedVideoFilePath := path.Join(os.TempDir(), vf.Name+"_converted.mp4")
 	cmd := fmt.Sprintf(`ffmpeg -y -i "%s" -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "%s"`, vf.Path, convertedVideoFilePath)
@@ -34,6 +36,7 @@ func (c *FfmpegConverter) Convert(vf *core.VideoFile, bitrate int) (*core.VideoF
 	return c.CreateVideoFile(convertedVideoFilePath)
 }
 
+// CreateVideoFile is a core.IVideoFileFactory interface implementation
 func (c *FfmpegConverter) CreateVideoFile(path string) (*core.VideoFile, error) {
 	ffprobe, err := c.getFFProbe(path)
 	if err != nil {

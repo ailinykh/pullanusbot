@@ -1,5 +1,6 @@
 package infrastructure
 
+// Player that can be persistent on disk
 type Player struct {
 	GameID       int64 `gorm:"primaryKey"`
 	UserID       int   `gorm:"primaryKey"`
@@ -9,6 +10,7 @@ type Player struct {
 	LanguageCode string
 }
 
+// TableName gorm API
 func (Player) TableName() string {
 	return "faggot_players"
 }

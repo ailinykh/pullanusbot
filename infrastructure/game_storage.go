@@ -13,6 +13,7 @@ import (
 
 var conn *gorm.DB
 
+// CreateGameStorage is a default GameStorage factory
 func CreateGameStorage(gameID int64, factory IPlayerFactory) GameStorage {
 	if conn == nil {
 		dbFile := path.Join(getWorkingDir(), "pullanusbot.db")
@@ -39,22 +40,25 @@ func CreateGameStorage(gameID int64, factory IPlayerFactory) GameStorage {
 	return s
 }
 
+// GameStorage implements core.IGameStorage interface
 type GameStorage struct {
 	conn          *gorm.DB
 	gameID        int64
 	playerFactory IPlayerFactory
 }
 
-func (db *GameStorage) GetPlayers() ([]*core.User, error) {
+// GetPlayers is a core.IGameStorage interface implementation
+func (s *GameStorage) GetPlayers() ([]*core.User, error) {
 	var dbPlayers []Player
 	var corePlayers []*core.User
-	db.conn.Where("game_id = ?", db.gameID).Find(&dbPlayers)
+	s.conn.Where("game_id = ?", s.gameID).Find(&dbPlayers)
 	for _, p := range dbPlayers {
 		corePlayers = append(corePlayers, &core.User{Username: p.Username})
 	}
 	return corePlayers, nil
 }
 
+// GetRounds is a core.IGameStorage interface implementation
 func (s *GameStorage) GetRounds() ([]*core.Round, error) {
 	var dbRounds []Round
 	var coreRounds []*core.Round
@@ -66,12 +70,14 @@ func (s *GameStorage) GetRounds() ([]*core.Round, error) {
 	return coreRounds, nil
 }
 
+// AddPlayer is a core.IGameStorage interface implementation
 func (s *GameStorage) AddPlayer(player *core.User) error {
 	dbPlayer := s.playerFactory.CreatePlayer(player.Username)
 	s.conn.Create(&dbPlayer)
 	return nil
 }
 
+// AddRound is a core.IGameStorage interface implementation
 func (s *GameStorage) AddRound(round *core.Round) error {
 	player := s.playerFactory.CreatePlayer(round.Winner.Username)
 	dbRound := Round{

@@ -5,6 +5,7 @@ import (
 	"runtime"
 )
 
+// GameLocalizer for faggot game
 type GameLocalizer struct{}
 
 var ru = map[string]string{
@@ -89,6 +90,7 @@ var ru = map[string]string{
 	"faggot_me": "%s, ты был(а) <b>пидором дня</b> — %d раз!",
 }
 
+// I18n is a core.ILocalizer implementation
 func (l GameLocalizer) I18n(key string, args ...interface{}) string {
 
 	if val, ok := ru[key]; ok {
@@ -99,6 +101,7 @@ func (l GameLocalizer) I18n(key string, args ...interface{}) string {
 	return fmt.Sprintf("%s:%d KEY_MISSED:\"%s\"", file, line, key)
 }
 
+// AllKeys is a core.ILocalizer implementation
 func (l GameLocalizer) AllKeys() []string {
 	keys := make([]string, 0, len(ru))
 	for k := range ru {
