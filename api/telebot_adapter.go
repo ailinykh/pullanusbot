@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/ailinykh/pullanusbot/v2/core"
-	"github.com/ailinykh/pullanusbot/v2/infrastructure"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -109,16 +108,4 @@ func (a *TelebotAdapter) SendVideoFile(vf *core.VideoFile, caption string) (*cor
 		a.t.bot.Delete(a.m)
 	}
 	return makeMessage(sent), err
-}
-
-// CreatePlayer is a core.IPlayerFactory interface implementation
-func (a *TelebotAdapter) CreatePlayer(string) infrastructure.Player {
-	return infrastructure.Player{
-		GameID:       a.m.Chat.ID,
-		UserID:       a.m.Sender.ID,
-		FirstName:    a.m.Sender.FirstName,
-		LastName:     a.m.Sender.LastName,
-		Username:     a.m.Sender.Username,
-		LanguageCode: a.m.Sender.LanguageCode,
-	}
 }

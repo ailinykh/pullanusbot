@@ -1,7 +1,6 @@
 package usecases
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -13,95 +12,84 @@ import (
 )
 
 func Test_RulesCommand_DeliversRules(t *testing.T) {
-	game, _, l := makeSUT(LocalizerDict{"faggot_rules": "Game rules:"})
-	expected := l.I18n("faggot_rules")
-	rules := game.Rules()
+	game, bot, _ := makeSUT(LocalizerDict{"faggot_rules": "Game rules:"})
+	message := makeMessage(1, "Faggot")
 
-	assert.Equal(t, rules, expected)
-}
+	game.Rules(message, bot)
 
-func Test_RulesCommand_DeliversRulesInDifferentTranslations(t *testing.T) {
-	game, _, l := makeSUT(LocalizerDict{"faggot_rules": "Правила игры:"})
-	expected := l.I18n("faggot_rules")
-	rules := game.Rules()
-
-	assert.Equal(t, rules, expected)
-}
-
-func Test_Add_ReturnsErrorOnStorageError(t *testing.T) {
-	game, storage, _ := makeSUT()
-	storage.err = errors.New("Unexpected error")
-	player := &core.User{Username: "Faggot"}
-	message := game.Add(player, storage)
-
-	assert.Equal(t, message, storage.err.Error())
+	assert.Equal(t, bot.messages[0], "Game rules:")
 }
 
 func Test_Add_AppendsPlayerInGameOnlyOnce(t *testing.T) {
-	game, storage, localizer := makeSUT(LocalizerDict{
+	game, bot, storage := makeSUT(LocalizerDict{
 		"faggot_added_to_game":   "Player added",
 		"faggot_already_in_game": "Player already in game",
 	})
-	player := &core.User{Username: "Faggot"}
+	message := makeMessage(1, "Faggot")
 
-	message := game.Add(player, storage)
+	game.Add(message, bot)
 
-	assert.Equal(t, storage.players, []*core.User{player})
-	assert.Equal(t, message, localizer.I18n("faggot_added_to_game"))
+	assert.Equal(t, storage.players, []*core.User{message.Sender})
+	assert.Equal(t, bot.messages[0], "Player added")
 
-	message = game.Add(player, storage)
+	game.Add(message, bot)
 
-	assert.Equal(t, storage.players, []*core.User{player})
-	assert.Equal(t, message, localizer.I18n("faggot_already_in_game"))
+	assert.Equal(t, storage.players, []*core.User{message.Sender})
+	assert.Equal(t, bot.messages[1], "Player already in game")
 }
 
 func Test_Play_RespondsWithNoPlayers(t *testing.T) {
-	game, storage, localizer := makeSUT(LocalizerDict{
+	game, bot, _ := makeSUT(LocalizerDict{
 		"faggot_no_players": "Nobody in game. So you win, %s!",
 	})
-	player := &core.User{Username: "Faggot"}
-	messages := game.Play(player, storage)
-	expected := []string{localizer.I18n("faggot_no_players", player.Username)}
-	assert.Equal(t, messages, expected)
+	message := makeMessage(1, "Faggot")
+
+	game.Play(message, bot)
+
+	assert.Equal(t, bot.messages[0], "Nobody in game. So you win, Faggot!")
 }
 
 func Test_Play_RespondsNotEnoughPlayers(t *testing.T) {
-	game, storage, localizer := makeSUT(LocalizerDict{
+	game, bot, _ := makeSUT(LocalizerDict{
 		"faggot_not_enough_players": "Not enough players",
 	})
-	player := &core.User{Username: "Faggot"}
-	game.Add(player, storage)
+	message := makeMessage(1, "Faggot")
 
-	messages := game.Play(player, storage)
-	expected := []string{localizer.I18n("faggot_not_enough_players")}
-	assert.Equal(t, messages, expected)
+	game.Add(message, bot)
+	game.Play(message, bot)
+
+	assert.Equal(t, bot.messages[1], "Not enough players")
 }
 
 func Test_Play_RespondsWinnerAlreadyKnown(t *testing.T) {
-	game, storage, localizer := makeSUT(LocalizerDict{
+	game, bot, storage := makeSUT(LocalizerDict{
 		"faggot_game_0_0":     "0",
 		"faggot_game_1_0":     "1",
 		"faggot_game_2_0":     "2",
 		"faggot_game_3_0":     "3 %s",
 		"faggot_winner_known": "Winner already known %s",
 	})
-	player1 := &core.User{Username: "Faggot1"}
-	player2 := &core.User{Username: "Faggot2"}
-	game.Add(player1, storage)
-	game.Add(player2, storage)
+	m1 := makeMessage(1, "Faggot1")
+	m2 := makeMessage(2, "Faggot2")
 
-	messages := game.Play(player1, storage)
-	expected := []string{"0", "1", "2", fmt.Sprintf("3 @%s", storage.rounds[0].Winner.Username)}
-	assert.Equal(t, messages, expected)
+	game.Add(m1, bot)
+	game.Add(m2, bot)
+	game.Play(m1, bot)
 
-	messages = game.Play(player1, storage)
-	expected = []string{localizer.I18n("faggot_winner_known", storage.rounds[0].Winner.Username)}
-	assert.Equal(t, messages, expected)
+	winner := storage.rounds[0].Winner.Username
+	assert.Equal(t, bot.messages[2], "0")
+	assert.Equal(t, bot.messages[3], "1")
+	assert.Equal(t, bot.messages[4], "2")
+	assert.Equal(t, bot.messages[5], fmt.Sprintf("3 @%s", winner))
+
+	game.Play(m1, bot)
+
+	assert.Equal(t, bot.messages[6], fmt.Sprintf("Winner already known %s", winner))
 }
 
 func Test_Stats_RespondsWithDescendingResultsForCurrentYear(t *testing.T) {
 	year := strconv.Itoa(time.Now().Year())
-	game, storage, _ := makeSUT(LocalizerDict{
+	game, bot, storage := makeSUT(LocalizerDict{
 		"faggot_stats_top":    "top",
 		"faggot_stats_entry":  "index:%d,player:%s,scores:%d",
 		"faggot_stats_bottom": "total_players:%d",
@@ -117,26 +105,26 @@ func Test_Stats_RespondsWithDescendingResultsForCurrentYear(t *testing.T) {
 		"total_players:3",
 	}
 
-	player1 := &core.User{Username: "Faggot1"}
-	player2 := &core.User{Username: "Faggot2"}
-	player3 := &core.User{Username: "Faggot3"}
+	m1 := makeMessage(1, "Faggot1")
+	m2 := makeMessage(2, "Faggot2")
+	m3 := makeMessage(3, "Faggot3")
 
 	storage.rounds = []*core.Round{
-		{Day: year + "-01-01", Winner: player2},
-		{Day: "2020-01-02", Winner: player3},
-		{Day: year + "-01-02", Winner: player3},
-		{Day: year + "-01-03", Winner: player3},
-		{Day: year + "-01-04", Winner: player3},
-		{Day: year + "-01-05", Winner: player1},
-		{Day: year + "-01-06", Winner: player1},
+		{Day: year + "-01-01", Winner: m2.Sender},
+		{Day: "2020-01-02", Winner: m3.Sender},
+		{Day: year + "-01-02", Winner: m3.Sender},
+		{Day: year + "-01-03", Winner: m3.Sender},
+		{Day: year + "-01-04", Winner: m3.Sender},
+		{Day: year + "-01-05", Winner: m1.Sender},
+		{Day: year + "-01-06", Winner: m1.Sender},
 	}
 
-	message := game.Stats(storage)
-	assert.Equal(t, strings.Split(message, "\n"), expected)
+	game.Stats(m1, bot)
+	assert.Equal(t, strings.Split(bot.messages[0], "\n"), expected)
 }
 
 func Test_All_RespondsWithDescendingResultsForAllTime(t *testing.T) {
-	game, storage, _ := makeSUT(LocalizerDict{
+	game, bot, storage := makeSUT(LocalizerDict{
 		"faggot_all_top":    "top",
 		"faggot_all_entry":  "index:%d,player:%s,scores:%d",
 		"faggot_all_bottom": "total_players:%d",
@@ -152,51 +140,61 @@ func Test_All_RespondsWithDescendingResultsForAllTime(t *testing.T) {
 		"total_players:3",
 	}
 
-	player1 := &core.User{Username: "Faggot1"}
-	player2 := &core.User{Username: "Faggot2"}
-	player3 := &core.User{Username: "Faggot3"}
+	m1 := makeMessage(1, "Faggot1")
+	m2 := makeMessage(2, "Faggot2")
+	m3 := makeMessage(3, "Faggot3")
 
 	storage.rounds = []*core.Round{
-		{Day: "2021-01-01", Winner: player2},
-		{Day: "2020-01-02", Winner: player3},
-		{Day: "2020-01-02", Winner: player3},
-		{Day: "2021-01-03", Winner: player3},
-		{Day: "2021-01-04", Winner: player3},
-		{Day: "2021-01-05", Winner: player1},
-		{Day: "2021-01-06", Winner: player1},
+		{Day: "2021-01-01", Winner: m2.Sender},
+		{Day: "2020-01-02", Winner: m3.Sender},
+		{Day: "2020-01-02", Winner: m3.Sender},
+		{Day: "2021-01-03", Winner: m3.Sender},
+		{Day: "2021-01-04", Winner: m3.Sender},
+		{Day: "2021-01-05", Winner: m1.Sender},
+		{Day: "2021-01-06", Winner: m1.Sender},
 	}
 
-	message := game.All(storage)
-	assert.Equal(t, strings.Split(message, "\n"), expected)
+	game.All(m1, bot)
+	assert.Equal(t, strings.Split(bot.messages[0], "\n"), expected)
 }
 
 func Test_Me_RespondsWithPersonalStat(t *testing.T) {
-	game, storage, localizer := makeSUT(LocalizerDict{
+	game, bot, storage := makeSUT(LocalizerDict{
 		"faggot_me": "username:%s,scores:%d",
 	})
 
-	player1 := &core.User{Username: "Faggot1"}
-	player2 := &core.User{Username: "Faggot2"}
+	m1 := makeMessage(1, "Faggot1")
+	m2 := makeMessage(2, "Faggot2")
 
 	storage.rounds = []*core.Round{
-		{Day: "2021-01-01", Winner: player2},
-		{Day: "2021-01-05", Winner: player1},
-		{Day: "2021-01-06", Winner: player1},
+		{Day: "2021-01-01", Winner: m2.Sender},
+		{Day: "2021-01-05", Winner: m1.Sender},
+		{Day: "2021-01-06", Winner: m1.Sender},
 	}
 
-	var message string
-	message = game.Me(player1, storage)
-	assert.Equal(t, message, localizer.I18n("faggot_me", player1.Username, 2))
+	game.Me(m1, bot)
+	assert.Equal(t, bot.messages[0], fmt.Sprintf("username:%s,scores:%d", m1.Sender.Username, 2))
 
-	message = game.Me(player2, storage)
-	assert.Equal(t, message, localizer.I18n("faggot_me", player2.Username, 1))
+	game.Me(m2, bot)
+	assert.Equal(t, bot.messages[1], fmt.Sprintf("username:%s,scores:%d", m2.Sender.Username, 1))
 }
 
 // Helpers
 
-func makeSUT(args ...interface{}) (*GameFlow, *GameStorageMock, *LocalizerMock) {
+func makeMessage(id int, username string) *core.Message {
+	player := &core.User{
+		ID:        id,
+		FirstName: "FirstName" + fmt.Sprint(id),
+		LastName:  "LastName" + fmt.Sprint(id),
+		Username:  username,
+	}
+	return &core.Message{ID: 0, Sender: player}
+}
+
+func makeSUT(args ...interface{}) (*GameFlow, *BotMock, *GameStorageMock) {
 	dict := LocalizerDict{}
 	storage := &GameStorageMock{players: []*core.User{}}
+	bot := &BotMock{}
 
 	for _, arg := range args {
 		switch opt := arg.(type) {
@@ -206,8 +204,8 @@ func makeSUT(args ...interface{}) (*GameFlow, *GameStorageMock, *LocalizerMock) 
 	}
 
 	l := &LocalizerMock{dict: dict}
-	game := &GameFlow{l}
-	return game, storage, l
+	game := &GameFlow{l, storage}
+	return game, bot, storage
 }
 
 // LocalizerMock
@@ -238,39 +236,38 @@ func (l *LocalizerMock) AllKeys() []string {
 type GameStorageMock struct {
 	players []*core.User
 	rounds  []*core.Round
-	err     error
 }
 
-func (s *GameStorageMock) AddPlayer(player *core.User) error {
-	if s.err != nil {
-		return s.err
-	}
-
+func (s *GameStorageMock) AddPlayer(gameID int64, player *core.User) error {
 	s.players = append(s.players, player)
 	return nil
 }
 
-func (s *GameStorageMock) GetPlayers() ([]*core.User, error) {
-	if s.err != nil {
-		return []*core.User{}, s.err
-	}
-
+func (s *GameStorageMock) GetPlayers(gameID int64) ([]*core.User, error) {
 	return s.players, nil
 }
 
-func (s *GameStorageMock) AddRound(round *core.Round) error {
-	if s.err != nil {
-		return s.err
-	}
-
+func (s *GameStorageMock) AddRound(gameID int64, round *core.Round) error {
 	s.rounds = append(s.rounds, round)
 	return nil
 }
 
-func (s *GameStorageMock) GetRounds() ([]*core.Round, error) {
-	if s.err != nil {
-		return []*core.Round{}, s.err
-	}
-
+func (s *GameStorageMock) GetRounds(gameID int64) ([]*core.Round, error) {
 	return s.rounds, nil
+}
+
+type BotMock struct {
+	messages []string
+}
+
+func (BotMock) Delete(*core.Message) error                                   { return nil }
+func (BotMock) SendImage(*core.Image) (*core.Message, error)                 { return nil, nil }
+func (BotMock) SendAlbum([]*core.Image) ([]*core.Message, error)             { return nil, nil }
+func (BotMock) SendMedia(*core.Media) (*core.Message, error)                 { return nil, nil }
+func (BotMock) SendPhotoAlbum([]*core.Media) ([]*core.Message, error)        { return nil, nil }
+func (BotMock) SendVideoFile(*core.VideoFile, string) (*core.Message, error) { return nil, nil }
+
+func (b *BotMock) SendText(text string, args ...interface{}) (*core.Message, error) {
+	b.messages = append(b.messages, text)
+	return nil, nil
 }

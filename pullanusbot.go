@@ -23,12 +23,17 @@ func main() {
 	defer close()
 
 	telebot := api.CreateTelebot(os.Getenv("BOT_TOKEN"), logger)
+	telebot.SetupInfo()
 
 	localizer := infrastructure.GameLocalizer{}
-	game := usecases.CreateGameFlow(localizer)
-	telebot.SetupGame(game, createDatabaseConnection())
-
-	telebot.SetupInfo()
+	gameStorade := infrastructure.CreateGameStorage(createDatabaseConnection(), logger)
+	gameFlow := usecases.CreateGameFlow(localizer, gameStorade)
+	telebot.AddHandler("/pidorules", gameFlow.Rules)
+	telebot.AddHandler("/pidoreg", gameFlow.Add)
+	telebot.AddHandler("/pidor", gameFlow.Play)
+	telebot.AddHandler("/pidorstats", gameFlow.Stats)
+	telebot.AddHandler("/pidorall", gameFlow.All)
+	telebot.AddHandler("/pidorme", gameFlow.Me)
 
 	converter := infrastructure.CreateFfmpegConverter()
 	videoFlow := usecases.CreateVideoFlow(logger, converter, converter)

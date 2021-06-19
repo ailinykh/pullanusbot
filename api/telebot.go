@@ -119,12 +119,16 @@ func (t *Telebot) AddHandler(handler ...interface{}) {
 		t.imageHandlers = append(t.imageHandlers, h)
 	case string:
 		t.registerCommand(h)
-		if handler, ok := handler[1].(core.ICommandHandler); ok {
+		if ch, ok := handler[1].(core.ICommandHandler); ok {
 			t.bot.Handle(h, func(m *tb.Message) {
-				handler.HandleCommand(makeMessage(m), &TelebotAdapter{m, t})
+				ch.HandleCommand(makeMessage(m), &TelebotAdapter{m, t})
+			})
+		} else if f, ok := handler[1].(func(*core.Message, core.IBot) error); ok {
+			t.bot.Handle(h, func(m *tb.Message) {
+				f(makeMessage(m), &TelebotAdapter{m, t})
 			})
 		} else {
-			panic("interface must implement core.ICommandHandler")
+			panic("interface must implement core.ICommandHandler or func(*core.Message, core.IBot) error")
 		}
 	default:
 		panic(fmt.Sprintf("something wrong with %s", h))
@@ -150,8 +154,18 @@ func makeMessage(m *tb.Message) *core.Message {
 		ID:        m.ID,
 		ChatID:    m.Chat.ID,
 		IsPrivate: m.Private(),
-		Sender:    &core.User{Username: m.Sender.Username},
+		Sender:    makeUser(m.Sender),
 		Text:      m.Text,
+	}
+}
+
+func makeUser(u *tb.User) *core.User {
+	return &core.User{
+		ID:           u.ID,
+		FirstName:    u.FirstName,
+		LastName:     u.LastName,
+		Username:     u.Username,
+		LanguageCode: u.LanguageCode,
 	}
 }
 
