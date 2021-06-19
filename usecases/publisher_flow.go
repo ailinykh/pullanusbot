@@ -58,8 +58,7 @@ func (p *PublisherFlow) HandleImage(image *core.Image, message *core.Message, bo
 	return nil
 }
 
-// HandleCommand is a core.ICommandHandler protocol implementation
-func (p *PublisherFlow) HandleCommand(message *core.Message, bot core.IBot) error {
+func (p *PublisherFlow) HandleRequest(message *core.Message, bot core.IBot) error {
 	if message.ChatID == p.chatID {
 		p.requestChan <- msgSource{*message, bot}
 	}

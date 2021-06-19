@@ -1,10 +1,5 @@
 package core
 
-// ICommandHandler responds to text messages started from forwardslash
-type ICommandHandler interface {
-	HandleCommand(*Message, IBot) error
-}
-
 // IDocumentHandler responds to documents sent in chah
 type IDocumentHandler interface {
 	HandleDocument(*Document, IBot) error

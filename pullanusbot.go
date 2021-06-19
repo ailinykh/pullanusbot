@@ -52,7 +52,7 @@ func main() {
 
 	publisherFlow := usecases.CreatePublisherFlow(logger)
 	telebot.AddHandler(publisherFlow)
-	telebot.AddHandler("/loh666", publisherFlow)
+	telebot.AddHandler("/loh666", publisherFlow.HandleRequest)
 	// Start endless loop
 	telebot.Run()
 }

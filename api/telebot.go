@@ -119,16 +119,12 @@ func (t *Telebot) AddHandler(handler ...interface{}) {
 		t.imageHandlers = append(t.imageHandlers, h)
 	case string:
 		t.registerCommand(h)
-		if ch, ok := handler[1].(core.ICommandHandler); ok {
-			t.bot.Handle(h, func(m *tb.Message) {
-				ch.HandleCommand(makeMessage(m), &TelebotAdapter{m, t})
-			})
-		} else if f, ok := handler[1].(func(*core.Message, core.IBot) error); ok {
+		if f, ok := handler[1].(func(*core.Message, core.IBot) error); ok {
 			t.bot.Handle(h, func(m *tb.Message) {
 				f(makeMessage(m), &TelebotAdapter{m, t})
 			})
 		} else {
-			panic("interface must implement core.ICommandHandler or func(*core.Message, core.IBot) error")
+			panic("interface must implement func(*core.Message, core.IBot) error")
 		}
 	default:
 		panic(fmt.Sprintf("something wrong with %s", h))
