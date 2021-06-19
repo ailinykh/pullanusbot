@@ -2,18 +2,25 @@ package infrastructure
 
 import (
 	"github.com/ailinykh/pullanusbot/v2/core"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // CreateGameStorage is a default GameStorage factory
-func CreateGameStorage(conn *gorm.DB, logger core.ILogger) *GameStorage {
+func CreateGameStorage(dbFile string) *GameStorage {
+	conn, err := gorm.Open(sqlite.Open(dbFile+"?cache=shared"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Error),
+	})
+	if err != nil {
+		panic(err)
+	}
+
 	if conn.Migrator().HasTable(&Player{}) && conn.Migrator().HasColumn(&Player{}, "chat_id") {
-		logger.Info("Extendend migration")
 		conn.Migrator().RenameColumn(&Player{}, "chat_id", "game_id")
 		conn.Migrator().RenameTable("faggot_entries", "faggot_rounds")
 		conn.Migrator().RenameColumn(&Round{}, "chat_id", "game_id")
 	} else {
-		logger.Info("Default migration")
 		conn.AutoMigrate(&Player{}, &Round{})
 	}
 	return &GameStorage{conn}
