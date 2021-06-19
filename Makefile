@@ -6,7 +6,7 @@ run: build
 	./pullanusbot
 
 test:
-	go test ./... -coverprofile=cover.txt
+	go test ./... -coverprofile=cover.txt -race
 
 build: clean *.go
 	go build .
