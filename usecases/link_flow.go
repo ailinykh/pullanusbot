@@ -102,8 +102,6 @@ func (lf *LinkFlow) downloadMedia(media *core.Media) (*core.VideoFile, error) {
 		return nil, err
 	}
 
-	defer os.Remove(file.Path)
-
 	stat, err := os.Stat(file.Path)
 	if err != nil {
 		return nil, err
