@@ -36,6 +36,31 @@ func (c *FfmpegConverter) Convert(vf *core.VideoFile, bitrate int) (*core.VideoF
 	return c.CreateVideoFile(convertedVideoFilePath)
 }
 
+// CreateVideoFile is a core.IVideoFileSplitter interface implementation
+func (c *FfmpegConverter) Split(video *core.VideoFile, limit int) ([]*core.VideoFile, error) {
+	duration, n := 0, 0
+	var videos = []*core.VideoFile{}
+	for duration < video.Duration {
+		nextFilePath := fmt.Sprintf("%s-%d.mp4", video.File.Path, n)
+		cmd := fmt.Sprintf(`ffmpeg -i %s -ss %d -fs %d %s`, video.File.Path, duration, limit, nextFilePath)
+		_, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
+		if err != nil {
+			return nil, err
+		}
+
+		nextVideoFile, err := c.CreateVideoFile(nextFilePath)
+		if err != nil {
+			return nil, err
+		}
+		// defer nextVideoFile.Dispose()
+
+		videos = append(videos, nextVideoFile)
+		duration += nextVideoFile.Duration
+		n++
+	}
+	return videos, nil
+}
+
 // CreateVideoFile is a core.IVideoFileFactory interface implementation
 func (c *FfmpegConverter) CreateVideoFile(path string) (*core.VideoFile, error) {
 	ffprobe, err := c.getFFProbe(path)
@@ -73,7 +98,7 @@ func (c *FfmpegConverter) CreateVideoFile(path string) (*core.VideoFile, error) 
 	}
 
 	return &core.VideoFile{
-		File:      core.File{Name: stat.Name(), Path: path},
+		File:      core.File{Name: stat.Name(), Path: path, Size: stat.Size()},
 		Width:     stream.Width,
 		Height:    stream.Height,
 		Bitrate:   bitrate,
