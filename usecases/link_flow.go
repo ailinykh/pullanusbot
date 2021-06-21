@@ -41,7 +41,7 @@ func (lf *LinkFlow) processLink(message *core.Message, bot core.IBot) error {
 	}
 
 	media := &core.Media{URL: resp.Request.URL.String()}
-	media.Caption = fmt.Sprintf(`<a href="%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, message.Text, path.Base(resp.Request.URL.Path), message.Sender.Username)
+	media.Caption = fmt.Sprintf(`<a href="%s">🔗</a> <b>%s</b> <i>(by %s)</i>`, message.Text, path.Base(resp.Request.URL.Path), message.Sender.Username)
 
 	switch resp.Header["Content-Type"][0] {
 	case "video/mp4":

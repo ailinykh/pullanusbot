@@ -53,7 +53,7 @@ func (f *YoutubeFlow) process(url string, message *core.Message, bot core.IBot) 
 	}
 	defer file.Dispose()
 
-	caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🔗</a> <b>%s</b> <i>(by %s)</i>`, youtubeID, title, message.Sender.Username)
+	caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, youtubeID, title, message.Sender.Username)
 	_, err = bot.SendVideo(file, caption)
 	if err != nil {
 		f.l.Error("Can't send video: ", err)
@@ -69,7 +69,7 @@ func (f *YoutubeFlow) process(url string, message *core.Message, bot core.IBot) 
 			}
 
 			for i, file := range files {
-				caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🔗</a> <b>[%d/%d] %s</b> <i>(by %s)</i>`, youtubeID, i+1, len(files), title, message.Sender.Username)
+				caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🎞</a> <b>[%d/%d] %s</b> <i>(by %s)</i>`, youtubeID, i+1, len(files), title, message.Sender.Username)
 				_, err := bot.SendVideo(file, caption)
 				if err != nil {
 					return err
