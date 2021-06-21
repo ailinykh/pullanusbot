@@ -10,11 +10,12 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateYoutubeAPI(fd core.IFileDownloader) *YoutubeAPI {
-	return &YoutubeAPI{fd}
+func CreateYoutubeAPI(l core.ILogger, fd core.IFileDownloader) *YoutubeAPI {
+	return &YoutubeAPI{l, fd}
 }
 
 type YoutubeAPI struct {
+	l  core.ILogger
 	fd core.IFileDownloader
 }
 
@@ -42,13 +43,19 @@ func (y *YoutubeAPI) CreateVideo(youtubeID string) (*core.Video, error) {
 		return nil, err
 	}
 
+	// formats := video.availableFormats()
+	// for _, f := range formats {
+	// 	y.l.Info(f)
+	// }
+
 	ytDlFormat := "134"
 	name := "youtube-" + youtubeID + "-" + ytDlFormat + ".mp4"
 	path := path.Join(os.TempDir(), name)
 
 	cmd := fmt.Sprintf("youtube-dl -f %s+140 %s -o %s", ytDlFormat, youtubeID, path)
-	err = exec.Command("/bin/sh", "-c", cmd).Run()
+	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
+		y.l.Error(string(out))
 		return nil, err
 	}
 
@@ -73,7 +80,7 @@ func (y *YoutubeAPI) CreateVideo(youtubeID string) (*core.Video, error) {
 	}, nil
 }
 
-func (YoutubeAPI) getInfo(url string) (*Video, error) {
+func (y *YoutubeAPI) getInfo(url string) (*Video, error) {
 	cmd := fmt.Sprintf(`youtube-dl -j %s`, url)
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
@@ -83,6 +90,7 @@ func (YoutubeAPI) getInfo(url string) (*Video, error) {
 	var video Video
 	err = json.Unmarshal(out, &video)
 	if err != nil {
+		y.l.Error(string(out))
 		return nil, err
 	}
 	return &video, nil

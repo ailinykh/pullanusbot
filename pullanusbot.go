@@ -54,7 +54,7 @@ func main() {
 	telebot.AddHandler(publisherFlow)
 	telebot.AddHandler("/loh666", publisherFlow.HandleRequest)
 
-	youtubeAPI := api.CreateYoutubeAPI(fileDownloader)
+	youtubeAPI := api.CreateYoutubeAPI(logger, fileDownloader)
 	youtubeFlow := usecases.CreateYoutubeFlow(logger, youtubeAPI, youtubeAPI, converter)
 	telebot.AddHandler(youtubeFlow)
 
