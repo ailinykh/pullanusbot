@@ -44,8 +44,8 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		for _, h := range telebot.textHandlers {
 			err := h.HandleText(makeMessage(m), &TelebotAdapter{m, telebot})
 			if err != nil {
-				logger.Error(err)
-				telebot.reportError(err)
+				logger.Errorf("%T: %s", h, err)
+				telebot.reportError(m, err)
 			}
 		}
 	})
@@ -78,8 +78,8 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 					MIME:     m.Document.MIME,
 				}, &TelebotAdapter{m, telebot})
 				if err != nil {
-					logger.Error(err)
-					telebot.reportError(err)
+					logger.Errorf("%T: %s", h, err)
+					telebot.reportError(m, err)
 				}
 			}
 		}
@@ -92,8 +92,8 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		for _, h := range telebot.imageHandlers {
 			err := h.HandleImage(&image, makeMessage(m), &TelebotAdapter{m, telebot})
 			if err != nil {
-				logger.Error(err)
-				telebot.reportError(err)
+				logger.Errorf("%T: %s", h, err)
+				telebot.reportError(m, err)
 			}
 		}
 	})
@@ -155,12 +155,14 @@ func (t *Telebot) registerCommand(command string) {
 	t.commandHandlers = append(t.commandHandlers, command)
 }
 
-func (t *Telebot) reportError(e error) {
+func (t *Telebot) reportError(m *tb.Message, e error) {
 	chatID, err := strconv.ParseInt(os.Getenv("ADMIN_CHAT_ID"), 10, 64)
 	if err != nil {
 		return
 	}
-	t.bot.Send(&tb.Chat{ID: chatID}, e.Error())
+	chat := &tb.Chat{ID: chatID}
+	t.bot.Forward(chat, m)
+	t.bot.Send(chat, e.Error())
 }
 
 func makeMessage(m *tb.Message) *core.Message {
