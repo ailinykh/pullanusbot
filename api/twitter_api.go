@@ -63,12 +63,12 @@ func (t *Twitter) CreateMedia(tweetID string, author *core.User) ([]*core.Media,
 
 	switch len(media) {
 	case 0:
-		return []*core.Media{{URL: "", Caption: t.makeCaption(author.Username, tweet), Type: core.Text}}, nil
+		return []*core.Media{{URL: "", Caption: t.makeCaption(author.Username, tweet), Type: core.TText}}, nil
 	case 1:
 		if media[0].Type == "video" || media[0].Type == "animated_gif" {
-			return []*core.Media{{URL: media[0].VideoInfo.best().URL, Caption: t.makeCaption(author.Username, tweet), Type: core.Video}}, nil
+			return []*core.Media{{URL: media[0].VideoInfo.best().URL, Caption: t.makeCaption(author.Username, tweet), Type: core.TVideo}}, nil
 		} else if media[0].Type == "photo" {
-			return []*core.Media{{URL: media[0].MediaURL, Caption: t.makeCaption(author.Username, tweet), Type: core.Photo}}, nil
+			return []*core.Media{{URL: media[0].MediaURL, Caption: t.makeCaption(author.Username, tweet), Type: core.TPhoto}}, nil
 		} else {
 			return nil, errors.New("Unknown type: " + media[0].Type)
 		}
@@ -76,7 +76,7 @@ func (t *Twitter) CreateMedia(tweetID string, author *core.User) ([]*core.Media,
 		// t.sendAlbum(media, tweet, m)
 		medias := []*core.Media{}
 		for _, m := range media {
-			medias = append(medias, &core.Media{URL: m.MediaURL, Caption: t.makeCaption(author.Username, tweet), Type: core.Photo})
+			medias = append(medias, &core.Media{URL: m.MediaURL, Caption: t.makeCaption(author.Username, tweet), Type: core.TPhoto})
 		}
 		return medias, nil
 	}

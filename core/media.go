@@ -5,11 +5,11 @@ type MediaType int
 
 const (
 	// Video media type
-	Video MediaType = iota
+	TVideo MediaType = iota
 	// Photo media type
-	Photo
+	TPhoto
 	// Text media type
-	Text
+	TText
 )
 
 // Media ...

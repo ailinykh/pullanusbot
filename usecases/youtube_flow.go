@@ -8,7 +8,7 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateYoutubeFlow(l core.ILogger, mf core.IMediaFactory, vff core.IVideoFileFactory, vfs core.IVideoFileSplitter) *YoutubeFlow {
+func CreateYoutubeFlow(l core.ILogger, mf core.IMediaFactory, vff core.IVideoFactory, vfs core.IVideoSplitter) *YoutubeFlow {
 	return &YoutubeFlow{l: l, mf: mf, vff: vff, vfs: vfs}
 }
 
@@ -16,8 +16,8 @@ type YoutubeFlow struct {
 	m   sync.Mutex
 	l   core.ILogger
 	mf  core.IMediaFactory
-	vff core.IVideoFileFactory
-	vfs core.IVideoFileSplitter
+	vff core.IVideoFactory
+	vfs core.IVideoSplitter
 }
 
 // HandleText is a core.ITextHandler protocol implementation
@@ -47,14 +47,14 @@ func (f *YoutubeFlow) process(url string, message *core.Message, bot core.IBot) 
 
 	youtubeID, title := media[0].URL, media[0].Caption
 	f.l.Infof("downloading %s", youtubeID)
-	file, err := f.vff.CreateVideoFile(youtubeID)
+	file, err := f.vff.CreateVideo(youtubeID)
 	if err != nil {
 		return err
 	}
 	defer file.Dispose()
 
 	caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🔗</a> <b>%s</b> <i>(by %s)</i>`, youtubeID, title, message.Sender.Username)
-	_, err = bot.SendVideoFile(file, caption)
+	_, err = bot.SendVideo(file, caption)
 	if err != nil {
 		f.l.Error("Can't send video: ", err)
 		if err.Error() == "telegram: Request Entity Too Large (400)" {
@@ -70,7 +70,7 @@ func (f *YoutubeFlow) process(url string, message *core.Message, bot core.IBot) 
 
 			for i, file := range files {
 				caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🔗</a> <b>[%d/%d] %s</b> <i>(by %s)</i>`, youtubeID, i+1, len(files), title, message.Sender.Username)
-				_, err := bot.SendVideoFile(file, caption)
+				_, err := bot.SendVideo(file, caption)
 				if err != nil {
 					return err
 				}

@@ -59,17 +59,17 @@ func (a *TelebotAdapter) SendMedia(media *core.Media) (*core.Message, error) {
 	var sent *tb.Message
 	var err error
 	switch media.Type {
-	case core.Photo:
+	case core.TPhoto:
 		file := &tb.Photo{File: tb.FromURL(media.URL)}
 		file.Caption = media.Caption
 		a.t.bot.Notify(a.m.Chat, tb.UploadingPhoto)
 		sent, err = a.t.bot.Send(a.m.Chat, file, &tb.SendOptions{ParseMode: tb.ModeHTML})
-	case core.Video:
+	case core.TVideo:
 		file := &tb.Video{File: tb.FromURL(media.URL)}
 		file.Caption = media.Caption
 		a.t.bot.Notify(a.m.Chat, tb.UploadingVideo)
 		sent, err = a.t.bot.Send(a.m.Chat, file, &tb.SendOptions{ParseMode: tb.ModeHTML})
-	case core.Text:
+	case core.TText:
 		sent, err = a.t.bot.Send(a.m.Chat, media.Caption, &tb.SendOptions{ParseMode: tb.ModeHTML})
 	}
 
@@ -98,9 +98,9 @@ func (a *TelebotAdapter) SendPhotoAlbum(medias []*core.Media) ([]*core.Message, 
 	return messages, err
 }
 
-// SendVideoFile is a core.IBot interface implementation
-func (a *TelebotAdapter) SendVideoFile(vf *core.VideoFile, caption string) (*core.Message, error) {
-	video := makeVideoFile(vf, caption)
+// SendVideo is a core.IBot interface implementation
+func (a *TelebotAdapter) SendVideo(vf *core.Video, caption string) (*core.Message, error) {
+	video := makeVideo(vf, caption)
 	a.t.bot.Notify(a.m.Chat, tb.UploadingVideo)
 	sent, err := video.Send(a.t.bot, a.m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
 	if err != nil {

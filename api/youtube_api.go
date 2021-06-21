@@ -30,13 +30,13 @@ func (y *YoutubeAPI) CreateMedia(url string, author *core.User) ([]*core.Media, 
 			URL:      video.ID,
 			Caption:  video.Title,
 			Duration: video.Duration,
-			Type:     core.Video,
+			Type:     core.TVideo,
 		},
 	}, nil
 }
 
-// CreateVideoFile is a core.IVideoFileFactory interface implementation
-func (y *YoutubeAPI) CreateVideoFile(youtubeID string) (*core.VideoFile, error) {
+// CreateVideo is a core.IVideoFactory interface implementation
+func (y *YoutubeAPI) CreateVideo(youtubeID string) (*core.Video, error) {
 	video, err := y.getInfo(youtubeID)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (y *YoutubeAPI) CreateVideoFile(youtubeID string) (*core.VideoFile, error) 
 		return nil, err
 	}
 
-	thumb, err := y.fd.Download(video.thumb().URL) // will be disposed with VideoFile
+	thumb, err := y.fd.Download(video.thumb().URL) // will be disposed with Video
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (y *YoutubeAPI) CreateVideoFile(youtubeID string) (*core.VideoFile, error) 
 		return nil, err
 	}
 
-	return &core.VideoFile{
+	return &core.Video{
 		File:      core.File{Name: name, Path: path, Size: int64(format.Filesize)},
 		Width:     format.Width,
 		Height:    format.Height,

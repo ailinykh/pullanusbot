@@ -260,12 +260,12 @@ type BotMock struct {
 	messages []string
 }
 
-func (BotMock) Delete(*core.Message) error                                   { return nil }
-func (BotMock) SendImage(*core.Image) (*core.Message, error)                 { return nil, nil }
-func (BotMock) SendAlbum([]*core.Image) ([]*core.Message, error)             { return nil, nil }
-func (BotMock) SendMedia(*core.Media) (*core.Message, error)                 { return nil, nil }
-func (BotMock) SendPhotoAlbum([]*core.Media) ([]*core.Message, error)        { return nil, nil }
-func (BotMock) SendVideoFile(*core.VideoFile, string) (*core.Message, error) { return nil, nil }
+func (BotMock) Delete(*core.Message) error                            { return nil }
+func (BotMock) SendImage(*core.Image) (*core.Message, error)          { return nil, nil }
+func (BotMock) SendAlbum([]*core.Image) ([]*core.Message, error)      { return nil, nil }
+func (BotMock) SendMedia(*core.Media) (*core.Message, error)          { return nil, nil }
+func (BotMock) SendPhotoAlbum([]*core.Media) ([]*core.Message, error) { return nil, nil }
+func (BotMock) SendVideo(*core.Video, string) (*core.Message, error)  { return nil, nil }
 
 func (b *BotMock) SendText(text string, args ...interface{}) (*core.Message, error) {
 	b.messages = append(b.messages, text)

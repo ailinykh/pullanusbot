@@ -11,7 +11,7 @@ import (
 )
 
 // CreateLinkFlow is a basic LinkFlow factory
-func CreateLinkFlow(l core.ILogger, fd core.IFileDownloader, vff core.IVideoFileFactory, vfc core.IVideoFileConverter) *LinkFlow {
+func CreateLinkFlow(l core.ILogger, fd core.IFileDownloader, vff core.IVideoFactory, vfc core.IVideoConverter) *LinkFlow {
 	return &LinkFlow{l, fd, vff, vfc}
 }
 
@@ -19,8 +19,8 @@ func CreateLinkFlow(l core.ILogger, fd core.IFileDownloader, vff core.IVideoFile
 type LinkFlow struct {
 	l   core.ILogger
 	fd  core.IFileDownloader
-	vff core.IVideoFileFactory
-	vfc core.IVideoFileConverter
+	vff core.IVideoFactory
+	vfc core.IVideoConverter
 }
 
 // HandleText is a core.ITextHandler protocol implementation
@@ -70,7 +70,7 @@ func (lf *LinkFlow) processLink(message *core.Message, bot core.IBot) error {
 		}
 		defer vfc.Dispose()
 
-		_, err = bot.SendVideoFile(vfc, media.Caption)
+		_, err = bot.SendVideo(vfc, media.Caption)
 		if err != nil {
 			return err
 		}
@@ -91,11 +91,11 @@ func (lf *LinkFlow) sendByUploading(media *core.Media, bot core.IBot) error {
 		return err
 	}
 	defer vf.Dispose()
-	_, err = bot.SendVideoFile(vf, media.Caption)
+	_, err = bot.SendVideo(vf, media.Caption)
 	return err
 }
 
-func (lf *LinkFlow) downloadMedia(media *core.Media) (*core.VideoFile, error) {
+func (lf *LinkFlow) downloadMedia(media *core.Media) (*core.Video, error) {
 	file, err := lf.fd.Download(media.URL)
 	if err != nil {
 		lf.l.Errorf("video download error: %v", err)
@@ -109,7 +109,7 @@ func (lf *LinkFlow) downloadMedia(media *core.Media) (*core.VideoFile, error) {
 
 	lf.l.Infof("File downloaded: %s %0.2fMB", file.Name, float64(stat.Size())/1024/1024)
 
-	vf, err := lf.vff.CreateVideoFile(file.Path)
+	vf, err := lf.vff.CreateVideo(file.Path)
 	if err != nil {
 		lf.l.Errorf("Can't create video file for %s, %v", file.Path, err)
 		return nil, err

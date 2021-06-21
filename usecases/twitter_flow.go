@@ -14,7 +14,7 @@ import (
 )
 
 // CreateTwitterFlow is a basic TwitterFlow factory
-func CreateTwitterFlow(l core.ILogger, mf core.IMediaFactory, fd core.IFileDownloader, vff core.IVideoFileFactory) *TwitterFlow {
+func CreateTwitterFlow(l core.ILogger, mf core.IMediaFactory, fd core.IFileDownloader, vff core.IVideoFactory) *TwitterFlow {
 	return &TwitterFlow{l, mf, fd, vff, make(map[core.Message]core.Message)}
 }
 
@@ -23,7 +23,7 @@ type TwitterFlow struct {
 	l              core.ILogger
 	mf             core.IMediaFactory
 	fd             core.IFileDownloader
-	vff            core.IVideoFileFactory
+	vff            core.IVideoFactory
 	timeoutReplies map[core.Message]core.Message
 }
 
@@ -71,7 +71,7 @@ func (tf *TwitterFlow) handleMedia(media []*core.Media, message *core.Message, b
 		return errors.New("unexpected 0 media count")
 	case 1:
 		_, err := bot.SendMedia(media[0])
-		if err != nil && media[0].Type == core.Video {
+		if err != nil && media[0].Type == core.TVideo {
 			if strings.Contains(err.Error(), "failed to get HTTP URL content") || strings.Contains(err.Error(), "wrong file identifier/HTTP URL specified") {
 				return tf.fallbackToUploading(media[0], bot)
 			}
@@ -125,12 +125,12 @@ func (tf *TwitterFlow) fallbackToUploading(media *core.Media, bot core.IBot) err
 
 	tf.l.Infof("File downloaded: %s %0.2fMB", file.Name, float64(stat.Size())/1024/1024)
 
-	vf, err := tf.vff.CreateVideoFile(file.Path)
+	vf, err := tf.vff.CreateVideo(file.Path)
 	if err != nil {
 		tf.l.Errorf("Can't create video file for %s, %v", file.Path, err)
 		return err
 	}
 	defer vf.Dispose()
-	_, err = bot.SendVideoFile(vf, media.Caption)
+	_, err = bot.SendVideo(vf, media.Caption)
 	return err
 }

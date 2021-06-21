@@ -2,8 +2,8 @@ package core
 
 import "os"
 
-// VideoFile ...
-type VideoFile struct {
+// Video ...
+type Video struct {
 	File
 	Width     int
 	Height    int
@@ -14,7 +14,7 @@ type VideoFile struct {
 }
 
 // Dispose to cleanup filesystem
-func (vf *VideoFile) Dispose() {
+func (vf *Video) Dispose() {
 	os.Remove(vf.Path)
 	os.Remove(vf.ThumbPath)
 }

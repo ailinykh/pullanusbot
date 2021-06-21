@@ -18,13 +18,13 @@ func CreateFfmpegConverter(l core.ILogger) *FfmpegConverter {
 	return &FfmpegConverter{l}
 }
 
-// FfmpegConverter implements core.IVideoFileConverter and core.IVideoFileFactory using ffmpeg
+// FfmpegConverter implements core.IVideoConverter and core.IVideoFactory using ffmpeg
 type FfmpegConverter struct {
 	l core.ILogger
 }
 
-// Convert is a core.IVideoFileConverter interface implementation
-func (c *FfmpegConverter) Convert(vf *core.VideoFile, bitrate int) (*core.VideoFile, error) {
+// Convert is a core.IVideoConverter interface implementation
+func (c *FfmpegConverter) Convert(vf *core.Video, bitrate int) (*core.Video, error) {
 	path := path.Join(os.TempDir(), vf.Name+"_converted.mp4")
 	cmd := fmt.Sprintf(`ffmpeg -y -i "%s" -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "%s"`, vf.Path, path)
 	if bitrate > 0 {
@@ -38,13 +38,13 @@ func (c *FfmpegConverter) Convert(vf *core.VideoFile, bitrate int) (*core.VideoF
 		return nil, err
 	}
 
-	return c.CreateVideoFile(path)
+	return c.CreateVideo(path)
 }
 
-// CreateVideoFile is a core.IVideoFileSplitter interface implementation
-func (c *FfmpegConverter) Split(video *core.VideoFile, limit int) ([]*core.VideoFile, error) {
+// CreateVideo is a core.IVideoSplitter interface implementation
+func (c *FfmpegConverter) Split(video *core.Video, limit int) ([]*core.Video, error) {
 	duration, n := 0, 0
-	var videos = []*core.VideoFile{}
+	var videos = []*core.Video{}
 	for duration < video.Duration {
 		path := fmt.Sprintf("%s-%d.mp4", video.File.Path, n)
 		cmd := fmt.Sprintf(`ffmpeg -i %s -ss %d -fs %d %s`, video.File.Path, duration, limit, path)
@@ -54,7 +54,7 @@ func (c *FfmpegConverter) Split(video *core.VideoFile, limit int) ([]*core.Video
 			return nil, err
 		}
 
-		file, err := c.CreateVideoFile(path)
+		file, err := c.CreateVideo(path)
 		if err != nil {
 			return nil, err
 		}
@@ -67,8 +67,8 @@ func (c *FfmpegConverter) Split(video *core.VideoFile, limit int) ([]*core.Video
 	return videos, nil
 }
 
-// CreateVideoFile is a core.IVideoFileFactory interface implementation
-func (c *FfmpegConverter) CreateVideoFile(path string) (*core.VideoFile, error) {
+// CreateVideo is a core.IVideoFactory interface implementation
+func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
 	ffprobe, err := c.getFFProbe(path)
 	if err != nil {
 		return nil, err
@@ -103,7 +103,7 @@ func (c *FfmpegConverter) CreateVideoFile(path string) (*core.VideoFile, error) 
 		return nil, err
 	}
 
-	return &core.VideoFile{
+	return &core.Video{
 		File:      core.File{Name: stat.Name(), Path: path, Size: stat.Size()},
 		Width:     stream.Width,
 		Height:    stream.Height,
