@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
@@ -43,16 +44,16 @@ func (y *YoutubeAPI) CreateVideo(youtubeID string) (*core.Video, error) {
 		return nil, err
 	}
 
-	// formats := video.availableFormats()
-	// for _, f := range formats {
-	// 	y.l.Info(f)
-	// }
+	vf, af, err := y.getFormats(video)
+	if err != nil {
+		return nil, err
+	}
 
-	ytDlFormat := "134"
-	name := "youtube-" + youtubeID + "-" + ytDlFormat + ".mp4"
+	name := fmt.Sprintf("youtube-%s-%s-%s.mp4", youtubeID, vf.FormatID, af.FormatID)
 	path := path.Join(os.TempDir(), name)
 
-	cmd := fmt.Sprintf("youtube-dl -f %s+140 %s -o %s", ytDlFormat, youtubeID, path)
+	cmd := fmt.Sprintf("youtube-dl -f %s+%s %s -o %s", vf.FormatID, af.FormatID, youtubeID, path)
+	y.l.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		y.l.Error(string(out))
@@ -64,18 +65,13 @@ func (y *YoutubeAPI) CreateVideo(youtubeID string) (*core.Video, error) {
 		return nil, err
 	}
 
-	format, err := video.formatByID(ytDlFormat)
-	if err != nil {
-		return nil, err
-	}
-
 	return &core.Video{
-		File:      core.File{Name: name, Path: path, Size: int64(format.Filesize)},
-		Width:     format.Width,
-		Height:    format.Height,
+		File:      core.File{Name: name, Path: path, Size: int64(vf.Filesize)},
+		Width:     vf.Width,
+		Height:    vf.Height,
 		Bitrate:   0,
 		Duration:  video.Duration,
-		Codec:     format.VCodec,
+		Codec:     vf.VCodec,
 		ThumbPath: thumb.Path,
 	}, nil
 }
@@ -94,4 +90,25 @@ func (y *YoutubeAPI) getInfo(url string) (*Video, error) {
 		return nil, err
 	}
 	return &video, nil
+}
+
+func (y *YoutubeAPI) getFormats(video *Video) (*Format, *Format, error) {
+	af, err := video.audioFormat()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	vf, err := video.formatByID("134")
+	if err != nil {
+		formats := video.availableFormats()
+		for _, f := range formats {
+			y.l.Info(f)
+		}
+		if len(formats) == 0 {
+			return nil, nil, err
+		}
+		vf = formats[len(formats)-1]
+	}
+
+	return vf, af, nil
 }

@@ -31,7 +31,7 @@ func (v Video) availableFormats() []*Format {
 	rv := []*Format{}
 	for _, f := range v.Formats {
 		if f.Ext == "mp4" { // webm not friendly for iPhone
-			if f.VCodec != "none" && f.ACodec == "none" {
+			if f.VCodec != "none" && f.ACodec == "none" { // got zero Filesize if no audio
 				if strings.HasSuffix(f.FormatNote, "p") || strings.Contains(f.FormatNote, "DASH") { // skip 720p60
 					rv = append(rv, f)
 				}
