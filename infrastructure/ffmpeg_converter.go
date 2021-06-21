@@ -8,32 +8,37 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
+	"strings"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
 // CreateFfmpegConverter is a basic FfmpegConverter factory
-func CreateFfmpegConverter() *FfmpegConverter {
-	return &FfmpegConverter{}
+func CreateFfmpegConverter(l core.ILogger) *FfmpegConverter {
+	return &FfmpegConverter{l}
 }
 
 // FfmpegConverter implements core.IVideoFileConverter and core.IVideoFileFactory using ffmpeg
-type FfmpegConverter struct{}
+type FfmpegConverter struct {
+	l core.ILogger
+}
 
 // Convert is a core.IVideoFileConverter interface implementation
 func (c *FfmpegConverter) Convert(vf *core.VideoFile, bitrate int) (*core.VideoFile, error) {
-	convertedVideoFilePath := path.Join(os.TempDir(), vf.Name+"_converted.mp4")
-	cmd := fmt.Sprintf(`ffmpeg -y -i "%s" -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "%s"`, vf.Path, convertedVideoFilePath)
+	path := path.Join(os.TempDir(), vf.Name+"_converted.mp4")
+	cmd := fmt.Sprintf(`ffmpeg -y -i "%s" -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "%s"`, vf.Path, path)
 	if bitrate > 0 {
-		cmd = fmt.Sprintf(`ffmpeg -v error -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 1 -b:a 128k -f mp4 /dev/null && ffmpeg -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 2 -b:a 128k "%s"`, vf.Path, bitrate/1024, vf.Path, bitrate/1024, convertedVideoFilePath)
+		cmd = fmt.Sprintf(`ffmpeg -v error -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 1 -b:a 128k -f mp4 /dev/null && ffmpeg -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 2 -b:a 128k "%s"`, vf.Path, bitrate/1024, vf.Path, bitrate/1024, path)
 	}
+	c.l.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
-		os.Remove(convertedVideoFilePath)
-		return nil, errors.New(string(out))
+		os.Remove(path)
+		c.l.Error(out)
+		return nil, err
 	}
 
-	return c.CreateVideoFile(convertedVideoFilePath)
+	return c.CreateVideoFile(path)
 }
 
 // CreateVideoFile is a core.IVideoFileSplitter interface implementation
@@ -41,21 +46,22 @@ func (c *FfmpegConverter) Split(video *core.VideoFile, limit int) ([]*core.Video
 	duration, n := 0, 0
 	var videos = []*core.VideoFile{}
 	for duration < video.Duration {
-		nextFilePath := fmt.Sprintf("%s-%d.mp4", video.File.Path, n)
-		cmd := fmt.Sprintf(`ffmpeg -i %s -ss %d -fs %d %s`, video.File.Path, duration, limit, nextFilePath)
+		path := fmt.Sprintf("%s-%d.mp4", video.File.Path, n)
+		cmd := fmt.Sprintf(`ffmpeg -i %s -ss %d -fs %d %s`, video.File.Path, duration, limit, path)
+		c.l.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
 		_, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 		if err != nil {
 			return nil, err
 		}
 
-		nextVideoFile, err := c.CreateVideoFile(nextFilePath)
+		file, err := c.CreateVideoFile(path)
 		if err != nil {
 			return nil, err
 		}
-		// defer nextVideoFile.Dispose()
+		// defer file.Dispose()
 
-		videos = append(videos, nextVideoFile)
-		duration += nextVideoFile.Duration
+		videos = append(videos, file)
+		duration += file.Duration
 		n++
 	}
 	return videos, nil
@@ -121,36 +127,4 @@ func (c *FfmpegConverter) getFFProbe(file string) (*ffpResponse, error) {
 	}
 
 	return &resp, nil
-}
-
-type ffpResponse struct {
-	Streams []ffpStream `json:"streams"`
-	Format  ffpFormat   `json:"format"`
-}
-
-type ffpStream struct {
-	Index     int    `json:"index"`
-	CodecName string `json:"codec_name"`
-	CodecType string `json:"codec_type"`
-	Width     int    `json:"width"`
-	Height    int    `json:"height"`
-	BitRate   string `json:"bit_rate"`
-}
-
-type ffpFormat struct {
-	Filename       string `json:"filename"`
-	NbStreams      int    `json:"nb_streams"`
-	FormatName     string `json:"format_name"`
-	FormatLongName string `json:"format_long_name"`
-	Duration       string `json:"duration"`
-	Size           string `json:"size"`
-}
-
-func (f ffpResponse) getVideoStream() (ffpStream, error) {
-	for _, stream := range f.Streams {
-		if stream.CodecType == "video" {
-			return stream, nil
-		}
-	}
-	return ffpStream{}, errors.New("no video stream found")
 }

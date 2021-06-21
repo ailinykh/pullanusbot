@@ -33,7 +33,7 @@ func main() {
 	telebot.AddHandler("/pidorall", gameFlow.All)
 	telebot.AddHandler("/pidorme", gameFlow.Me)
 
-	converter := infrastructure.CreateFfmpegConverter()
+	converter := infrastructure.CreateFfmpegConverter(logger)
 	videoFlow := usecases.CreateVideoFlow(logger, converter, converter)
 	telebot.AddHandler(videoFlow)
 
