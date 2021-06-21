@@ -53,6 +53,11 @@ func main() {
 	publisherFlow := usecases.CreatePublisherFlow(logger)
 	telebot.AddHandler(publisherFlow)
 	telebot.AddHandler("/loh666", publisherFlow.HandleRequest)
+
+	youtubeAPI := api.CreateYoutubeAPI(fileDownloader)
+	youtubeFlow := usecases.CreateYoutubeFlow(logger, youtubeAPI, youtubeAPI, converter)
+	telebot.AddHandler(youtubeFlow)
+
 	// Start endless loop
 	telebot.Run()
 }
