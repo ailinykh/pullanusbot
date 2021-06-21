@@ -11,7 +11,9 @@ FROM jrottenberg/ffmpeg:4.1-alpine
 RUN apk update && apk add tzdata python3 supervisor openssh --no-cache && \
     ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N '' -t rsa && \
     ssh-keygen -f /etc/ssh/ssh_host_dsa_key -N '' -t dsa && \
-    wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl && chmod a+rx /usr/local/bin/youtube-dl
+    wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl && \
+    chmod a+rx /usr/local/bin/youtube-dl && \
+    ln -s /usr/bin/python3 /usr/bin/python
 
 COPY --from=builder /go/src/github.com/ailinykh/pullanusbot/pullanusbot /usr/local/bin/pullanusbot
 COPY .docker/telegram-bot-api /usr/local/bin/telegram-bot-api
