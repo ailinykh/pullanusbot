@@ -160,7 +160,7 @@ func (t *Telebot) reportError(e error) {
 	if err != nil {
 		return
 	}
-	t.bot.Send(&tb.Chat{ID: chatID}, e)
+	t.bot.Send(&tb.Chat{ID: chatID}, e.Error())
 }
 
 func makeMessage(m *tb.Message) *core.Message {
