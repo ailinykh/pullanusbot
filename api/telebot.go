@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strconv"
 	"sync"
 	"time"
 
@@ -44,6 +45,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 			err := h.HandleText(makeMessage(m), &TelebotAdapter{m, telebot})
 			if err != nil {
 				logger.Error(err)
+				telebot.reportError(err)
 			}
 		}
 	})
@@ -69,12 +71,16 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 			defer os.Remove(path)
 
 			for _, h := range telebot.documentHandlers {
-				h.HandleDocument(&core.Document{
+				err := h.HandleDocument(&core.Document{
 					Author:   m.Sender.Username,
 					FileName: m.Document.FileName,
 					FilePath: path,
 					MIME:     m.Document.MIME,
 				}, &TelebotAdapter{m, telebot})
+				if err != nil {
+					logger.Error(err)
+					telebot.reportError(err)
+				}
 			}
 		}
 	})
@@ -84,7 +90,11 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		image := core.CreateImage(m.Photo.FileID, m.Photo.FileURL)
 
 		for _, h := range telebot.imageHandlers {
-			h.HandleImage(&image, makeMessage(m), &TelebotAdapter{m, telebot})
+			err := h.HandleImage(&image, makeMessage(m), &TelebotAdapter{m, telebot})
+			if err != nil {
+				logger.Error(err)
+				telebot.reportError(err)
+			}
 		}
 	})
 
@@ -143,6 +153,14 @@ func (t *Telebot) registerCommand(command string) {
 		}
 	}
 	t.commandHandlers = append(t.commandHandlers, command)
+}
+
+func (t *Telebot) reportError(e error) {
+	chatID, err := strconv.ParseInt(os.Getenv("ADMIN_CHAT_ID"), 10, 64)
+	if err != nil {
+		return
+	}
+	t.bot.Send(&tb.Chat{ID: chatID}, e)
 }
 
 func makeMessage(m *tb.Message) *core.Message {
