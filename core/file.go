@@ -6,6 +6,7 @@ import "os"
 type File struct {
 	Name string
 	Path string
+	Size int64
 }
 
 // Dispose for filesystem cleanup
