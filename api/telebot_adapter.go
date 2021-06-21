@@ -103,9 +103,9 @@ func (a *TelebotAdapter) SendVideoFile(vf *core.VideoFile, caption string) (*cor
 	video := makeVideoFile(vf, caption)
 	a.t.bot.Notify(a.m.Chat, tb.UploadingVideo)
 	sent, err := video.Send(a.t.bot, a.m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
-	if err == nil {
-		a.t.logger.Infof("%s sent successfully", vf.Name)
-		a.t.bot.Delete(a.m)
+	if err != nil {
+		return nil, err
 	}
+	a.t.logger.Infof("%s successfully sent", vf.Name)
 	return makeMessage(sent), err
 }
