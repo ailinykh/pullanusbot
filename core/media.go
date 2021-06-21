@@ -14,7 +14,8 @@ const (
 
 // Media ...
 type Media struct {
-	URL     string
-	Caption string
-	Type    MediaType
+	URL      string
+	Caption  string
+	Duration int
+	Type     MediaType
 }
