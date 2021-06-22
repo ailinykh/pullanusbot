@@ -22,7 +22,7 @@ type YoutubeFlow struct {
 
 // HandleText is a core.ITextHandler protocol implementation
 func (f *YoutubeFlow) HandleText(message *core.Message, bot core.IBot) error {
-	r := regexp.MustCompile(`https?:\/\/(www\.)?youtu[\.be|\.com]\S+`)
+	r := regexp.MustCompile(`https?:\/\/(www\.|m\.)?youtu[\.be|\.com]\S+`)
 	match := r.FindStringSubmatch(message.Text)
 	if len(match) > 0 {
 		return f.process(match[0], message, bot)
