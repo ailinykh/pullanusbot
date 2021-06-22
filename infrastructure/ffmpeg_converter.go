@@ -34,8 +34,8 @@ func (c *FfmpegConverter) Convert(vf *core.Video, bitrate int) (*core.Video, err
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		os.Remove(path)
-		c.l.Error(string(out))
-		return nil, err
+		c.l.Error(err)
+		return nil, errors.New(string(out))
 	}
 
 	return c.CreateVideo(path)
@@ -51,8 +51,8 @@ func (c *FfmpegConverter) Split(video *core.Video, limit int) ([]*core.Video, er
 		c.l.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
 		out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 		if err != nil {
-			c.l.Error(string(out))
-			return nil, err
+			c.l.Error(err)
+			return nil, errors.New(string(out))
 		}
 
 		file, err := c.CreateVideo(path)

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -56,8 +57,8 @@ func (y *YoutubeAPI) CreateVideo(youtubeID string) (*core.Video, error) {
 	y.l.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
-		y.l.Error(string(out))
-		return nil, err
+		y.l.Error(err)
+		return nil, errors.New(string(out))
 	}
 
 	thumb, err := y.fd.Download(video.thumb().URL) // will be disposed with Video
@@ -80,13 +81,13 @@ func (y *YoutubeAPI) getInfo(url string) (*Video, error) {
 	cmd := fmt.Sprintf(`youtube-dl -j %s`, url)
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
-		return nil, err
+		y.l.Error(err)
+		return nil, errors.New(string(out))
 	}
 
 	var video Video
 	err = json.Unmarshal(out, &video)
 	if err != nil {
-		y.l.Error(string(out))
 		return nil, err
 	}
 	return &video, nil
