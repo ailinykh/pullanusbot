@@ -21,11 +21,11 @@ type VideoFlow struct {
 }
 
 // HandleDocument is a core.IDocumentHandler protocol implementation
-func (f *VideoFlow) HandleDocument(document *core.Document, b core.IBot) error {
-	vf, err := f.f.CreateVideo(document.FilePath)
+func (f *VideoFlow) HandleDocument(document *core.Document, message *core.Message, bot core.IBot) error {
+	vf, err := f.f.CreateVideo(document.File.Path)
 	if err != nil {
 		f.l.Error(err)
-		b.SendText(err.Error())
+		bot.SendText(err.Error())
 		return err
 	}
 	defer vf.Dispose()
@@ -42,8 +42,8 @@ func (f *VideoFlow) HandleDocument(document *core.Document, b core.IBot) error {
 		defer cvf.Dispose()
 		fi1, _ := os.Stat(vf.Path)
 		fi2, _ := os.Stat(cvf.Path)
-		caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>\n<i>Original size: %.2f MB (%d kb/s)\nConverted size: %.2f MB (%d kb/s)</i>", vf.Name, document.Author, float32(fi1.Size())/1048576, vf.Bitrate/1024, float32(fi2.Size())/1048576, cvf.Bitrate/1024)
-		_, err = b.SendVideo(cvf, caption)
+		caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>\n<i>Original size: %.2f MB (%d kb/s)\nConverted size: %.2f MB (%d kb/s)</i>", vf.Name, message.Sender.Username, float32(fi1.Size())/1048576, vf.Bitrate/1024, float32(fi2.Size())/1048576, cvf.Bitrate/1024)
+		_, err = bot.SendVideo(cvf, caption)
 		return err
 	}
 
@@ -55,13 +55,16 @@ func (f *VideoFlow) HandleDocument(document *core.Document, b core.IBot) error {
 			return err
 		}
 		defer cvf.Dispose()
-		caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>", vf.Name, document.Author)
-		_, err = b.SendVideo(cvf, caption)
+		caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>", vf.Name, message.Sender.Username)
+		_, err = bot.SendVideo(cvf, caption)
 		return err
 	}
 
 	f.l.Infof("No need to convert %s", vf.Name)
-	caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>", vf.Name, document.Author)
-	_, err = b.SendVideo(vf, caption)
-	return err
+	caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>", vf.Name, message.Sender.Username)
+	_, err = bot.SendVideo(vf, caption)
+	if err != nil {
+		return err
+	}
+	return bot.Delete(message)
 }

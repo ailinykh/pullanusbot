@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -67,16 +68,14 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 				return
 			}
 
-			logger.Infof("Downloaded to %s", path)
+			logger.Infof("Downloaded to %s", strings.ReplaceAll(path, os.TempDir(), "$TMPDIR/"))
 			defer os.Remove(path)
 
 			for _, h := range telebot.documentHandlers {
 				err := h.HandleDocument(&core.Document{
-					Author:   m.Sender.Username,
-					FileName: m.Document.FileName,
-					FilePath: path,
-					MIME:     m.Document.MIME,
-				}, &TelebotAdapter{m, telebot})
+					File: core.File{Name: m.Document.FileName, Path: path},
+					MIME: m.Document.MIME,
+				}, makeMessage(m), &TelebotAdapter{m, telebot})
 				if err != nil {
 					logger.Errorf("%T: %s", h, err)
 					telebot.reportError(m, err)
