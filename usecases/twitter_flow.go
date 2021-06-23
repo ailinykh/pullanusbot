@@ -49,6 +49,7 @@ func (tf *TwitterFlow) process(tweetID string, message *core.Message, bot core.I
 					return err
 				}
 				tf.timeoutReplies[*message] = *sent
+				return nil
 			}
 		}
 		return err
