@@ -86,10 +86,15 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 
 	bot.Handle(tb.OnPhoto, func(m *tb.Message) {
 
-		image := core.CreateImage(m.Photo.FileID, m.Photo.FileURL)
+		image := &core.Image{
+			ID:      m.Photo.FileID,
+			FileURL: m.Photo.FileURL,
+			Width:   m.Photo.Width,
+			Height:  m.Photo.Height,
+		}
 
 		for _, h := range telebot.imageHandlers {
-			err := h.HandleImage(&image, makeMessage(m), &TelebotAdapter{m, telebot})
+			err := h.HandleImage(image, makeMessage(m), &TelebotAdapter{m, telebot})
 			if err != nil {
 				logger.Errorf("%T: %s", h, err)
 				telebot.reportError(m, err)
