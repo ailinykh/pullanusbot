@@ -1,8 +1,10 @@
 package usecases
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
@@ -22,20 +24,26 @@ type YoutubeFlow struct {
 
 // HandleText is a core.ITextHandler protocol implementation
 func (f *YoutubeFlow) HandleText(message *core.Message, bot core.IBot) error {
-	r := regexp.MustCompile(`https?:\/\/(www\.|m\.)?youtu[\.be|\.com]\S+`)
+	r := regexp.MustCompile(`youtu\.?be(\.com)?\/(watch\?v=)?([\w\-_]+)`)
 	match := r.FindStringSubmatch(message.Text)
-	if len(match) > 0 {
-		return f.process(match[0], message, bot)
+	if len(match) == 4 {
+		return f.process(match[3], message, bot)
+	}
+	if strings.Contains(message.Text, "youtu") {
+		for i, m := range match {
+			f.l.Info(i, " ", m)
+		}
+		return errors.New("possibble regexp mismatch: " + message.Text)
 	}
 	return nil
 }
 
-func (f *YoutubeFlow) process(url string, message *core.Message, bot core.IBot) error {
+func (f *YoutubeFlow) process(id string, message *core.Message, bot core.IBot) error {
 	f.m.Lock()
 	defer f.m.Unlock()
 
-	f.l.Infof("processing youtube %s", url)
-	media, err := f.mf.CreateMedia(url, message.Sender)
+	f.l.Infof("processing %s", id)
+	media, err := f.mf.CreateMedia(id, message.Sender)
 	if err != nil {
 		return err
 	}
@@ -45,15 +53,15 @@ func (f *YoutubeFlow) process(url string, message *core.Message, bot core.IBot) 
 		return nil
 	}
 
-	youtubeID, title := media[0].URL, media[0].Caption
-	f.l.Infof("downloading %s", youtubeID)
-	file, err := f.vff.CreateVideo(youtubeID)
+	title := media[0].Caption
+	f.l.Infof("downloading %s", id)
+	file, err := f.vff.CreateVideo(id)
 	if err != nil {
 		return err
 	}
 	defer file.Dispose()
 
-	caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, youtubeID, title, message.Sender.Username)
+	caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, id, title, message.Sender.Username)
 	_, err = bot.SendVideo(file, caption)
 	if err != nil {
 		f.l.Error("Can't send video: ", err)
@@ -69,7 +77,7 @@ func (f *YoutubeFlow) process(url string, message *core.Message, bot core.IBot) 
 			}
 
 			for i, file := range files {
-				caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🎞</a> <b>[%d/%d] %s</b> <i>(by %s)</i>`, youtubeID, i+1, len(files), title, message.Sender.Username)
+				caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🎞</a> <b>[%d/%d] %s</b> <i>(by %s)</i>`, id, i+1, len(files), title, message.Sender.Username)
 				_, err := bot.SendVideo(file, caption)
 				if err != nil {
 					return err

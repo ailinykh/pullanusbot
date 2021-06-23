@@ -39,8 +39,8 @@ func (y *YoutubeAPI) CreateMedia(url string, author *core.User) ([]*core.Media, 
 }
 
 // CreateVideo is a core.IVideoFactory interface implementation
-func (y *YoutubeAPI) CreateVideo(youtubeID string) (*core.Video, error) {
-	video, err := y.getInfo(youtubeID)
+func (y *YoutubeAPI) CreateVideo(id string) (*core.Video, error) {
+	video, err := y.getInfo(id)
 	if err != nil {
 		return nil, err
 	}
@@ -50,10 +50,10 @@ func (y *YoutubeAPI) CreateVideo(youtubeID string) (*core.Video, error) {
 		return nil, err
 	}
 
-	name := fmt.Sprintf("youtube-%s-%s-%s.mp4", youtubeID, vf.FormatID, af.FormatID)
+	name := fmt.Sprintf("youtube-%s-%s-%s.mp4", id, vf.FormatID, af.FormatID)
 	path := path.Join(os.TempDir(), name)
 
-	cmd := fmt.Sprintf("youtube-dl -f %s+%s %s -o %s", vf.FormatID, af.FormatID, youtubeID, path)
+	cmd := fmt.Sprintf("youtube-dl -f %s+%s https://youtu.be/%s -o %s", vf.FormatID, af.FormatID, id, path)
 	y.l.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
@@ -77,8 +77,8 @@ func (y *YoutubeAPI) CreateVideo(youtubeID string) (*core.Video, error) {
 	}, nil
 }
 
-func (y *YoutubeAPI) getInfo(url string) (*Video, error) {
-	cmd := fmt.Sprintf(`youtube-dl -j %s`, url)
+func (y *YoutubeAPI) getInfo(id string) (*Video, error) {
+	cmd := fmt.Sprintf(`youtube-dl -j https://youtu.be/%s`, id) // id might start with dash, ex: -bdUoHZCf24
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		y.l.Error(err)
