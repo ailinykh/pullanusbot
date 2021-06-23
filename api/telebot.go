@@ -160,8 +160,9 @@ func (t *Telebot) reportError(m *tb.Message, e error) {
 		return
 	}
 	chat := &tb.Chat{ID: chatID}
-	t.bot.Forward(chat, m)
-	t.bot.Send(chat, e.Error())
+	opts := &tb.SendOptions{DisableWebPagePreview: true}
+	t.bot.Forward(chat, m, opts)
+	t.bot.Send(chat, e.Error(), opts)
 }
 
 func makeMessage(m *tb.Message) *core.Message {
