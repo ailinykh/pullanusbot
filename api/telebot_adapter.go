@@ -73,6 +73,9 @@ func (a *TelebotAdapter) SendMedia(media *core.Media) (*core.Message, error) {
 		sent, err = a.t.bot.Send(a.m.Chat, media.Caption, &tb.SendOptions{ParseMode: tb.ModeHTML})
 	}
 
+	if err != nil {
+		return nil, err
+	}
 	return makeMessage(sent), err
 }
 
