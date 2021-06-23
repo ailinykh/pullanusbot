@@ -2,7 +2,9 @@
 
 .PHONY: test run build clean
 
-run: build
+all: build run
+
+run:
 	./pullanusbot
 
 test:
