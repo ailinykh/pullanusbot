@@ -80,23 +80,21 @@ func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
 		return nil, err
 	}
 
+	scale := "320:-1"
+	if stream.Width < stream.Height {
+		scale = "-1:320"
+	}
+
+	thumb, err := c.createThumb(path, scale)
+	if err != nil {
+		return nil, err
+	}
+
 	bitrate, _ := strconv.Atoi(stream.BitRate) // empty for .gif
 
 	duration, err := strconv.ParseFloat(ffprobe.Format.Duration, 32)
 	if err != nil {
 		return nil, err
-	}
-
-	thumbpath := path + ".jpg"
-	scale := "320:-1"
-	if stream.Width < stream.Height {
-		scale = "-1:320"
-	}
-	cmd := fmt.Sprintf(`ffmpeg -v error -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, path, scale, thumbpath)
-	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
-	if err != nil {
-		os.Remove(thumbpath)
-		return nil, errors.New(string(out))
 	}
 
 	stat, err := os.Stat(path)
@@ -105,13 +103,13 @@ func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
 	}
 
 	return &core.Video{
-		File:      core.File{Name: stat.Name(), Path: path, Size: stat.Size()},
-		Width:     stream.Width,
-		Height:    stream.Height,
-		Bitrate:   bitrate,
-		Duration:  int(duration),
-		Codec:     stream.CodecName,
-		ThumbPath: thumbpath}, nil
+		File:     core.File{Name: stat.Name(), Path: path, Size: stat.Size()},
+		Width:    stream.Width,
+		Height:   stream.Height,
+		Bitrate:  bitrate,
+		Duration: int(duration),
+		Codec:    stream.CodecName,
+		Thumb:    *thumb}, nil
 }
 
 func (c *FfmpegConverter) getFFProbe(file string) (*ffpResponse, error) {
@@ -128,4 +126,25 @@ func (c *FfmpegConverter) getFFProbe(file string) (*ffpResponse, error) {
 	}
 
 	return &resp, nil
+}
+
+func (c *FfmpegConverter) createThumb(videoPath string, scale string) (*core.Image, error) {
+	thumbPath := videoPath + ".jpg"
+
+	cmd := fmt.Sprintf(`ffmpeg -v error -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, videoPath, scale, thumbPath)
+	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
+	if err != nil {
+		return nil, errors.New(string(out))
+	}
+
+	ffprobe, err := c.getFFProbe(thumbPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &core.Image{
+		File:   core.File{Name: path.Base(thumbPath), Path: thumbPath},
+		Width:  ffprobe.Streams[0].Width,
+		Height: ffprobe.Streams[0].Height,
+	}, nil
 }

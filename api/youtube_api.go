@@ -61,19 +61,24 @@ func (y *YoutubeAPI) CreateVideo(id string) (*core.Video, error) {
 		return nil, errors.New(string(out))
 	}
 
-	thumb, err := y.fd.Download(video.thumb().URL) // will be disposed with Video
+	thumb := video.thumb()
+	file, err := y.fd.Download(thumb.URL) // will be disposed with Video
 	if err != nil {
 		return nil, err
 	}
 
 	return &core.Video{
-		File:      core.File{Name: name, Path: path, Size: int64(vf.Filesize)},
-		Width:     vf.Width,
-		Height:    vf.Height,
-		Bitrate:   0,
-		Duration:  video.Duration,
-		Codec:     vf.VCodec,
-		ThumbPath: thumb.Path,
+		File:     core.File{Name: name, Path: path, Size: int64(vf.Filesize)},
+		Width:    vf.Width,
+		Height:   vf.Height,
+		Bitrate:  0,
+		Duration: video.Duration,
+		Codec:    vf.VCodec,
+		Thumb: core.Image{
+			File:   *file,
+			Width:  thumb.Width,
+			Height: thumb.Height,
+		},
 	}, nil
 }
 
