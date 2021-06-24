@@ -51,9 +51,9 @@ func (y *YoutubeAPI) CreateVideo(id string) (*core.Video, error) {
 	}
 
 	name := fmt.Sprintf("youtube-%s-%s-%s.mp4", id, vf.FormatID, af.FormatID)
-	path := path.Join(os.TempDir(), name)
+	videoPath := path.Join(os.TempDir(), name)
 
-	cmd := fmt.Sprintf("youtube-dl -f %s+%s https://youtu.be/%s -o %s", vf.FormatID, af.FormatID, id, path)
+	cmd := fmt.Sprintf("youtube-dl -f %s+%s https://youtu.be/%s -o %s", vf.FormatID, af.FormatID, id, videoPath)
 	y.l.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
@@ -62,13 +62,15 @@ func (y *YoutubeAPI) CreateVideo(id string) (*core.Video, error) {
 	}
 
 	thumb := video.thumb()
-	file, err := y.fd.Download(thumb.URL) // will be disposed with Video
+	thumbPath := path.Join(os.TempDir(), name+".jpg")
+	y.l.Infof("downloading thumb %s", thumb.URL)
+	file, err := y.fd.Download(thumb.URL, thumbPath) // will be disposed with Video
 	if err != nil {
 		return nil, err
 	}
 
 	return &core.Video{
-		File:     core.File{Name: name, Path: path, Size: int64(vf.Filesize)},
+		File:     core.File{Name: name, Path: videoPath, Size: int64(vf.Filesize)},
 		Width:    vf.Width,
 		Height:   vf.Height,
 		Bitrate:  0,

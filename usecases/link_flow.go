@@ -96,7 +96,8 @@ func (lf *LinkFlow) sendByUploading(media *core.Media, bot core.IBot) error {
 }
 
 func (lf *LinkFlow) downloadMedia(media *core.Media) (*core.Video, error) {
-	file, err := lf.fd.Download(media.URL)
+	mediaPath := path.Join(os.TempDir(), path.Base(media.URL))
+	file, err := lf.fd.Download(media.URL, mediaPath)
 	if err != nil {
 		lf.l.Errorf("video download error: %v", err)
 		return nil, err

@@ -18,9 +18,8 @@ func CreateFileDownloader() *FileDownloader {
 type FileDownloader struct{}
 
 // Download is a core.IFileDownloader interface implementation
-func (FileDownloader) Download(url core.URL) (*core.File, error) {
-	name := path.Base(url)
-	path := path.Join(os.TempDir(), name)
+func (FileDownloader) Download(url core.URL, filepath string) (*core.File, error) {
+	name := path.Base(filepath)
 	// Get the data
 	resp, err := http.Get(url)
 	if err != nil {
@@ -29,7 +28,7 @@ func (FileDownloader) Download(url core.URL) (*core.File, error) {
 	defer resp.Body.Close()
 
 	// Create the file
-	out, err := os.Create(path)
+	out, err := os.Create(filepath)
 	if err != nil {
 		return nil, err
 	}
@@ -37,5 +36,5 @@ func (FileDownloader) Download(url core.URL) (*core.File, error) {
 
 	// Write the body to file
 	_, err = io.Copy(out, resp.Body)
-	return &core.File{Name: name, Path: path}, err
+	return &core.File{Name: name, Path: filepath}, err
 }

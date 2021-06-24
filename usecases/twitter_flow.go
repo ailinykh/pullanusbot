@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -111,13 +112,14 @@ func (tf *TwitterFlow) handleTimeout(err error, tweetID string, message *core.Me
 func (tf *TwitterFlow) fallbackToUploading(media *core.Media, bot core.IBot) error {
 	// Try to upload file to telegram
 	tf.l.Info("Sending by uploading")
-	file, err := tf.fd.Download(media.URL)
+	mediaPath := path.Join(os.TempDir(), path.Base(media.URL))
+	file, err := tf.fd.Download(media.URL, mediaPath)
 	if err != nil {
 		tf.l.Errorf("video download error: %v", err)
 		return err
 	}
 
-	defer os.Remove(file.Path)
+	defer file.Dispose()
 
 	stat, err := os.Stat(file.Path)
 	if err != nil {

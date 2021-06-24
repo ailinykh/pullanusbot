@@ -2,7 +2,7 @@ package core
 
 // IFileDownloader turns URL to File
 type IFileDownloader interface {
-	Download(URL) (*File, error)
+	Download(URL, string) (*File, error)
 }
 
 // IFileUploader turns File to URL

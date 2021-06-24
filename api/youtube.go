@@ -53,7 +53,7 @@ func (v Video) formatByID(id string) (*Format, error) {
 func (v Video) thumb() *Thumbnail {
 	th := v.Thumbnails[0]
 	for _, t := range v.Thumbnails {
-		if !strings.Contains(t.URL, ".webp") {
+		if !strings.Contains(t.URL, ".webp") && t.Height < 320 && t.Width < 320 {
 			th = t
 		}
 	}
