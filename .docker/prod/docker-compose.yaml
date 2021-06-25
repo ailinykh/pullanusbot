@@ -1,0 +1,11 @@
+version: '2'
+services:
+  bot:
+    image: ailinykh/pullanusbot
+    container_name: pullanusbot
+    environment:
+      BOT_TOKEN: 12345678:XXXXXXXXxxxxxxxxXXXXXXXXxxxxxxxxXXX
+      ADMIN_CHAT_ID: 1488
+    volumes:
+      - ./pullanusbot-data:/usr/local/share/pullanusbot-data
+    restart: always
