@@ -46,7 +46,7 @@ jobs:
       run: |
         docker build -t ${{ github.repository }}:$TAG -t ${{ github.repository }}:latest .
         echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
-        docker push ${{ github.repository }}:$TAG ${{ github.repository }}:latest
+        docker push --all-tags
       env:
         DOCKER_LOGIN: ${{ secrets.DOCKER_LOGIN }}
         DOCKER_PWD: ${{ secrets.DOCKER_PWD }}
