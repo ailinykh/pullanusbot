@@ -58,6 +58,10 @@ func main() {
 	youtubeFlow := usecases.CreateYoutubeFlow(logger, youtubeAPI, youtubeAPI, converter)
 	telebot.AddHandler(youtubeFlow)
 
+	telebot.AddHandler("/proxy", func(m *core.Message, bot core.IBot) error {
+		_, err := bot.SendText("tg://proxy?server=proxy.ailinykh.com&port=443&secret=dd71ce3b5bf1b7015dc62a76dc244c5aec")
+		return err
+	})
 	// Start endless loop
 	telebot.Run()
 }
