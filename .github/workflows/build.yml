@@ -44,7 +44,7 @@ jobs:
     
     - name: Build docker container
       run: |
-        docker build -t ${{ github.repository }}:$TAG .
+        docker build -t ${{ github.repository }}:$TAG -t latest .
         echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
         docker push ${{ github.repository }}:$TAG
       env:
