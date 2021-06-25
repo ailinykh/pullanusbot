@@ -10,7 +10,7 @@
 *.so
 *.dylib
 *.db
-cover.txt
+coverage.txt
 .env
 
 # Test binary, built with `go test -c`

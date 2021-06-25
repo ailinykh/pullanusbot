@@ -8,7 +8,7 @@ run:
 	./pullanusbot
 
 test:
-	go test ./... -coverprofile=cover.txt -race
+	go test ./... -coverprofile=coverage.txt -race -covermode=atomic
 
 build: clean *.go
 	go build .
