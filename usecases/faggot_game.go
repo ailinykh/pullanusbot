@@ -25,12 +25,20 @@ type GameFlow struct {
 
 // Rules of the game
 func (flow *GameFlow) Rules(message *core.Message, bot core.IBot) error {
+	if message.IsPrivate {
+		_, err := bot.SendText(flow.l.I18n("faggot_not_available_for_private"))
+		return err
+	}
 	_, err := bot.SendText(flow.l.I18n("faggot_rules"))
 	return err
 }
 
 // Add a new player to game
 func (flow *GameFlow) Add(message *core.Message, bot core.IBot) error {
+	if message.IsPrivate {
+		_, err := bot.SendText(flow.l.I18n("faggot_not_available_for_private"))
+		return err
+	}
 	players, _ := flow.s.GetPlayers(message.ChatID)
 	for _, p := range players {
 		if p.ID == message.Sender.ID {
@@ -52,6 +60,10 @@ var mutex sync.Mutex
 
 // Play game
 func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
+	if message.IsPrivate {
+		_, err := bot.SendText(flow.l.I18n("faggot_not_available_for_private"))
+		return err
+	}
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -109,6 +121,11 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 
 // All statistics for all time
 func (flow *GameFlow) All(message *core.Message, bot core.IBot) error {
+	if message.IsPrivate {
+		_, err := bot.SendText(flow.l.I18n("faggot_not_available_for_private"))
+		return err
+	}
+
 	entries, _ := flow.getStat(message)
 	messages := []string{flow.l.I18n("faggot_all_top"), ""}
 	for i, e := range entries {
@@ -122,6 +139,11 @@ func (flow *GameFlow) All(message *core.Message, bot core.IBot) error {
 
 // Stats returns current year statistics
 func (flow *GameFlow) Stats(message *core.Message, bot core.IBot) error {
+	if message.IsPrivate {
+		_, err := bot.SendText(flow.l.I18n("faggot_not_available_for_private"))
+		return err
+	}
+
 	year := strconv.Itoa(time.Now().Year())
 	rounds, _ := flow.s.GetRounds(message.ChatID)
 	entries := []Stat{}
@@ -156,6 +178,11 @@ func (flow *GameFlow) Stats(message *core.Message, bot core.IBot) error {
 
 // Me returns your personal statistics
 func (flow *GameFlow) Me(message *core.Message, bot core.IBot) error {
+	if message.IsPrivate {
+		_, err := bot.SendText(flow.l.I18n("faggot_not_available_for_private"))
+		return err
+	}
+
 	entries, _ := flow.getStat(message)
 	score := 0
 	for _, e := range entries {
