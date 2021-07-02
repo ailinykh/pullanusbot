@@ -18,6 +18,8 @@ func (a *TelebotAdapter) SendText(text string, params ...interface{}) (*core.Mes
 		switch m := param.(type) {
 		case *core.Message:
 			opts.ReplyTo = &tb.Message{ID: m.ID}
+		case bool:
+			opts.DisableWebPagePreview = m
 		default:
 			break
 		}
