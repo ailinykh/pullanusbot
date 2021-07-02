@@ -62,6 +62,9 @@ func main() {
 		_, err := bot.SendText("tg://proxy?server=proxy.ailinykh.com&port=443&secret=dd71ce3b5bf1b7015dc62a76dc244c5aec")
 		return err
 	})
+
+	iDoNotCare := usecases.CreateIDoNotCare()
+	telebot.AddHandler(iDoNotCare)
 	// Start endless loop
 	telebot.Run()
 }
