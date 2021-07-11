@@ -44,7 +44,11 @@ func (f *VideoFlow) HandleDocument(document *core.Document, message *core.Messag
 		fi2, _ := os.Stat(cvf.Path)
 		caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>\n<i>Original size: %.2f MB (%d kb/s)\nConverted size: %.2f MB (%d kb/s)</i>", vf.Name, message.Sender.Username, float32(fi1.Size())/1048576, vf.Bitrate/1024, float32(fi2.Size())/1048576, cvf.Bitrate/1024)
 		_, err = bot.SendVideo(cvf, caption)
-		return err
+		if err != nil {
+			f.l.Error(err)
+			return err
+		}
+		return bot.Delete(message)
 	}
 
 	if vf.Codec != "h264" {
@@ -57,7 +61,11 @@ func (f *VideoFlow) HandleDocument(document *core.Document, message *core.Messag
 		defer cvf.Dispose()
 		caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>", vf.Name, message.Sender.Username)
 		_, err = bot.SendVideo(cvf, caption)
-		return err
+		if err != nil {
+			f.l.Error(err)
+			return err
+		}
+		return bot.Delete(message)
 	}
 
 	f.l.Infof("No need to convert %s", vf.Name)
