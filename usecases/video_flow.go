@@ -59,7 +59,7 @@ func (f *VideoFlow) HandleDocument(document *core.Document, message *core.Messag
 			return err
 		}
 		defer cvf.Dispose()
-		caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>", vf.Name, message.Sender.Username)
+		caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>\n%s", vf.Name, message.Sender.Username, message.Text)
 		_, err = bot.SendVideo(cvf, caption)
 		if err != nil {
 			f.l.Error(err)

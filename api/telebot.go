@@ -171,12 +171,16 @@ func (t *Telebot) reportError(m *tb.Message, e error) {
 }
 
 func makeMessage(m *tb.Message) *core.Message {
+	text := m.Text
+	if m.Document != nil {
+		text = m.Caption
+	}
 	return &core.Message{
 		ID:        m.ID,
 		ChatID:    m.Chat.ID,
 		IsPrivate: m.Private(),
 		Sender:    makeUser(m.Sender),
-		Text:      m.Text,
+		Text:      text,
 	}
 }
 
