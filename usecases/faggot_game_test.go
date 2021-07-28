@@ -61,6 +61,27 @@ func Test_Play_RespondsNotEnoughPlayers(t *testing.T) {
 	assert.Equal(t, bot.messages[1], "Not enough players")
 }
 
+func Test_Play_RespondsWithCurrentGameResult(t *testing.T) {
+	game, bot, storage := makeSUT(LocalizerDict{
+		"faggot_game_0_0": "0",
+		"faggot_game_1_0": "1",
+		"faggot_game_2_0": "2",
+		"faggot_game_3_0": "%s",
+	})
+	m1 := makeMessage(1, "")
+	m2 := makeMessage(2, "")
+
+	game.Add(m1, bot)
+	game.Add(m2, bot)
+	game.Play(m1, bot)
+
+	winner := storage.rounds[0].Winner
+	phrase := fmt.Sprintf(`<a href="tg://user?id=%d">%s %s</a>`, winner.ID, winner.FirstName, winner.LastName)
+	assert.Equal(t, "0", bot.messages[2])
+	assert.Equal(t, "1", bot.messages[3])
+	assert.Equal(t, "2", bot.messages[4])
+	assert.Equal(t, phrase, bot.messages[5])
+}
 func Test_Play_RespondsWinnerAlreadyKnown(t *testing.T) {
 	game, bot, storage := makeSUT(LocalizerDict{
 		"faggot_game_0_0":     "0",

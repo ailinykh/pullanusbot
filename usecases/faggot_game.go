@@ -104,7 +104,11 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 
 		if i == 3 {
 			// TODO: implementation detail leaked
-			phrase = flow.l.I18n(template, "@"+winner.Username)
+			if len(winner.Username) == 0 {
+				phrase = flow.l.I18n(template, fmt.Sprintf(`<a href="tg://user?id=%d">%s %s</a>`, winner.ID, winner.FirstName, winner.LastName))
+			} else {
+				phrase = flow.l.I18n(template, "@"+winner.Username)
+			}
 		}
 
 		_, err := bot.SendText(phrase)
@@ -129,7 +133,7 @@ func (flow *GameFlow) All(message *core.Message, bot core.IBot) error {
 	entries, _ := flow.getStat(message)
 	messages := []string{flow.l.I18n("faggot_all_top"), ""}
 	for i, e := range entries {
-		message := flow.l.I18n("faggot_all_entry", i+1, e.Player.Username, e.Score)
+		message := flow.l.I18n("faggot_all_entry", i+1, e.Player.DisplayName(), e.Score)
 		messages = append(messages, message)
 	}
 	messages = append(messages, "", flow.l.I18n("faggot_all_bottom", len(entries)))
@@ -168,7 +172,7 @@ func (flow *GameFlow) Stats(message *core.Message, bot core.IBot) error {
 
 	messages := []string{flow.l.I18n("faggot_stats_top"), ""}
 	for i, e := range entries {
-		message := flow.l.I18n("faggot_stats_entry", i+1, e.Player.Username, e.Score)
+		message := flow.l.I18n("faggot_stats_entry", i+1, e.Player.DisplayName(), e.Score)
 		messages = append(messages, message)
 	}
 	messages = append(messages, "", flow.l.I18n("faggot_stats_bottom", len(entries)))

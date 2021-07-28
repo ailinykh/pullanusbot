@@ -8,3 +8,10 @@ type User struct {
 	Username     string
 	LanguageCode string
 }
+
+func (u *User) DisplayName() string {
+	if len(u.Username) == 0 {
+		return u.FirstName + " " + u.LastName
+	}
+	return u.Username
+}
