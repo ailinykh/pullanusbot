@@ -26,9 +26,9 @@ type FfmpegConverter struct {
 // Convert is a core.IVideoConverter interface implementation
 func (c *FfmpegConverter) Convert(vf *core.Video, bitrate int) (*core.Video, error) {
 	path := path.Join(os.TempDir(), vf.Name+"_converted.mp4")
-	cmd := fmt.Sprintf(`ffmpeg -y -i "%s" -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "%s"`, vf.Path, path)
+	cmd := fmt.Sprintf(`ffmpeg -v error -y -i "%s" -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "%s"`, vf.Path, path)
 	if bitrate > 0 {
-		cmd = fmt.Sprintf(`ffmpeg -v error -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 1 -b:a 128k -f mp4 /dev/null && ffmpeg -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 2 -b:a 128k "%s"`, vf.Path, bitrate/1024, vf.Path, bitrate/1024, path)
+		cmd = fmt.Sprintf(`ffmpeg -v error -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 1 -b:a 128k -f mp4 /dev/null && ffmpeg -v error -y -i "%s" -c:v libx264 -preset medium -b:v %dk -pass 2 -b:a 128k "%s"`, vf.Path, bitrate/1024, vf.Path, bitrate/1024, path)
 	}
 	c.l.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
@@ -47,7 +47,7 @@ func (c *FfmpegConverter) Split(video *core.Video, limit int) ([]*core.Video, er
 	var videos = []*core.Video{}
 	for duration < video.Duration {
 		path := fmt.Sprintf("%s-%d.mp4", video.File.Path, n)
-		cmd := fmt.Sprintf(`ffmpeg -i %s -ss %d -fs %d %s`, video.File.Path, duration, limit, path)
+		cmd := fmt.Sprintf(`ffmpeg -v error -y -i %s -ss %d -fs %d %s`, video.File.Path, duration, limit, path)
 		c.l.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
 		out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 		if err != nil {
@@ -58,7 +58,15 @@ func (c *FfmpegConverter) Split(video *core.Video, limit int) ([]*core.Video, er
 		file, err := c.CreateVideo(path)
 		if err != nil {
 			c.l.Error(err)
-			return nil, err
+			os.Remove(path)
+			if err.Error() == "file is too short" {
+				// the last piece might be shorter than a second
+				// example: https://youtu.be/1MLRCczBKn8
+				duration += 1
+				continue
+			} else {
+				return nil, err
+			}
 		}
 		// defer file.Dispose()
 
@@ -76,6 +84,17 @@ func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
 	if err != nil {
 		c.l.Error(err)
 		return nil, err
+	}
+
+	duration, err := strconv.ParseFloat(ffprobe.Format.Duration, 32)
+	if err != nil {
+		c.l.Error(err)
+		return nil, err
+	}
+
+	if duration < 1 {
+		c.l.Errorf("expected duration at least 1 second, got %f", duration)
+		return nil, errors.New("file is too short")
 	}
 
 	stream, err := ffprobe.getVideoStream()
@@ -96,12 +115,6 @@ func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
 	}
 
 	bitrate, _ := strconv.Atoi(stream.BitRate) // empty for .gif
-
-	duration, err := strconv.ParseFloat(ffprobe.Format.Duration, 32)
-	if err != nil {
-		c.l.Error(err)
-		return nil, err
-	}
 
 	stat, err := os.Stat(path)
 	if err != nil {
@@ -141,7 +154,7 @@ func (c *FfmpegConverter) getFFProbe(file string) (*ffpResponse, error) {
 func (c *FfmpegConverter) createThumb(videoPath string, scale string) (*core.Image, error) {
 	thumbPath := videoPath + ".jpg"
 
-	cmd := fmt.Sprintf(`ffmpeg -v error -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, videoPath, scale, thumbPath)
+	cmd := fmt.Sprintf(`ffmpeg -v error -y -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, videoPath, scale, thumbPath)
 	c.l.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
