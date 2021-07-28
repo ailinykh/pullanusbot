@@ -57,6 +57,7 @@ func (c *FfmpegConverter) Split(video *core.Video, limit int) ([]*core.Video, er
 
 		file, err := c.CreateVideo(path)
 		if err != nil {
+			c.l.Error(err)
 			return nil, err
 		}
 		// defer file.Dispose()
@@ -72,11 +73,13 @@ func (c *FfmpegConverter) Split(video *core.Video, limit int) ([]*core.Video, er
 func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
 	ffprobe, err := c.getFFProbe(path)
 	if err != nil {
+		c.l.Error(err)
 		return nil, err
 	}
 
 	stream, err := ffprobe.getVideoStream()
 	if err != nil {
+		c.l.Error(err)
 		return nil, err
 	}
 
@@ -87,6 +90,7 @@ func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
 
 	thumb, err := c.createThumb(path, scale)
 	if err != nil {
+		c.l.Error(err)
 		return nil, err
 	}
 
@@ -94,11 +98,13 @@ func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
 
 	duration, err := strconv.ParseFloat(ffprobe.Format.Duration, 32)
 	if err != nil {
+		c.l.Error(err)
 		return nil, err
 	}
 
 	stat, err := os.Stat(path)
 	if err != nil {
+		c.l.Error(err)
 		return nil, err
 	}
 
@@ -116,12 +122,14 @@ func (c *FfmpegConverter) getFFProbe(file string) (*ffpResponse, error) {
 	cmd := fmt.Sprintf(`ffprobe -v error -of json -show_streams -show_format "%s"`, file)
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
+		c.l.Error(err)
 		return nil, errors.New(string(out))
 	}
 
 	var resp ffpResponse
 	err = json.Unmarshal(out, &resp)
 	if err != nil {
+		c.l.Error(err)
 		return nil, err
 	}
 
@@ -134,11 +142,13 @@ func (c *FfmpegConverter) createThumb(videoPath string, scale string) (*core.Ima
 	cmd := fmt.Sprintf(`ffmpeg -v error -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, videoPath, scale, thumbPath)
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
+		c.l.Error(err)
 		return nil, errors.New(string(out))
 	}
 
 	ffprobe, err := c.getFFProbe(thumbPath)
 	if err != nil {
+		c.l.Error(err)
 		return nil, err
 	}
 
