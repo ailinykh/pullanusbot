@@ -7,7 +7,7 @@ RUN go mod download
 ADD . .
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags '-extldflags "-static"'
 
-FROM jrottenberg/ffmpeg:4.1-alpine
+FROM jrottenberg/ffmpeg:4.3-alpine
 RUN apk update && apk add tzdata python3 --no-cache && \
     wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl && \
     chmod a+rx /usr/local/bin/youtube-dl && \
