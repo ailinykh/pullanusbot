@@ -70,7 +70,7 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 	players, _ := flow.s.GetPlayers(message.ChatID)
 	switch len(players) {
 	case 0:
-		_, err := bot.SendText(flow.l.I18n("faggot_no_players", message.Sender.Username))
+		_, err := bot.SendText(flow.l.I18n("faggot_no_players", message.Sender.DisplayName()))
 		return err
 	case 1:
 		_, err := bot.SendText(flow.l.I18n("faggot_not_enough_players"))
@@ -83,7 +83,7 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 
 	for _, r := range games {
 		if r.Day == day {
-			_, err := bot.SendText(flow.l.I18n("faggot_winner_known", r.Winner.Username))
+			_, err := bot.SendText(flow.l.I18n("faggot_winner_known", r.Winner.DisplayName()))
 			return err
 		}
 	}
@@ -154,7 +154,7 @@ func (flow *GameFlow) Stats(message *core.Message, bot core.IBot) error {
 
 	for _, r := range rounds {
 		if strings.HasPrefix(r.Day, year) {
-			index := Find(entries, r.Winner.Username)
+			index := Find(entries, r.Winner.ID)
 			if index == -1 {
 				entries = append(entries, Stat{Player: r.Winner, Score: 1})
 			} else {
@@ -194,7 +194,7 @@ func (flow *GameFlow) Me(message *core.Message, bot core.IBot) error {
 			score = e.Score
 		}
 	}
-	_, err := bot.SendText(flow.l.I18n("faggot_me", message.Sender.Username, score))
+	_, err := bot.SendText(flow.l.I18n("faggot_me", message.Sender.DisplayName(), score))
 	return err
 }
 
@@ -207,7 +207,7 @@ func (flow *GameFlow) getStat(message *core.Message) ([]Stat, error) {
 	}
 
 	for _, r := range rounds {
-		index := Find(entries, r.Winner.Username)
+		index := Find(entries, r.Winner.ID)
 		if index == -1 {
 			entries = append(entries, Stat{Player: r.Winner, Score: 1})
 		} else {
