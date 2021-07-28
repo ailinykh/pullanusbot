@@ -71,6 +71,7 @@ func (c *FfmpegConverter) Split(video *core.Video, limit int) ([]*core.Video, er
 
 // CreateVideo is a core.IVideoFactory interface implementation
 func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
+	c.l.Infof("create video: %s", strings.ReplaceAll(path, os.TempDir(), "$TMPDIR/"))
 	ffprobe, err := c.getFFProbe(path)
 	if err != nil {
 		c.l.Error(err)
@@ -120,6 +121,7 @@ func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
 
 func (c *FfmpegConverter) getFFProbe(file string) (*ffpResponse, error) {
 	cmd := fmt.Sprintf(`ffprobe -v error -of json -show_streams -show_format "%s"`, file)
+	c.l.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		c.l.Error(err)
@@ -140,6 +142,7 @@ func (c *FfmpegConverter) createThumb(videoPath string, scale string) (*core.Ima
 	thumbPath := videoPath + ".jpg"
 
 	cmd := fmt.Sprintf(`ffmpeg -v error -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, videoPath, scale, thumbPath)
+	c.l.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		c.l.Error(err)
