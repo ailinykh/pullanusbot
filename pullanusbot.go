@@ -40,7 +40,8 @@ func main() {
 	fileDownloader := infrastructure.CreateFileDownloader()
 	twitterAPI := api.CreateTwitterAPI()
 	twitterFlow := usecases.CreateTwitterFlow(logger, twitterAPI, fileDownloader, converter)
-	telebot.AddHandler(twitterFlow)
+	twitterTimeout := usecases.CreateTwitterTimeout(logger, twitterFlow)
+	telebot.AddHandler(twitterTimeout)
 
 	linkFlow := usecases.CreateLinkFlow(logger, fileDownloader, converter, converter)
 	telebot.AddHandler(linkFlow)

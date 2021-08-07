@@ -2,30 +2,25 @@ package usecases
 
 import (
 	"errors"
-	"fmt"
-	"math"
 	"os"
 	"path"
 	"regexp"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
 // CreateTwitterFlow is a basic TwitterFlow factory
 func CreateTwitterFlow(l core.ILogger, mf core.IMediaFactory, fd core.IFileDownloader, vff core.IVideoFactory) *TwitterFlow {
-	return &TwitterFlow{l, mf, fd, vff, make(map[core.Message]core.Message)}
+	return &TwitterFlow{l, mf, fd, vff}
 }
 
 // TwitterFlow represents tweet processing logic
 type TwitterFlow struct {
-	l              core.ILogger
-	mf             core.IMediaFactory
-	fd             core.IFileDownloader
-	vff            core.IVideoFactory
-	timeoutReplies map[core.Message]core.Message
+	l   core.ILogger
+	mf  core.IMediaFactory
+	fd  core.IFileDownloader
+	vff core.IVideoFactory
 }
 
 // HandleText is a core.ITextHandler protocol implementation
@@ -42,26 +37,11 @@ func (tf *TwitterFlow) process(tweetID string, message *core.Message, bot core.I
 	tf.l.Infof("processing tweet %s", tweetID)
 	media, err := tf.mf.CreateMedia(tweetID, message.Sender)
 	if err != nil {
-		if strings.HasPrefix(err.Error(), "Rate limit exceeded") {
-			err := tf.handleTimeout(err, tweetID, message, bot)
-			if strings.HasPrefix(err.Error(), "twitter api timeout") {
-				sent, err := bot.SendText(err.Error(), message)
-				if err != nil {
-					return err
-				}
-				tf.timeoutReplies[*message] = *sent
-				return nil
-			}
-		}
 		return err
 	}
 
 	err = tf.handleMedia(media, message, bot)
 	if err == nil {
-		if sent, ok := tf.timeoutReplies[*message]; ok {
-			_ = bot.Delete(&sent)
-			delete(tf.timeoutReplies, *message)
-		}
 		return bot.Delete(message)
 	}
 	return err
@@ -83,30 +63,6 @@ func (tf *TwitterFlow) handleMedia(media []*core.Media, message *core.Message, b
 		_, err := bot.SendPhotoAlbum(media)
 		return err
 	}
-}
-
-func (tf *TwitterFlow) handleTimeout(err error, tweetID string, message *core.Message, bot core.IBot) error {
-	r := regexp.MustCompile(`(\-?\d+)$`)
-	match := r.FindStringSubmatch(err.Error())
-	if len(match) < 2 {
-		return errors.New("rate limit not found")
-	}
-
-	limit, err := strconv.ParseInt(match[1], 10, 64)
-	if err != nil {
-		return err
-	}
-
-	timeout := limit - time.Now().Unix()
-	tf.l.Infof("Twitter api timeout %d seconds", timeout)
-	timeout = int64(math.Max(float64(timeout), 1)) // Twitter api timeout might be negative
-	go func() {
-		time.Sleep(time.Duration(timeout) * time.Second)
-		tf.process(tweetID, message, bot)
-	}()
-	minutes := timeout / 60
-	seconds := timeout % 60
-	return fmt.Errorf("twitter api timeout %d min %d sec", minutes, seconds)
 }
 
 func (tf *TwitterFlow) fallbackToUploading(media *core.Media, bot core.IBot) error {
