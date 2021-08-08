@@ -37,14 +37,17 @@ func (tf *TwitterFlow) process(tweetID string, message *core.Message, bot core.I
 	tf.l.Infof("processing tweet %s", tweetID)
 	media, err := tf.mf.CreateMedia(tweetID, message.Sender)
 	if err != nil {
+		tf.l.Error(err)
 		return err
 	}
 
 	err = tf.handleMedia(media, message, bot)
-	if err == nil {
-		return bot.Delete(message)
+	if err != nil {
+		tf.l.Error(err)
+		return err
 	}
-	return err
+
+	return bot.Delete(message)
 }
 
 func (tf *TwitterFlow) handleMedia(media []*core.Media, message *core.Message, bot core.IBot) error {
