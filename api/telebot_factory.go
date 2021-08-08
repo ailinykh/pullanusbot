@@ -5,7 +5,7 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-func makeTbVideo(vf *core.Video, caption string) tb.Video {
+func makeTbVideo(vf *core.Video, caption string) *tb.Video {
 	video := tb.Video{File: tb.FromDisk(vf.Path)}
 	video.FileName = vf.File.Name
 	video.Width = vf.Width
@@ -18,5 +18,14 @@ func makeTbVideo(vf *core.Video, caption string) tb.Video {
 		Width:  vf.Thumb.Width,
 		Height: vf.Thumb.Height,
 	}
-	return video
+	return &video
+}
+
+func makeTbPhoto(image *core.Image, caption string) *tb.Photo {
+	photo := &tb.Photo{File: tb.FromDisk(image.File.Path)}
+	if len(image.ID) > 0 {
+		photo = &tb.Photo{File: tb.File{FileID: image.ID}}
+	}
+	photo.Caption = caption
+	return photo
 }

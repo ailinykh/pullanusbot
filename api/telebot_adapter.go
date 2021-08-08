@@ -34,9 +34,12 @@ func (a *TelebotAdapter) Delete(message *core.Message) error {
 }
 
 // SendImage is a core.IBot interface implementation
-func (a *TelebotAdapter) SendImage(image *core.Image) (*core.Message, error) {
-	photo := &tb.Photo{File: tb.File{FileID: image.ID}}
-	sent, err := a.t.bot.Send(a.m.Chat, photo)
+func (a *TelebotAdapter) SendImage(image *core.Image, caption string) (*core.Message, error) {
+	photo := makeTbPhoto(image, caption)
+	sent, err := photo.Send(a.t.bot, a.m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
+	if err != nil {
+		return nil, err
+	}
 	return makeMessage(sent), err
 }
 

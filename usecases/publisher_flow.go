@@ -102,7 +102,7 @@ func (p *PublisherFlow) runLoop() {
 				}
 			case 1:
 				p.l.Info("have one actual photo")
-				sent, err := ms.bot.SendImage(&core.Image{ID: photos[0]})
+				sent, err := ms.bot.SendImage(&core.Image{ID: photos[0]}, "")
 				if err != nil {
 					p.l.Error(err)
 				} else {
