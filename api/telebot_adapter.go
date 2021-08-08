@@ -105,7 +105,7 @@ func (a *TelebotAdapter) SendPhotoAlbum(medias []*core.Media) ([]*core.Message, 
 
 // SendVideo is a core.IBot interface implementation
 func (a *TelebotAdapter) SendVideo(vf *core.Video, caption string) (*core.Message, error) {
-	video := makeVideo(vf, caption)
+	video := makeTbVideo(vf, caption)
 	a.t.bot.Notify(a.m.Chat, tb.UploadingVideo)
 	sent, err := video.Send(a.t.bot, a.m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
 	if err != nil {

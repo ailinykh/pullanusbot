@@ -5,7 +5,7 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-func makeVideo(vf *core.Video, caption string) tb.Video {
+func makeTbVideo(vf *core.Video, caption string) tb.Video {
 	video := tb.Video{File: tb.FromDisk(vf.Path)}
 	video.FileName = vf.File.Name
 	video.Width = vf.Width
