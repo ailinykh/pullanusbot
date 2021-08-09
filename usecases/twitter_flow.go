@@ -56,7 +56,7 @@ func (tf *TwitterFlow) handleMedia(media []*core.Media, message *core.Message, b
 		return errors.New("unexpected 0 media count")
 	case 1:
 		_, err := bot.SendMedia(media[0])
-		if err != nil && media[0].Type == core.TVideo {
+		if err != nil {
 			if strings.Contains(err.Error(), "failed to get HTTP URL content") || strings.Contains(err.Error(), "wrong file identifier/HTTP URL specified") {
 				return tf.fallbackToUploading(media[0], bot)
 			}
@@ -74,7 +74,7 @@ func (tf *TwitterFlow) fallbackToUploading(media *core.Media, bot core.IBot) err
 	mediaPath := path.Join(os.TempDir(), path.Base(media.URL))
 	file, err := tf.fd.Download(media.URL, mediaPath)
 	if err != nil {
-		tf.l.Errorf("video download error: %v", err)
+		tf.l.Errorf("file download error: %v", err)
 		return err
 	}
 
@@ -87,6 +87,12 @@ func (tf *TwitterFlow) fallbackToUploading(media *core.Media, bot core.IBot) err
 
 	tf.l.Infof("File downloaded: %s %0.2fMB", file.Name, float64(stat.Size())/1024/1024)
 
+	if media.Type == core.TPhoto {
+		image := &core.Image{File: *file}
+		_, err := bot.SendImage(image, media.Caption)
+		return err
+	}
+	// else
 	vf, err := tf.vff.CreateVideo(file.Path)
 	if err != nil {
 		tf.l.Errorf("Can't create video file for %s, %v", file.Path, err)
