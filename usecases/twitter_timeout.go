@@ -24,20 +24,29 @@ type TwitterTimeout struct {
 	replies map[core.Message]core.Message
 }
 
-// HandleText is a core.ITextHandler protocol implementation
-func (tt *TwitterTimeout) HandleText(message *core.Message, bot core.IBot) error {
-	err := tt.tf.HandleText(message, bot)
+func (tt *TwitterTimeout) HandleTweet(tweetID string, message *core.Message, bot core.IBot) error {
+	err := tt.tf.HandleTweet(tweetID, message, bot)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Rate limit exceeded") {
-			err := tt.handleTimeout(err, message, bot)
-			if strings.HasPrefix(err.Error(), "twitter api timeout") {
-				sent, err := bot.SendText(err.Error(), message)
-				if err != nil {
-					return err
-				}
-				tt.replies[*message] = *sent
-				return nil
+			timeout, err := tt.parseTimeout(err)
+			if err != nil {
+				return err
 			}
+
+			go func() {
+				time.Sleep(time.Duration(timeout) * time.Second)
+				tt.HandleTweet(tweetID, message, bot)
+			}()
+
+			minutes := timeout / 60
+			seconds := timeout % 60
+			reply := fmt.Sprintf("twitter api timeout %d min %d sec", minutes, seconds)
+			sent, err := bot.SendText(reply, message)
+			if err != nil {
+				return err
+			}
+			tt.replies[*message] = *sent
+			return nil
 		}
 		tt.l.Error(err)
 	} else if sent, ok := tt.replies[*message]; ok {
@@ -47,26 +56,20 @@ func (tt *TwitterTimeout) HandleText(message *core.Message, bot core.IBot) error
 	return err
 }
 
-func (tt *TwitterTimeout) handleTimeout(err error, message *core.Message, bot core.IBot) error {
+func (tt *TwitterTimeout) parseTimeout(err error) (int64, error) {
 	r := regexp.MustCompile(`(\-?\d+)$`)
 	match := r.FindStringSubmatch(err.Error())
 	if len(match) < 2 {
-		return errors.New("rate limit not found")
+		return 0, errors.New("rate limit not found")
 	}
 
 	limit, err := strconv.ParseInt(match[1], 10, 64)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	timeout := limit - time.Now().Unix()
 	tt.l.Infof("Twitter api timeout %d seconds", timeout)
-	timeout = int64(math.Max(float64(timeout), 1)) // Twitter api timeout might be negative
-	go func() {
-		time.Sleep(time.Duration(timeout) * time.Second)
-		tt.HandleText(message, bot)
-	}()
-	minutes := timeout / 60
-	seconds := timeout % 60
-	return fmt.Errorf("twitter api timeout %d min %d sec", minutes, seconds)
+	timeout = int64(math.Max(float64(timeout), 2)) // Twitter api timeout might be negative
+	return timeout, nil
 }

@@ -41,7 +41,8 @@ func main() {
 	twitterAPI := api.CreateTwitterAPI()
 	twitterFlow := usecases.CreateTwitterFlow(logger, twitterAPI, fileDownloader, converter)
 	twitterTimeout := usecases.CreateTwitterTimeout(logger, twitterFlow)
-	telebot.AddHandler(twitterTimeout)
+	twitterParser := usecases.CreateTwitterParser(twitterTimeout)
+	telebot.AddHandler(twitterParser)
 
 	linkFlow := usecases.CreateLinkFlow(logger, fileDownloader, converter, converter)
 	telebot.AddHandler(linkFlow)
