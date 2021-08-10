@@ -9,6 +9,10 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
+type ITweetHandler interface {
+	HandleTweet(string, *core.Message, core.IBot) error
+}
+
 // CreateTwitterFlow is a basic TwitterFlow factory
 func CreateTwitterFlow(l core.ILogger, mf core.IMediaFactory, fd core.IFileDownloader, vff core.IVideoFactory) *TwitterFlow {
 	return &TwitterFlow{l, mf, fd, vff}
@@ -22,6 +26,7 @@ type TwitterFlow struct {
 	vff core.IVideoFactory
 }
 
+// HandleTweet is a ITweetHandler protocol implementation
 func (tf *TwitterFlow) HandleTweet(tweetID string, message *core.Message, bot core.IBot) error {
 	tf.l.Infof("processing tweet %s", tweetID)
 	media, err := tf.mf.CreateMedia(tweetID, message.Sender)

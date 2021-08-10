@@ -13,19 +13,20 @@ import (
 )
 
 // CreateTwitterFlow is a basic TwitterFlow factory
-func CreateTwitterTimeout(l core.ILogger, tf *TwitterFlow) *TwitterTimeout {
-	return &TwitterTimeout{l, tf, make(map[core.Message]core.Message)}
+func CreateTwitterTimeout(l core.ILogger, th ITweetHandler) *TwitterTimeout {
+	return &TwitterTimeout{l, th, make(map[core.Message]core.Message)}
 }
 
 // TwitterTimeout is a decorator for TwitterFlow to handle API timeouts gracefully
 type TwitterTimeout struct {
 	l       core.ILogger
-	tf      *TwitterFlow
+	th      ITweetHandler
 	replies map[core.Message]core.Message
 }
 
+// HandleTweet is a ITweetHandler protocol implementation
 func (tt *TwitterTimeout) HandleTweet(tweetID string, message *core.Message, bot core.IBot) error {
-	err := tt.tf.HandleTweet(tweetID, message, bot)
+	err := tt.th.HandleTweet(tweetID, message, bot)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Rate limit exceeded") {
 			timeout, err := tt.parseTimeout(err)
