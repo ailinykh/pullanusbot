@@ -14,8 +14,8 @@ import (
 )
 
 // CreateGameFlow is a simple GameFlow factory
-func CreateGameFlow(l core.ILocalizer, s core.IGameStorage) GameFlow {
-	return GameFlow{l, s}
+func CreateGameFlow(l core.ILocalizer, s core.IGameStorage) *GameFlow {
+	return &GameFlow{l, s}
 }
 
 // GameFlow represents faggot game logic

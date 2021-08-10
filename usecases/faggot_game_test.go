@@ -1,4 +1,4 @@
-package usecases
+package usecases_test
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
+	"github.com/ailinykh/pullanusbot/v2/usecases"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -212,7 +213,7 @@ func makeMessage(id int, username string) *core.Message {
 	return &core.Message{ID: 0, Sender: player}
 }
 
-func makeSUT(args ...interface{}) (*GameFlow, *BotMock, *GameStorageMock) {
+func makeSUT(args ...interface{}) (*usecases.GameFlow, *BotMock, *GameStorageMock) {
 	dict := LocalizerDict{}
 	storage := &GameStorageMock{players: []*core.User{}}
 	bot := &BotMock{}
@@ -225,7 +226,7 @@ func makeSUT(args ...interface{}) (*GameFlow, *BotMock, *GameStorageMock) {
 	}
 
 	l := &LocalizerMock{dict: dict}
-	game := &GameFlow{l, storage}
+	game := usecases.CreateGameFlow(l, storage)
 	return game, bot, storage
 }
 
