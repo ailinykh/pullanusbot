@@ -3,6 +3,7 @@ package usecases
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -116,8 +117,10 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 			//TODO: logger?
 		}
 
-		r := rand.Intn(3) + 1
-		time.Sleep(time.Duration(r) * time.Second)
+		if os.Getenv("GO_ENV") != "testing" {
+			r := rand.Intn(3) + 1
+			time.Sleep(time.Duration(r) * time.Second)
+		}
 	}
 
 	return nil
