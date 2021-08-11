@@ -14,7 +14,7 @@ import (
 
 func Test_RulesCommand_DeliversRules(t *testing.T) {
 	game, bot, _ := makeSUT(LocalizerDict{"faggot_rules": "Game rules:"})
-	message := makeMessage(1, "Faggot")
+	message := makeGameMessage(1, "Faggot")
 
 	game.Rules(message, bot)
 
@@ -26,7 +26,7 @@ func Test_Add_AppendsPlayerInGameOnlyOnce(t *testing.T) {
 		"faggot_added_to_game":   "Player added",
 		"faggot_already_in_game": "Player already in game",
 	})
-	message := makeMessage(1, "Faggot")
+	message := makeGameMessage(1, "Faggot")
 
 	game.Add(message, bot)
 
@@ -43,7 +43,7 @@ func Test_Play_RespondsWithNoPlayers(t *testing.T) {
 	game, bot, _ := makeSUT(LocalizerDict{
 		"faggot_no_players": "Nobody in game. So you win, %s!",
 	})
-	message := makeMessage(1, "Faggot")
+	message := makeGameMessage(1, "Faggot")
 
 	game.Play(message, bot)
 
@@ -54,7 +54,7 @@ func Test_Play_RespondsNotEnoughPlayers(t *testing.T) {
 	game, bot, _ := makeSUT(LocalizerDict{
 		"faggot_not_enough_players": "Not enough players",
 	})
-	message := makeMessage(1, "Faggot")
+	message := makeGameMessage(1, "Faggot")
 
 	game.Add(message, bot)
 	game.Play(message, bot)
@@ -69,8 +69,8 @@ func Test_Play_RespondsWithCurrentGameResult(t *testing.T) {
 		"faggot_game_2_0": "2",
 		"faggot_game_3_0": "%s",
 	})
-	m1 := makeMessage(1, "")
-	m2 := makeMessage(2, "")
+	m1 := makeGameMessage(1, "")
+	m2 := makeGameMessage(2, "")
 
 	game.Add(m1, bot)
 	game.Add(m2, bot)
@@ -91,8 +91,8 @@ func Test_Play_RespondsWinnerAlreadyKnown(t *testing.T) {
 		"faggot_game_3_0":     "3 %s",
 		"faggot_winner_known": "Winner already known %s",
 	})
-	m1 := makeMessage(1, "Faggot1")
-	m2 := makeMessage(2, "Faggot2")
+	m1 := makeGameMessage(1, "Faggot1")
+	m2 := makeGameMessage(2, "Faggot2")
 
 	game.Add(m1, bot)
 	game.Add(m2, bot)
@@ -127,9 +127,9 @@ func Test_Stats_RespondsWithDescendingResultsForCurrentYear(t *testing.T) {
 		"total_players:3",
 	}
 
-	m1 := makeMessage(1, "Faggot1")
-	m2 := makeMessage(2, "Faggot2")
-	m3 := makeMessage(3, "Faggot3")
+	m1 := makeGameMessage(1, "Faggot1")
+	m2 := makeGameMessage(2, "Faggot2")
+	m3 := makeGameMessage(3, "Faggot3")
 
 	storage.rounds = []*core.Round{
 		{Day: year + "-01-01", Winner: m2.Sender},
@@ -162,9 +162,9 @@ func Test_All_RespondsWithDescendingResultsForAllTime(t *testing.T) {
 		"total_players:3",
 	}
 
-	m1 := makeMessage(1, "Faggot1")
-	m2 := makeMessage(2, "Faggot2")
-	m3 := makeMessage(3, "Faggot3")
+	m1 := makeGameMessage(1, "Faggot1")
+	m2 := makeGameMessage(2, "Faggot2")
+	m3 := makeGameMessage(3, "Faggot3")
 
 	storage.rounds = []*core.Round{
 		{Day: "2021-01-01", Winner: m2.Sender},
@@ -185,8 +185,8 @@ func Test_Me_RespondsWithPersonalStat(t *testing.T) {
 		"faggot_me": "username:%s,scores:%d",
 	})
 
-	m1 := makeMessage(1, "Faggot1")
-	m2 := makeMessage(2, "Faggot2")
+	m1 := makeGameMessage(1, "Faggot1")
+	m2 := makeGameMessage(2, "Faggot2")
 
 	storage.rounds = []*core.Round{
 		{Day: "2021-01-01", Winner: m2.Sender},
@@ -203,7 +203,7 @@ func Test_Me_RespondsWithPersonalStat(t *testing.T) {
 
 // Helpers
 
-func makeMessage(id int, username string) *core.Message {
+func makeGameMessage(id int, username string) *core.Message {
 	player := &core.User{
 		ID:        id,
 		FirstName: "FirstName" + fmt.Sprint(id),
