@@ -20,10 +20,8 @@ func Test_HandleText_NotFoundAnyLinkByDefault(t *testing.T) {
 }
 
 func Test_HandleText_FoundTweetLink(t *testing.T) {
-	handler := &FakeTweetHandler{[]string{}}
-	parser := usecases.CreateTwitterParser(handler)
+	parser, handler, bot := makeTwitterSUT()
 	m := makeTweetMessage("a message with https://twitter.com/status/username/123456")
-	bot := &BotMock{}
 
 	parser.HandleText(m, bot)
 
@@ -31,14 +29,36 @@ func Test_HandleText_FoundTweetLink(t *testing.T) {
 }
 
 func Test_HandleText_FoundMultipleTweetLinks(t *testing.T) {
-	handler := &FakeTweetHandler{[]string{}}
-	parser := usecases.CreateTwitterParser(handler)
-	m := makeTweetMessage("a message with https://twitter.com/status/username/123456 and https://twitter.com/status/username/789010 and some text")
-	bot := &BotMock{}
-
+	parser, handler, bot := makeTwitterSUT()
+	m := makeTweetMessage("a message with https://twitter.com/username/status/123456 and https://twitter.com/username/status/789010 and some text")
 	parser.HandleText(m, bot)
 
 	assert.Equal(t, []string{"123456", "789010"}, handler.tweets)
+}
+
+func Test_HandleText_RemovesOriginalMessageInCaseOfFullMatch(t *testing.T) {
+	parser, _, bot := makeTwitterSUT()
+	m := makeTweetMessage("https://twitter.com/username/status/123456")
+
+	parser.HandleText(m, bot)
+
+	assert.Equal(t, []string{"https://twitter.com/username/status/123456"}, bot.removedMessages)
+}
+
+func Test_HandleText_DoesNotRemoveOriginalMessage(t *testing.T) {
+	parser, _, bot := makeTwitterSUT()
+	m := makeTweetMessage("https://twitter.com/username/status/123456 and some other text")
+
+	parser.HandleText(m, bot)
+
+	assert.Equal(t, []string{}, bot.removedMessages)
+}
+
+func makeTwitterSUT() (*usecases.TwitterParser, *FakeTweetHandler, *BotMock) {
+	handler := &FakeTweetHandler{[]string{}}
+	parser := usecases.CreateTwitterParser(handler)
+	bot := &BotMock{[]string{}, []string{}}
+	return parser, handler, bot
 }
 
 func makeTweetMessage(text string) *core.Message {
@@ -50,7 +70,10 @@ type FakeTweetHandler struct {
 }
 
 // HandleTweet is a ITweetHandler protocol implementation
-func (fth *FakeTweetHandler) HandleTweet(tweetID string, message *core.Message, bot core.IBot) error {
+func (fth *FakeTweetHandler) HandleTweet(tweetID string, message *core.Message, bot core.IBot, deleteOriginal bool) error {
 	fth.tweets = append(fth.tweets, tweetID)
+	if deleteOriginal {
+		return bot.Delete(message)
+	}
 	return nil
 }

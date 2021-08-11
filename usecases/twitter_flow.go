@@ -10,7 +10,7 @@ import (
 )
 
 type ITweetHandler interface {
-	HandleTweet(string, *core.Message, core.IBot) error
+	HandleTweet(string, *core.Message, core.IBot, bool) error
 }
 
 // CreateTwitterFlow is a basic TwitterFlow factory
@@ -27,7 +27,7 @@ type TwitterFlow struct {
 }
 
 // HandleTweet is a ITweetHandler protocol implementation
-func (tf *TwitterFlow) HandleTweet(tweetID string, message *core.Message, bot core.IBot) error {
+func (tf *TwitterFlow) HandleTweet(tweetID string, message *core.Message, bot core.IBot, deleteOriginal bool) error {
 	tf.l.Infof("processing tweet %s", tweetID)
 	media, err := tf.mf.CreateMedia(tweetID, message.Sender)
 	if err != nil {
@@ -41,7 +41,10 @@ func (tf *TwitterFlow) HandleTweet(tweetID string, message *core.Message, bot co
 		return err
 	}
 
-	return bot.Delete(message)
+	if deleteOriginal {
+		return bot.Delete(message)
+	}
+	return nil
 }
 
 func (tf *TwitterFlow) handleMedia(media []*core.Media, message *core.Message, bot core.IBot) error {
