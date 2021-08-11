@@ -18,7 +18,7 @@ func Test_RulesCommand_DeliversRules(t *testing.T) {
 
 	game.Rules(message, bot)
 
-	assert.Equal(t, bot.messages[0], "Game rules:")
+	assert.Equal(t, bot.sentMessages[0], "Game rules:")
 }
 
 func Test_Add_AppendsPlayerInGameOnlyOnce(t *testing.T) {
@@ -31,12 +31,12 @@ func Test_Add_AppendsPlayerInGameOnlyOnce(t *testing.T) {
 	game.Add(message, bot)
 
 	assert.Equal(t, storage.players, []*core.User{message.Sender})
-	assert.Equal(t, bot.messages[0], "Player added")
+	assert.Equal(t, bot.sentMessages[0], "Player added")
 
 	game.Add(message, bot)
 
 	assert.Equal(t, storage.players, []*core.User{message.Sender})
-	assert.Equal(t, bot.messages[1], "Player already in game")
+	assert.Equal(t, bot.sentMessages[1], "Player already in game")
 }
 
 func Test_Play_RespondsWithNoPlayers(t *testing.T) {
@@ -47,7 +47,7 @@ func Test_Play_RespondsWithNoPlayers(t *testing.T) {
 
 	game.Play(message, bot)
 
-	assert.Equal(t, bot.messages[0], "Nobody in game. So you win, Faggot!")
+	assert.Equal(t, bot.sentMessages[0], "Nobody in game. So you win, Faggot!")
 }
 
 func Test_Play_RespondsNotEnoughPlayers(t *testing.T) {
@@ -59,7 +59,7 @@ func Test_Play_RespondsNotEnoughPlayers(t *testing.T) {
 	game.Add(message, bot)
 	game.Play(message, bot)
 
-	assert.Equal(t, bot.messages[1], "Not enough players")
+	assert.Equal(t, bot.sentMessages[1], "Not enough players")
 }
 
 func Test_Play_RespondsWithCurrentGameResult(t *testing.T) {
@@ -78,10 +78,10 @@ func Test_Play_RespondsWithCurrentGameResult(t *testing.T) {
 
 	winner := storage.rounds[0].Winner
 	phrase := fmt.Sprintf(`<a href="tg://user?id=%d">%s %s</a>`, winner.ID, winner.FirstName, winner.LastName)
-	assert.Equal(t, "0", bot.messages[2])
-	assert.Equal(t, "1", bot.messages[3])
-	assert.Equal(t, "2", bot.messages[4])
-	assert.Equal(t, phrase, bot.messages[5])
+	assert.Equal(t, "0", bot.sentMessages[2])
+	assert.Equal(t, "1", bot.sentMessages[3])
+	assert.Equal(t, "2", bot.sentMessages[4])
+	assert.Equal(t, phrase, bot.sentMessages[5])
 }
 func Test_Play_RespondsWinnerAlreadyKnown(t *testing.T) {
 	game, bot, storage := makeSUT(LocalizerDict{
@@ -99,14 +99,14 @@ func Test_Play_RespondsWinnerAlreadyKnown(t *testing.T) {
 	game.Play(m1, bot)
 
 	winner := storage.rounds[0].Winner.Username
-	assert.Equal(t, bot.messages[2], "0")
-	assert.Equal(t, bot.messages[3], "1")
-	assert.Equal(t, bot.messages[4], "2")
-	assert.Equal(t, bot.messages[5], fmt.Sprintf("3 @%s", winner))
+	assert.Equal(t, bot.sentMessages[2], "0")
+	assert.Equal(t, bot.sentMessages[3], "1")
+	assert.Equal(t, bot.sentMessages[4], "2")
+	assert.Equal(t, bot.sentMessages[5], fmt.Sprintf("3 @%s", winner))
 
 	game.Play(m1, bot)
 
-	assert.Equal(t, bot.messages[6], fmt.Sprintf("Winner already known %s", winner))
+	assert.Equal(t, bot.sentMessages[6], fmt.Sprintf("Winner already known %s", winner))
 }
 
 func Test_Stats_RespondsWithDescendingResultsForCurrentYear(t *testing.T) {
@@ -142,7 +142,7 @@ func Test_Stats_RespondsWithDescendingResultsForCurrentYear(t *testing.T) {
 	}
 
 	game.Stats(m1, bot)
-	assert.Equal(t, strings.Split(bot.messages[0], "\n"), expected)
+	assert.Equal(t, strings.Split(bot.sentMessages[0], "\n"), expected)
 }
 
 func Test_All_RespondsWithDescendingResultsForAllTime(t *testing.T) {
@@ -177,7 +177,7 @@ func Test_All_RespondsWithDescendingResultsForAllTime(t *testing.T) {
 	}
 
 	game.All(m1, bot)
-	assert.Equal(t, strings.Split(bot.messages[0], "\n"), expected)
+	assert.Equal(t, strings.Split(bot.sentMessages[0], "\n"), expected)
 }
 
 func Test_Me_RespondsWithPersonalStat(t *testing.T) {
@@ -195,10 +195,10 @@ func Test_Me_RespondsWithPersonalStat(t *testing.T) {
 	}
 
 	game.Me(m1, bot)
-	assert.Equal(t, bot.messages[0], fmt.Sprintf("username:%s,scores:%d", m1.Sender.Username, 2))
+	assert.Equal(t, bot.sentMessages[0], fmt.Sprintf("username:%s,scores:%d", m1.Sender.Username, 2))
 
 	game.Me(m2, bot)
-	assert.Equal(t, bot.messages[1], fmt.Sprintf("username:%s,scores:%d", m2.Sender.Username, 1))
+	assert.Equal(t, bot.sentMessages[1], fmt.Sprintf("username:%s,scores:%d", m2.Sender.Username, 1))
 }
 
 // Helpers
@@ -279,17 +279,22 @@ func (s *GameStorageMock) GetRounds(gameID int64) ([]*core.Round, error) {
 }
 
 type BotMock struct {
-	messages []string
+	sentMessages    []string
+	removedMessages []string
 }
 
-func (BotMock) Delete(*core.Message) error                            { return nil }
 func (BotMock) SendImage(*core.Image, string) (*core.Message, error)  { return nil, nil }
 func (BotMock) SendAlbum([]*core.Image) ([]*core.Message, error)      { return nil, nil }
 func (BotMock) SendMedia(*core.Media) (*core.Message, error)          { return nil, nil }
 func (BotMock) SendPhotoAlbum([]*core.Media) ([]*core.Message, error) { return nil, nil }
 func (BotMock) SendVideo(*core.Video, string) (*core.Message, error)  { return nil, nil }
 
+func (b *BotMock) Delete(message *core.Message) error {
+	b.removedMessages = append(b.removedMessages, message.Text)
+	return nil
+}
+
 func (b *BotMock) SendText(text string, args ...interface{}) (*core.Message, error) {
-	b.messages = append(b.messages, text)
+	b.sentMessages = append(b.sentMessages, text)
 	return nil, nil
 }
