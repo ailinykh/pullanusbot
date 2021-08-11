@@ -16,10 +16,15 @@ type TwitterParser struct {
 
 // HandleText is a core.ITextHandler protocol implementation
 func (tp *TwitterParser) HandleText(message *core.Message, bot core.IBot) error {
-	r := regexp.MustCompile(`twitter\.com.+/(\d+)\S*$`)
-	match := r.FindStringSubmatch(message.Text)
-	if len(match) < 2 {
-		return nil // no tweet id found
+	r := regexp.MustCompile(`twitter\.com\S+/(\d+)`)
+	match := r.FindAllStringSubmatch(message.Text, -1)
+
+	for _, m := range match {
+		err := tp.th.HandleTweet(m[1], message, bot)
+		if err != nil {
+			return err
+		}
 	}
-	return tp.th.HandleTweet(match[1], message, bot)
+
+	return nil
 }
