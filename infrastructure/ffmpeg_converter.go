@@ -41,6 +41,23 @@ func (c *FfmpegConverter) Convert(vf *core.Video, bitrate int) (*core.Video, err
 	return c.CreateVideo(path)
 }
 
+// GetCodec is a core.IVideoConverter interface implementation
+func (c *FfmpegConverter) GetCodec(path string) string {
+	ffprobe, err := c.getFFProbe(path)
+	if err != nil {
+		c.l.Error(err)
+		return "unknown"
+	}
+
+	stream, err := ffprobe.getVideoStream()
+	if err != nil {
+		c.l.Error(err)
+		return "unknown"
+	}
+
+	return stream.CodecName
+}
+
 // CreateVideo is a core.IVideoSplitter interface implementation
 func (c *FfmpegConverter) Split(video *core.Video, limit int) ([]*core.Video, error) {
 	duration, n := 0, 0
