@@ -76,7 +76,7 @@ func (y *YoutubeAPI) CreateVideo(id string) (*core.Video, error) {
 		Bitrate:  0,
 		Duration: video.Duration,
 		Codec:    vf.VCodec,
-		Thumb: core.Image{
+		Thumb: &core.Image{
 			File:   *file,
 			Width:  thumb.Width,
 			Height: thumb.Height,

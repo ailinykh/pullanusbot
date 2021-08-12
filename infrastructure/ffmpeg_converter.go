@@ -129,7 +129,7 @@ func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
 		Bitrate:  bitrate,
 		Duration: int(duration),
 		Codec:    stream.CodecName,
-		Thumb:    *thumb}, nil
+		Thumb:    thumb}, nil
 }
 
 func (c *FfmpegConverter) getFFProbe(file string) (*ffpResponse, error) {

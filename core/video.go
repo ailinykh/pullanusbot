@@ -10,7 +10,7 @@ type Video struct {
 	Bitrate  int
 	Duration int
 	Codec    string
-	Thumb    Image
+	Thumb    *Image
 }
 
 // Dispose to cleanup filesystem
