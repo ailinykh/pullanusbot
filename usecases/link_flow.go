@@ -46,40 +46,54 @@ func (lf *LinkFlow) processLink(message *core.Message, bot core.IBot) error {
 	switch resp.Header["Content-Type"][0] {
 	case "video/mp4":
 		lf.l.Infof("found mp4 file %s", message.Text)
-		_, err := bot.SendMedia(media)
 
-		if err != nil {
-			lf.l.Errorf("%s. Fallback to uploading", err)
-			err := lf.sendByUploading(media, bot)
+		codec := lf.vfc.GetCodec(media.URL)
+		if codec != "h264" {
+			lf.l.Warningf("expected h264 codec, but got %s", codec)
+			err := lf.sendByConverting(media, bot)
 			if err != nil {
 				return err
 			}
+		} else {
+			_, err = bot.SendMedia(media)
+			if err != nil {
+				lf.l.Errorf("%s. Fallback to uploading", err)
+				err := lf.sendByUploading(media, bot)
+				if err != nil {
+					return err
+				}
+			}
 		}
-		return bot.Delete(message)
 	case "video/webm":
-		vf, err := lf.downloadMedia(media)
+		err := lf.sendByConverting(media, bot)
 		if err != nil {
 			return err
 		}
-		defer vf.Dispose()
-
-		vfc, err := lf.vfc.Convert(vf, 0)
-		if err != nil {
-			lf.l.Errorf("cant convert video file: %v", err)
-			return err
-		}
-		defer vfc.Dispose()
-
-		_, err = bot.SendVideo(vfc, media.Caption)
-		if err != nil {
-			return err
-		}
-		return bot.Delete(message)
 	case "text/html; charset=utf-8":
+		return nil
 	default:
 		lf.l.Warningf("Unsupported content type: %s", resp.Header["Content-Type"])
+		return nil
 	}
-	return nil
+	return bot.Delete(message)
+}
+
+func (lf *LinkFlow) sendByConverting(media *core.Media, bot core.IBot) error {
+	vf, err := lf.downloadMedia(media)
+	if err != nil {
+		return err
+	}
+	defer vf.Dispose()
+
+	vfc, err := lf.vfc.Convert(vf, 0)
+	if err != nil {
+		lf.l.Errorf("cant convert video file: %v", err)
+		return err
+	}
+	defer vfc.Dispose()
+
+	_, err = bot.SendVideo(vfc, media.Caption)
+	return err
 }
 
 func (lf *LinkFlow) sendByUploading(media *core.Media, bot core.IBot) error {
