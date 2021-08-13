@@ -117,12 +117,7 @@ func (lf *LinkFlow) downloadMedia(media *core.Media) (*core.Video, error) {
 		return nil, err
 	}
 
-	stat, err := os.Stat(file.Path)
-	if err != nil {
-		return nil, err
-	}
-
-	lf.l.Infof("File downloaded: %s %0.2fMB", file.Name, float64(stat.Size())/1024/1024)
+	lf.l.Infof("File downloaded: %s %0.2fMB", file.Name, file.Size/1024/1024)
 
 	vf, err := lf.vff.CreateVideo(file.Path)
 	if err != nil {
