@@ -77,12 +77,7 @@ func (tf *TwitterFlow) fallbackToUploading(media *core.Media, bot core.IBot) err
 
 	defer file.Dispose()
 
-	stat, err := os.Stat(file.Path)
-	if err != nil {
-		return err
-	}
-
-	tf.l.Infof("File downloaded: %s %0.2fMB", file.Name, float64(stat.Size())/1024/1024)
+	tf.l.Infof("File downloaded: %s %0.2fMB", file.Name, float64(file.Size)/1024/1024)
 
 	if media.Type == core.TPhoto {
 		image := &core.Image{File: *file}
