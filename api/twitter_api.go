@@ -12,14 +12,14 @@ import (
 )
 
 // CreateTwitterAPI is a default Twitter factory
-func CreateTwitterAPI() *Twitter {
-	return &Twitter{}
+func CreateTwitterAPI() *TwitterAPI {
+	return &TwitterAPI{}
 }
 
 // Twitter API
-type Twitter struct{}
+type TwitterAPI struct{}
 
-func (Twitter) get(tweetID string) (*Tweet, error) {
+func (TwitterAPI) get(tweetID string) (*Tweet, error) {
 	client := http.DefaultClient
 	req, _ := http.NewRequest("GET", fmt.Sprintf("https://api.twitter.com/1.1/statuses/show.json?id=%s&tweet_mode=extended", tweetID), nil)
 	req.Header.Add("Authorization", "Bearer AAAAAAAAAAAAAAAAAAAAAPYXBAAAAAAACLXUNDekMxqa8h%2F40K4moUkGsoc%3DTYfbDKbT3jJPCEVnMYqilB28NHfOPqkca3qaAxGfsyKCs0wRbw")
@@ -48,7 +48,7 @@ func (Twitter) get(tweetID string) (*Tweet, error) {
 }
 
 // CreateMedia is a core.IMediaFactory interface implementation
-func (t *Twitter) CreateMedia(tweetID string, author *core.User) ([]*core.Media, error) {
+func (t *TwitterAPI) CreateMedia(tweetID string, author *core.User) ([]*core.Media, error) {
 	tweet, err := t.get(tweetID)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (t *Twitter) CreateMedia(tweetID string, author *core.User) ([]*core.Media,
 	}
 }
 
-func (Twitter) makeCaption(author string, tweet *Tweet) string {
+func (TwitterAPI) makeCaption(author string, tweet *Tweet) string {
 	re := regexp.MustCompile(`\s?http\S+$`)
 	text := re.ReplaceAllString(tweet.FullText, "")
 	return fmt.Sprintf("<a href='https://twitter.com/%s/status/%s'>🐦</a> <b>%s</b> <i>(by %s)</i>\n%s", tweet.User.ScreenName, tweet.ID, tweet.User.Name, author, text)
