@@ -12,6 +12,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func Test_AllTheCommands_WorksOnlyInGroupChats(t *testing.T) {
+	game, bot, _ := makeSUT(LocalizerDict{"faggot_not_available_for_private": "group only"})
+	message := makeGameMessage(1, "Faggot")
+	message.IsPrivate = true
+
+	game.Rules(message, bot)
+	game.Add(message, bot)
+	game.Play(message, bot)
+	game.Stats(message, bot)
+	game.All(message, bot)
+	game.Me(message, bot)
+
+	for _, m := range bot.sentMessages {
+		assert.Equal(t, "group only", m)
+	}
+}
 func Test_RulesCommand_DeliversRules(t *testing.T) {
 	game, bot, _ := makeSUT(LocalizerDict{"faggot_rules": "Game rules:"})
 	message := makeGameMessage(1, "Faggot")
