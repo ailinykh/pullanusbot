@@ -13,12 +13,10 @@ func makeTbVideo(vf *core.Video, caption string) *tb.Video {
 	video.Caption = caption
 	video.Duration = vf.Duration
 	video.SupportsStreaming = true
-	if vf.Thumb != nil {
-		video.Thumbnail = &tb.Photo{
-			File:   tb.FromDisk(vf.Thumb.Path),
-			Width:  vf.Thumb.Width,
-			Height: vf.Thumb.Height,
-		}
+	video.Thumbnail = &tb.Photo{
+		File:   tb.FromDisk(vf.Thumb.Path),
+		Width:  vf.Thumb.Width,
+		Height: vf.Thumb.Height,
 	}
 	return &video
 }
