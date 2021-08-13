@@ -1,6 +1,7 @@
 package usecases_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
@@ -9,10 +10,8 @@ import (
 )
 
 func Test_HandleText_NotFoundAnyLinkByDefault(t *testing.T) {
-	handler := &FakeTweetHandler{[]string{}}
-	parser := usecases.CreateTwitterParser(handler)
+	parser, handler, bot := makeTwitterSUT()
 	m := makeTweetMessage("a message without any links")
-	bot := &FakeBot{}
 
 	parser.HandleText(m, bot)
 
@@ -54,8 +53,18 @@ func Test_HandleText_DoesNotRemoveOriginalMessage(t *testing.T) {
 	assert.Equal(t, []string{}, bot.removedMessages)
 }
 
+func Test_HandleText_ReturnsErrorOnError(t *testing.T) {
+	parser, handler, bot := makeTwitterSUT()
+	m := makeTweetMessage("a message with https://twitter.com/status/username/123456")
+	handler.err = errors.New("an error")
+
+	err := parser.HandleText(m, bot)
+
+	assert.Equal(t, "an error", err.Error())
+}
+
 func makeTwitterSUT() (*usecases.TwitterParser, *FakeTweetHandler, *FakeBot) {
-	handler := &FakeTweetHandler{[]string{}}
+	handler := &FakeTweetHandler{[]string{}, nil}
 	parser := usecases.CreateTwitterParser(handler)
 	bot := &FakeBot{[]string{}, []string{}}
 	return parser, handler, bot
@@ -67,6 +76,7 @@ func makeTweetMessage(text string) *core.Message {
 
 type FakeTweetHandler struct {
 	tweets []string
+	err    error
 }
 
 // HandleTweet is a ITweetHandler protocol implementation
@@ -75,5 +85,5 @@ func (fth *FakeTweetHandler) HandleTweet(tweetID string, message *core.Message, 
 	if deleteOriginal {
 		return bot.Delete(message)
 	}
-	return nil
+	return fth.err
 }
