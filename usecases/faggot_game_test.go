@@ -18,7 +18,7 @@ func Test_RulesCommand_DeliversRules(t *testing.T) {
 
 	game.Rules(message, bot)
 
-	assert.Equal(t, bot.sentMessages[0], "Game rules:")
+	assert.Equal(t, "Game rules:", bot.sentMessages[0])
 }
 
 func Test_Add_AppendsPlayerInGameOnlyOnce(t *testing.T) {
@@ -31,12 +31,12 @@ func Test_Add_AppendsPlayerInGameOnlyOnce(t *testing.T) {
 	game.Add(message, bot)
 
 	assert.Equal(t, storage.players, []*core.User{message.Sender})
-	assert.Equal(t, bot.sentMessages[0], "Player added")
+	assert.Equal(t, "Player added", bot.sentMessages[0])
 
 	game.Add(message, bot)
 
 	assert.Equal(t, storage.players, []*core.User{message.Sender})
-	assert.Equal(t, bot.sentMessages[1], "Player already in game")
+	assert.Equal(t, "Player already in game", bot.sentMessages[1])
 }
 
 func Test_Play_RespondsWithNoPlayers(t *testing.T) {
@@ -47,7 +47,7 @@ func Test_Play_RespondsWithNoPlayers(t *testing.T) {
 
 	game.Play(message, bot)
 
-	assert.Equal(t, bot.sentMessages[0], "Nobody in game. So you win, Faggot!")
+	assert.Equal(t, "Nobody in game. So you win, Faggot!", bot.sentMessages[0])
 }
 
 func Test_Play_RespondsNotEnoughPlayers(t *testing.T) {
@@ -59,7 +59,7 @@ func Test_Play_RespondsNotEnoughPlayers(t *testing.T) {
 	game.Add(message, bot)
 	game.Play(message, bot)
 
-	assert.Equal(t, bot.sentMessages[1], "Not enough players")
+	assert.Equal(t, "Not enough players", bot.sentMessages[1])
 }
 
 func Test_Play_RespondsWithCurrentGameResult(t *testing.T) {
@@ -99,14 +99,14 @@ func Test_Play_RespondsWinnerAlreadyKnown(t *testing.T) {
 	game.Play(m1, bot)
 
 	winner := storage.rounds[0].Winner.Username
-	assert.Equal(t, bot.sentMessages[2], "0")
-	assert.Equal(t, bot.sentMessages[3], "1")
-	assert.Equal(t, bot.sentMessages[4], "2")
-	assert.Equal(t, bot.sentMessages[5], fmt.Sprintf("3 @%s", winner))
+	assert.Equal(t, "0", bot.sentMessages[2])
+	assert.Equal(t, "1", bot.sentMessages[3])
+	assert.Equal(t, "2", bot.sentMessages[4])
+	assert.Equal(t, fmt.Sprintf("3 @%s", winner), bot.sentMessages[5])
 
 	game.Play(m1, bot)
 
-	assert.Equal(t, bot.sentMessages[6], fmt.Sprintf("Winner already known %s", winner))
+	assert.Equal(t, fmt.Sprintf("Winner already known %s", winner), bot.sentMessages[6])
 }
 
 func Test_Stats_RespondsWithDescendingResultsForCurrentYear(t *testing.T) {
@@ -142,7 +142,7 @@ func Test_Stats_RespondsWithDescendingResultsForCurrentYear(t *testing.T) {
 	}
 
 	game.Stats(m1, bot)
-	assert.Equal(t, strings.Split(bot.sentMessages[0], "\n"), expected)
+	assert.Equal(t, expected, strings.Split(bot.sentMessages[0], "\n"))
 }
 
 func Test_All_RespondsWithDescendingResultsForAllTime(t *testing.T) {
@@ -177,7 +177,7 @@ func Test_All_RespondsWithDescendingResultsForAllTime(t *testing.T) {
 	}
 
 	game.All(m1, bot)
-	assert.Equal(t, strings.Split(bot.sentMessages[0], "\n"), expected)
+	assert.Equal(t, expected, strings.Split(bot.sentMessages[0], "\n"))
 }
 
 func Test_Me_RespondsWithPersonalStat(t *testing.T) {
@@ -195,10 +195,10 @@ func Test_Me_RespondsWithPersonalStat(t *testing.T) {
 	}
 
 	game.Me(m1, bot)
-	assert.Equal(t, bot.sentMessages[0], fmt.Sprintf("username:%s,scores:%d", m1.Sender.Username, 2))
+	assert.Equal(t, fmt.Sprintf("username:%s,scores:%d", m1.Sender.Username, 2), bot.sentMessages[0])
 
 	game.Me(m2, bot)
-	assert.Equal(t, bot.sentMessages[1], fmt.Sprintf("username:%s,scores:%d", m2.Sender.Username, 1))
+	assert.Equal(t, fmt.Sprintf("username:%s,scores:%d", m2.Sender.Username, 1), bot.sentMessages[1])
 }
 
 // Helpers
