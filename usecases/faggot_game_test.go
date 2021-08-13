@@ -213,10 +213,10 @@ func makeGameMessage(id int, username string) *core.Message {
 	return &core.Message{ID: 0, Sender: player}
 }
 
-func makeSUT(args ...interface{}) (*usecases.GameFlow, *BotMock, *GameStorageMock) {
+func makeSUT(args ...interface{}) (*usecases.GameFlow, *FakeBot, *GameStorageMock) {
 	dict := LocalizerDict{}
 	storage := &GameStorageMock{players: []*core.User{}}
-	bot := &BotMock{}
+	bot := &FakeBot{}
 
 	for _, arg := range args {
 		switch opt := arg.(type) {

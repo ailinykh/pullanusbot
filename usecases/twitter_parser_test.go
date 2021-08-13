@@ -12,7 +12,7 @@ func Test_HandleText_NotFoundAnyLinkByDefault(t *testing.T) {
 	handler := &FakeTweetHandler{[]string{}}
 	parser := usecases.CreateTwitterParser(handler)
 	m := makeTweetMessage("a message without any links")
-	bot := &BotMock{}
+	bot := &FakeBot{}
 
 	parser.HandleText(m, bot)
 
@@ -54,10 +54,10 @@ func Test_HandleText_DoesNotRemoveOriginalMessage(t *testing.T) {
 	assert.Equal(t, []string{}, bot.removedMessages)
 }
 
-func makeTwitterSUT() (*usecases.TwitterParser, *FakeTweetHandler, *BotMock) {
+func makeTwitterSUT() (*usecases.TwitterParser, *FakeTweetHandler, *FakeBot) {
 	handler := &FakeTweetHandler{[]string{}}
 	parser := usecases.CreateTwitterParser(handler)
-	bot := &BotMock{[]string{}, []string{}}
+	bot := &FakeBot{[]string{}, []string{}}
 	return parser, handler, bot
 }
 
