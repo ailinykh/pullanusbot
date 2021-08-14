@@ -14,3 +14,8 @@ type IFileUploader interface {
 type IImageDownloader interface {
 	Download(image *Image) (*File, error)
 }
+
+// IHttpClient retreives remote content info
+type IHttpClient interface {
+	GetContentType(URL) (string, error)
+}
