@@ -65,16 +65,19 @@ func (a *TelebotAdapter) SendMedia(media *core.Media) (*core.Message, error) {
 	var err error
 	switch media.Type {
 	case core.TPhoto:
+		a.t.logger.Infof("sending media as photo: %v", media)
 		file := &tb.Photo{File: tb.FromURL(media.URL)}
 		file.Caption = media.Caption
 		a.t.bot.Notify(a.m.Chat, tb.UploadingPhoto)
 		sent, err = a.t.bot.Send(a.m.Chat, file, &tb.SendOptions{ParseMode: tb.ModeHTML})
 	case core.TVideo:
+		a.t.logger.Infof("sending media as video: %v", media)
 		file := &tb.Video{File: tb.FromURL(media.URL)}
 		file.Caption = media.Caption
 		a.t.bot.Notify(a.m.Chat, tb.UploadingVideo)
 		sent, err = a.t.bot.Send(a.m.Chat, file, &tb.SendOptions{ParseMode: tb.ModeHTML})
 	case core.TText:
+		a.t.logger.Infof("sending media as text: %v", media)
 		sent, err = a.t.bot.Send(a.m.Chat, media.Caption, &tb.SendOptions{ParseMode: tb.ModeHTML})
 	}
 
