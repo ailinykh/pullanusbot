@@ -2,22 +2,24 @@ package usecases
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"path"
 	"regexp"
+	"strings"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
 // CreateLinkFlow is a basic LinkFlow factory
-func CreateLinkFlow(l core.ILogger, fd core.IFileDownloader, vff core.IVideoFactory, vfc core.IVideoConverter) *LinkFlow {
-	return &LinkFlow{l, fd, vff, vfc}
+func CreateLinkFlow(l core.ILogger, hc core.IHttpClient, mf core.IMediaFactory, fd core.IFileDownloader, vff core.IVideoFactory, vfc core.IVideoConverter) *LinkFlow {
+	return &LinkFlow{l, hc, mf, fd, vff, vfc}
 }
 
 // LinkFlow represents convert hotlink to video file logic
 type LinkFlow struct {
 	l   core.ILogger
+	hc  core.IHttpClient
+	mf  core.IMediaFactory
 	fd  core.IFileDownloader
 	vff core.IVideoFactory
 	vfc core.IVideoConverter
@@ -27,60 +29,95 @@ type LinkFlow struct {
 func (lf *LinkFlow) HandleText(message *core.Message, bot core.IBot) error {
 	r := regexp.MustCompile(`^http(\S+)$`)
 	if r.MatchString(message.Text) {
-		return lf.processLink(message, bot)
+		return lf.handleURL(message, bot)
 	}
 	return nil
 }
 
-func (lf *LinkFlow) processLink(message *core.Message, bot core.IBot) error {
-	resp, err := http.Get(message.Text)
-
+func (lf *LinkFlow) handleURL(message *core.Message, bot core.IBot) error {
+	contentType, err := lf.hc.GetContentType(message.Text)
 	if err != nil {
 		lf.l.Error(err)
 		return err
 	}
 
-	media := &core.Media{URL: resp.Request.URL.String()}
-	media.Caption = fmt.Sprintf(`<a href="%s">🔗</a> <b>%s</b> <i>(by %s)</i>`, message.Text, path.Base(resp.Request.URL.Path), message.Sender.Username)
+	if !strings.HasPrefix(contentType, "video") && !strings.HasPrefix(contentType, "image") {
+		return nil
+	}
 
-	switch resp.Header["Content-Type"][0] {
-	case "video/mp4":
-		lf.l.Infof("found mp4 file %s", message.Text)
+	media, err := lf.mf.CreateMedia(message.Text, message.Sender)
+	if err != nil {
+		lf.l.Error(err)
+		return err
+	}
 
-		codec := lf.vfc.GetCodec(media.URL)
-		if codec != "h264" {
-			lf.l.Warningf("expected h264 codec, but got %s", codec)
-			err := lf.sendByConverting(media, bot)
+	for _, m := range media {
+		switch m.Type {
+		case core.TPhoto:
+			err := lf.sendAsPhoto(m, message, bot)
 			if err != nil {
 				return err
 			}
-		} else {
-			_, err = bot.SendMedia(media)
+		case core.TVideo:
+			err := lf.sendAsVideo(m, message, bot)
 			if err != nil {
-				lf.l.Errorf("%s. Fallback to uploading", err)
-				err := lf.sendByUploading(media, bot)
-				if err != nil {
-					return err
-				}
+				return err
 			}
+		case core.TText:
+			lf.l.Warningf("Unexpected %+v", m)
 		}
-	case "video/webm":
-		err := lf.sendByConverting(media, bot)
-		if err != nil {
-			return err
-		}
-	case "text/html; charset=utf-8":
-		return nil
-	default:
-		lf.l.Warningf("Unsupported content type: %s", resp.Header["Content-Type"])
-		return nil
 	}
+
 	return bot.Delete(message)
 }
 
-func (lf *LinkFlow) sendByConverting(media *core.Media, bot core.IBot) error {
-	vf, err := lf.downloadMedia(media)
+func (lf *LinkFlow) sendAsPhoto(media *core.Media, message *core.Message, bot core.IBot) error {
+	lf.l.Infof("sending as photo: %s", media.URL)
+	media.Caption = fmt.Sprintf(`<a href="%s">🖼</a> <b>%s</b> <i>(by %s)</i>`, media.URL, path.Base(media.URL), message.Sender.Username)
+	_, err := bot.SendMedia(media)
 	if err != nil {
+		lf.l.Error(err)
+		if strings.Contains(err.Error(), "failed to get HTTP URL content") || strings.Contains(err.Error(), "wrong file identifier/HTTP URL specified") {
+			file, err := lf.downloadMedia(media)
+			if err != nil {
+				return err
+			}
+			image := &core.Image{File: *file}
+			_, err = bot.SendImage(image, media.Caption)
+			return err
+		}
+	}
+	return err
+}
+
+func (lf *LinkFlow) sendAsVideo(media *core.Media, message *core.Message, bot core.IBot) error {
+	lf.l.Infof("sending as video: %s", media.URL)
+	media.Caption = fmt.Sprintf(`<a href="%s">🔗</a> <b>%s</b> <i>(by %s)</i>`, message.Text, path.Base(media.URL), message.Sender.Username)
+
+	if media.Codec != "h264" {
+		lf.l.Warningf("expected h264 codec, but got %s", media.Codec)
+		return lf.sendByConverting(media, bot)
+	}
+
+	_, err := bot.SendMedia(media)
+	if err != nil {
+		lf.l.Errorf("%s, fallback to uploading...", err)
+		return lf.sendByUploading(media, bot)
+	}
+
+	return err
+}
+
+func (lf *LinkFlow) sendByConverting(media *core.Media, bot core.IBot) error {
+	lf.l.Info("sending by converting")
+	file, err := lf.downloadMedia(media)
+	if err != nil {
+		return err
+	}
+
+	vf, err := lf.vff.CreateVideo(file.Path)
+	if err != nil {
+		lf.l.Errorf("can't create video file for %s, %v", file.Path, err)
 		return err
 	}
 	defer vf.Dispose()
@@ -98,18 +135,25 @@ func (lf *LinkFlow) sendByConverting(media *core.Media, bot core.IBot) error {
 
 func (lf *LinkFlow) sendByUploading(media *core.Media, bot core.IBot) error {
 	// Try to upload file to telegram
-	lf.l.Info("Sending by uploading")
+	lf.l.Info("sending by uploading")
 
-	vf, err := lf.downloadMedia(media)
+	file, err := lf.downloadMedia(media)
 	if err != nil {
 		return err
 	}
+
+	vf, err := lf.vff.CreateVideo(file.Path)
+	if err != nil {
+		lf.l.Errorf("can't create video file for %s, %v", file.Path, err)
+		return err
+	}
+
 	defer vf.Dispose()
 	_, err = bot.SendVideo(vf, media.Caption)
 	return err
 }
 
-func (lf *LinkFlow) downloadMedia(media *core.Media) (*core.Video, error) {
+func (lf *LinkFlow) downloadMedia(media *core.Media) (*core.File, error) {
 	mediaPath := path.Join(os.TempDir(), path.Base(media.URL))
 	file, err := lf.fd.Download(media.URL, mediaPath)
 	if err != nil {
@@ -117,12 +161,7 @@ func (lf *LinkFlow) downloadMedia(media *core.Media) (*core.Video, error) {
 		return nil, err
 	}
 
-	lf.l.Infof("File downloaded: %s %0.2fMB", file.Name, file.Size/1024/1024)
+	lf.l.Infof("file downloaded: %s %0.2fMB", file.Name, float64(file.Size)/1024/1024)
 
-	vf, err := lf.vff.CreateVideo(file.Path)
-	if err != nil {
-		lf.l.Errorf("Can't create video file for %s, %v", file.Path, err)
-		return nil, err
-	}
-	return vf, nil
+	return file, nil
 }

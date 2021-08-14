@@ -44,7 +44,8 @@ func main() {
 	twitterParser := usecases.CreateTwitterParser(twitterTimeout)
 	telebot.AddHandler(twitterParser)
 
-	linkFlow := usecases.CreateLinkFlow(logger, fileDownloader, converter, converter)
+	httpClient := api.CreateHttpClient()
+	linkFlow := usecases.CreateLinkFlow(logger, httpClient, converter, fileDownloader, converter, converter)
 	telebot.AddHandler(linkFlow)
 
 	fileUploader := api.CreateTelegraphAPI()
