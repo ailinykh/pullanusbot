@@ -58,6 +58,27 @@ func (c *FfmpegConverter) GetCodec(path string) string {
 	return stream.CodecName
 }
 
+// CreateMedia is a core.IMediaFactory interface implementation
+func (c *FfmpegConverter) CreateMedia(url string, author *core.User) ([]*core.Media, error) {
+	ffprobe, err := c.getFFProbe(url)
+	if err != nil {
+		c.l.Error(err)
+		return nil, err
+	}
+
+	stream, err := ffprobe.getVideoStream()
+	if err != nil {
+		c.l.Error(err)
+		return nil, err
+	}
+
+	if ffprobe.Format.FormatName == "image2" {
+		return []*core.Media{{URL: url, Codec: stream.CodecName, Type: core.TPhoto}}, nil
+	}
+
+	return []*core.Media{{URL: url, Codec: stream.CodecName, Type: core.TVideo}}, nil
+}
+
 // CreateVideo is a core.IVideoSplitter interface implementation
 func (c *FfmpegConverter) Split(video *core.Video, limit int) ([]*core.Video, error) {
 	duration, n := 0, 0
@@ -109,8 +130,8 @@ func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
 		return nil, err
 	}
 
-	if duration < 1 {
-		c.l.Errorf("expected duration at least 1 second, got %f", duration)
+	if duration < 2 {
+		c.l.Errorf("expected duration at least 2 seconds, got %f", duration)
 		return nil, errors.New("file is too short")
 	}
 
