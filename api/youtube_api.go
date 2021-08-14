@@ -28,11 +28,17 @@ func (y *YoutubeAPI) CreateMedia(url string, author *core.User) ([]*core.Media, 
 		return nil, err
 	}
 
+	vf, _, err := y.getFormats(video)
+	if err != nil {
+		return nil, err
+	}
+
 	return []*core.Media{
 		{
 			URL:      video.ID,
 			Caption:  video.Title,
 			Duration: video.Duration,
+			Codec:    vf.VCodec,
 			Type:     core.TVideo,
 		},
 	}, nil
