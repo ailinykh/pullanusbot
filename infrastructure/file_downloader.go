@@ -36,5 +36,14 @@ func (FileDownloader) Download(url core.URL, filepath string) (*core.File, error
 
 	// Write the body to file
 	_, err = io.Copy(out, resp.Body)
-	return &core.File{Name: name, Path: filepath}, err
+	if err != nil {
+		return nil, err
+	}
+
+	// Retreive file size
+	stat, err := os.Stat(filepath)
+	if err != nil {
+		return nil, err
+	}
+	return &core.File{Name: name, Path: filepath, Size: stat.Size()}, err
 }
