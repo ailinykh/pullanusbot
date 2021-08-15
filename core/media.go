@@ -20,3 +20,7 @@ type Media struct {
 	Codec    string // only video
 	Type     MediaType
 }
+
+type ISendMediaStrategy interface {
+	SendMedia([]*Media, IBot) error
+}
