@@ -3,7 +3,6 @@ package usecases
 import (
 	"os"
 	"path"
-	"strings"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
@@ -22,15 +21,12 @@ type ConvertMediaStrategy struct {
 
 // SendMedia is a core.ISendMediaStrategy interface implementation
 func (cms *ConvertMediaStrategy) SendMedia(media []*core.Media, bot core.IBot) error {
-	err := cms.sms.SendMedia(media, bot)
-	if err != nil {
-		cms.l.Error(err)
-		if strings.HasPrefix(err.Error(), "unexpected video codec") {
-			return cms.fallbackToConverting(media[0], bot)
+	for _, m := range media {
+		if m.Type == core.TVideo && media[0].Codec != "mp4" {
+			return cms.fallbackToConverting(m, bot)
 		}
 	}
-
-	return err
+	return cms.sms.SendMedia(media, bot)
 }
 
 func (cms *ConvertMediaStrategy) fallbackToConverting(media *core.Media, bot core.IBot) error {
