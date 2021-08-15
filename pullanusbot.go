@@ -45,7 +45,10 @@ func main() {
 	telebot.AddHandler(twitterParser)
 
 	httpClient := api.CreateHttpClient()
-	linkFlow := usecases.CreateLinkFlow(logger, httpClient, converter, fileDownloader, converter, converter)
+	remoteMediaSender := usecases.CreateSendMediaStrategy(logger)
+	localMediaSender := usecases.CreateUploadMediaStrategy(logger, remoteMediaSender, fileDownloader, converter, converter)
+	mp4MediaSender := usecases.CreateConvertMediaStrategy(logger, localMediaSender, fileDownloader, converter, converter)
+	linkFlow := usecases.CreateLinkFlow(logger, httpClient, converter, mp4MediaSender)
 	telebot.AddHandler(linkFlow)
 
 	fileUploader := api.CreateTelegraphAPI()
