@@ -22,11 +22,25 @@ type ConvertMediaStrategy struct {
 // SendMedia is a core.ISendMediaStrategy interface implementation
 func (cms *ConvertMediaStrategy) SendMedia(media []*core.Media, bot core.IBot) error {
 	for _, m := range media {
-		if m.Type == core.TVideo && media[0].Codec != "mp4" {
+		if cms.needToConvert(m) {
+			cms.l.Infof("expected mp4/h264 codec, but got %s", m.Codec)
 			return cms.fallbackToConverting(m, bot)
 		}
 	}
 	return cms.sms.SendMedia(media, bot)
+}
+
+func (cms *ConvertMediaStrategy) needToConvert(media *core.Media) bool {
+	if media.Type != core.TVideo {
+		return false
+	}
+
+	for _, codec := range []string{"mp4", "h264"} {
+		if media.Codec == codec {
+			return false
+		}
+	}
+	return true
 }
 
 func (cms *ConvertMediaStrategy) fallbackToConverting(media *core.Media, bot core.IBot) error {
