@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
+	"github.com/ailinykh/pullanusbot/v2/test_helpers"
 	"github.com/ailinykh/pullanusbot/v2/usecases"
 	"github.com/stretchr/testify/assert"
 )
@@ -41,7 +42,7 @@ func Test_HandleText_RemovesOriginalMessageInCaseOfFullMatch(t *testing.T) {
 
 	parser.HandleText(m, bot)
 
-	assert.Equal(t, []string{"https://twitter.com/username/status/123456"}, bot.removedMessages)
+	assert.Equal(t, []string{"https://twitter.com/username/status/123456"}, bot.RemovedMessages)
 }
 
 func Test_HandleText_DoesNotRemoveOriginalMessage(t *testing.T) {
@@ -50,7 +51,7 @@ func Test_HandleText_DoesNotRemoveOriginalMessage(t *testing.T) {
 
 	parser.HandleText(m, bot)
 
-	assert.Equal(t, []string{}, bot.removedMessages)
+	assert.Equal(t, []string{}, bot.RemovedMessages)
 }
 
 func Test_HandleText_ReturnsErrorOnError(t *testing.T) {
@@ -63,10 +64,10 @@ func Test_HandleText_ReturnsErrorOnError(t *testing.T) {
 	assert.Equal(t, "an error", err.Error())
 }
 
-func makeTwitterSUT() (*usecases.TwitterParser, *FakeTweetHandler, *FakeBot) {
+func makeTwitterSUT() (*usecases.TwitterParser, *FakeTweetHandler, *test_helpers.FakeBot) {
 	handler := &FakeTweetHandler{[]string{}, nil}
 	parser := usecases.CreateTwitterParser(handler)
-	bot := CreateFakeBot()
+	bot := test_helpers.CreateFakeBot()
 	return parser, handler, bot
 }
 

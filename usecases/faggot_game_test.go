@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
+	"github.com/ailinykh/pullanusbot/v2/test_helpers"
 	"github.com/ailinykh/pullanusbot/v2/usecases"
 	"github.com/stretchr/testify/assert"
 )
@@ -24,7 +25,7 @@ func Test_AllTheCommands_WorksOnlyInGroupChats(t *testing.T) {
 	game.All(message, bot)
 	game.Me(message, bot)
 
-	for _, m := range bot.sentMessages {
+	for _, m := range bot.SentMessages {
 		assert.Equal(t, "group only", m)
 	}
 }
@@ -34,7 +35,7 @@ func Test_RulesCommand_DeliversRules(t *testing.T) {
 
 	game.Rules(message, bot)
 
-	assert.Equal(t, "Game rules:", bot.sentMessages[0])
+	assert.Equal(t, "Game rules:", bot.SentMessages[0])
 }
 
 func Test_Add_AppendsPlayerInGameOnlyOnce(t *testing.T) {
@@ -47,12 +48,12 @@ func Test_Add_AppendsPlayerInGameOnlyOnce(t *testing.T) {
 	game.Add(message, bot)
 
 	assert.Equal(t, storage.players, []*core.User{message.Sender})
-	assert.Equal(t, "Player added", bot.sentMessages[0])
+	assert.Equal(t, "Player added", bot.SentMessages[0])
 
 	game.Add(message, bot)
 
 	assert.Equal(t, storage.players, []*core.User{message.Sender})
-	assert.Equal(t, "Player already in game", bot.sentMessages[1])
+	assert.Equal(t, "Player already in game", bot.SentMessages[1])
 }
 
 func Test_Play_RespondsWithNoPlayers(t *testing.T) {
@@ -63,7 +64,7 @@ func Test_Play_RespondsWithNoPlayers(t *testing.T) {
 
 	game.Play(message, bot)
 
-	assert.Equal(t, "Nobody in game. So you win, Faggot!", bot.sentMessages[0])
+	assert.Equal(t, "Nobody in game. So you win, Faggot!", bot.SentMessages[0])
 }
 
 func Test_Play_RespondsNotEnoughPlayers(t *testing.T) {
@@ -75,7 +76,7 @@ func Test_Play_RespondsNotEnoughPlayers(t *testing.T) {
 	game.Add(message, bot)
 	game.Play(message, bot)
 
-	assert.Equal(t, "Not enough players", bot.sentMessages[1])
+	assert.Equal(t, "Not enough players", bot.SentMessages[1])
 }
 
 func Test_Play_RespondsWithCurrentGameResult(t *testing.T) {
@@ -94,10 +95,10 @@ func Test_Play_RespondsWithCurrentGameResult(t *testing.T) {
 
 	winner := storage.rounds[0].Winner
 	phrase := fmt.Sprintf(`<a href="tg://user?id=%d">%s %s</a>`, winner.ID, winner.FirstName, winner.LastName)
-	assert.Equal(t, "0", bot.sentMessages[2])
-	assert.Equal(t, "1", bot.sentMessages[3])
-	assert.Equal(t, "2", bot.sentMessages[4])
-	assert.Equal(t, phrase, bot.sentMessages[5])
+	assert.Equal(t, "0", bot.SentMessages[2])
+	assert.Equal(t, "1", bot.SentMessages[3])
+	assert.Equal(t, "2", bot.SentMessages[4])
+	assert.Equal(t, phrase, bot.SentMessages[5])
 }
 func Test_Play_RespondsWinnerAlreadyKnown(t *testing.T) {
 	game, bot, storage := makeSUT(LocalizerDict{
@@ -115,14 +116,14 @@ func Test_Play_RespondsWinnerAlreadyKnown(t *testing.T) {
 	game.Play(m1, bot)
 
 	winner := storage.rounds[0].Winner.Username
-	assert.Equal(t, "0", bot.sentMessages[2])
-	assert.Equal(t, "1", bot.sentMessages[3])
-	assert.Equal(t, "2", bot.sentMessages[4])
-	assert.Equal(t, fmt.Sprintf("3 @%s", winner), bot.sentMessages[5])
+	assert.Equal(t, "0", bot.SentMessages[2])
+	assert.Equal(t, "1", bot.SentMessages[3])
+	assert.Equal(t, "2", bot.SentMessages[4])
+	assert.Equal(t, fmt.Sprintf("3 @%s", winner), bot.SentMessages[5])
 
 	game.Play(m1, bot)
 
-	assert.Equal(t, fmt.Sprintf("Winner already known %s", winner), bot.sentMessages[6])
+	assert.Equal(t, fmt.Sprintf("Winner already known %s", winner), bot.SentMessages[6])
 }
 
 func Test_Stats_RespondsWithDescendingResultsForCurrentYear(t *testing.T) {
@@ -158,7 +159,7 @@ func Test_Stats_RespondsWithDescendingResultsForCurrentYear(t *testing.T) {
 	}
 
 	game.Stats(m1, bot)
-	assert.Equal(t, expected, strings.Split(bot.sentMessages[0], "\n"))
+	assert.Equal(t, expected, strings.Split(bot.SentMessages[0], "\n"))
 }
 
 func Test_All_RespondsWithDescendingResultsForAllTime(t *testing.T) {
@@ -193,7 +194,7 @@ func Test_All_RespondsWithDescendingResultsForAllTime(t *testing.T) {
 	}
 
 	game.All(m1, bot)
-	assert.Equal(t, expected, strings.Split(bot.sentMessages[0], "\n"))
+	assert.Equal(t, expected, strings.Split(bot.SentMessages[0], "\n"))
 }
 
 func Test_Me_RespondsWithPersonalStat(t *testing.T) {
@@ -211,10 +212,10 @@ func Test_Me_RespondsWithPersonalStat(t *testing.T) {
 	}
 
 	game.Me(m1, bot)
-	assert.Equal(t, fmt.Sprintf("username:%s,scores:%d", m1.Sender.Username, 2), bot.sentMessages[0])
+	assert.Equal(t, fmt.Sprintf("username:%s,scores:%d", m1.Sender.Username, 2), bot.SentMessages[0])
 
 	game.Me(m2, bot)
-	assert.Equal(t, fmt.Sprintf("username:%s,scores:%d", m2.Sender.Username, 1), bot.sentMessages[1])
+	assert.Equal(t, fmt.Sprintf("username:%s,scores:%d", m2.Sender.Username, 1), bot.SentMessages[1])
 }
 
 // Helpers
@@ -229,10 +230,10 @@ func makeGameMessage(id int, username string) *core.Message {
 	return &core.Message{ID: 0, Sender: player}
 }
 
-func makeSUT(args ...interface{}) (*usecases.GameFlow, *FakeBot, *GameStorageMock) {
+func makeSUT(args ...interface{}) (*usecases.GameFlow, *test_helpers.FakeBot, *GameStorageMock) {
 	dict := LocalizerDict{}
 	storage := &GameStorageMock{players: []*core.User{}}
-	bot := &FakeBot{}
+	bot := test_helpers.CreateFakeBot()
 
 	for _, arg := range args {
 		switch opt := arg.(type) {
