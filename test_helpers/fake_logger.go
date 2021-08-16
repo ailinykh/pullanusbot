@@ -1,0 +1,14 @@
+package test_helpers
+
+func CreateFakeLogger() *FakeLogger {
+	return &FakeLogger{}
+}
+
+type FakeLogger struct{}
+
+func (FakeLogger) Error(...interface{})            {}
+func (FakeLogger) Errorf(string, ...interface{})   {}
+func (FakeLogger) Info(...interface{})             {}
+func (FakeLogger) Infof(string, ...interface{})    {}
+func (FakeLogger) Warning(...interface{})          {}
+func (FakeLogger) Warningf(string, ...interface{}) {}
