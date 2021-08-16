@@ -40,7 +40,7 @@ func main() {
 	fileDownloader := infrastructure.CreateFileDownloader()
 	remoteMediaSender := usecases.CreateSendMediaStrategy(logger)
 	localMediaSender := usecases.CreateUploadMediaStrategy(logger, remoteMediaSender, fileDownloader, converter, converter)
-	twitterMediaFactory := api.CreateTwitterMediaFactory()
+	twitterMediaFactory := api.CreateTwitterMediaFactory(logger)
 	twitterFlow := usecases.CreateTwitterFlow(logger, twitterMediaFactory, localMediaSender)
 	twitterTimeout := usecases.CreateTwitterTimeout(logger, twitterFlow)
 	twitterParser := usecases.CreateTwitterParser(twitterTimeout)

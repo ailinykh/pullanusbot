@@ -8,11 +8,12 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateTwitterMediaFactory() *TwitterMediaFactory {
-	return &TwitterMediaFactory{CreateTwitterAPI()}
+func CreateTwitterMediaFactory(l core.ILogger) *TwitterMediaFactory {
+	return &TwitterMediaFactory{l, CreateTwitterAPI()}
 }
 
 type TwitterMediaFactory struct {
+	l   core.ILogger
 	api *TwitterAPI
 }
 
@@ -25,7 +26,7 @@ func (tmf *TwitterMediaFactory) CreateMedia(tweetID string, author *core.User) (
 
 	if len(tweet.ExtendedEntities.Media) == 0 && tweet.QuotedStatus != nil && len(tweet.QuotedStatus.ExtendedEntities.Media) > 0 {
 		tweet = tweet.QuotedStatus
-		// logger.Warningf("tweet media is empty, using QuotedStatus instead %s", tweet.ID)
+		tmf.l.Warningf("tweet media is empty, using QuotedStatus instead %s", tweet.ID)
 	}
 
 	media := tweet.ExtendedEntities.Media
