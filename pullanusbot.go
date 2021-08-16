@@ -8,6 +8,7 @@ import (
 
 	"github.com/ailinykh/pullanusbot/v2/api"
 	"github.com/ailinykh/pullanusbot/v2/core"
+	"github.com/ailinykh/pullanusbot/v2/helpers"
 	"github.com/ailinykh/pullanusbot/v2/infrastructure"
 	"github.com/ailinykh/pullanusbot/v2/usecases"
 	"github.com/google/logger"
@@ -38,8 +39,8 @@ func main() {
 	telebot.AddHandler(videoFlow)
 
 	fileDownloader := infrastructure.CreateFileDownloader()
-	remoteMediaSender := usecases.CreateSendMediaStrategy(logger)
-	localMediaSender := usecases.CreateUploadMediaStrategy(logger, remoteMediaSender, fileDownloader, converter, converter)
+	remoteMediaSender := helpers.CreateSendMediaStrategy(logger)
+	localMediaSender := helpers.CreateUploadMediaStrategy(logger, remoteMediaSender, fileDownloader, converter, converter)
 	twitterMediaFactory := api.CreateTwitterMediaFactory(logger)
 	twitterFlow := usecases.CreateTwitterFlow(logger, twitterMediaFactory, localMediaSender)
 	twitterTimeout := usecases.CreateTwitterTimeout(logger, twitterFlow)
@@ -47,7 +48,7 @@ func main() {
 	telebot.AddHandler(twitterParser)
 
 	httpClient := api.CreateHttpClient()
-	convertMediaSender := usecases.CreateConvertMediaStrategy(logger, localMediaSender, fileDownloader, converter, converter)
+	convertMediaSender := helpers.CreateConvertMediaStrategy(logger, localMediaSender, fileDownloader, converter, converter)
 	linkFlow := usecases.CreateLinkFlow(logger, httpClient, converter, convertMediaSender)
 	telebot.AddHandler(linkFlow)
 

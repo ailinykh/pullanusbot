@@ -1,4 +1,4 @@
-package usecases
+package helpers
 
 import (
 	"github.com/ailinykh/pullanusbot/v2/core"
