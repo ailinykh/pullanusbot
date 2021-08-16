@@ -7,22 +7,41 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
 // CreateTwitterAPI is a default Twitter factory
 func CreateTwitterAPI() *TwitterAPI {
-	return &TwitterAPI{}
+	return &TwitterAPI{[]string{
+		"AAAAAAAAAAAAAAAAAAAAAPYXBAAAAAAACLXUNDekMxqa8h%2F40K4moUkGsoc%3DTYfbDKbT3jJPCEVnMYqilB28NHfOPqkca3qaAxGfsyKCs0wRbw",
+		"AAAAAAAAAAAAAAAAAAAAAPAh2AAAAAAAoInuXrJ%2BcqfgfR5PlJGnQsOniNY%3Dn9galDg4iUr7KyRAU47JGDbQz2q7sdwXRTkonzBX2uLxXRgNv0",
+	}}
 }
 
 // Twitter API
-type TwitterAPI struct{}
+type TwitterAPI struct {
+	tokens []string
+}
 
-func (TwitterAPI) get(tweetID string) (*Tweet, error) {
+func (api *TwitterAPI) getTweetByID(tweetID string) (*Tweet, error) {
+	var tweet *Tweet
+	var err error
+	for _, t := range api.tokens {
+		fmt.Println(t)
+		tweet, err = api.getTweetByIdAndToken(tweetID, t)
+		if err == nil || !strings.HasPrefix(err.Error(), "Rate limit exceeded") {
+			return tweet, err
+		}
+	}
+	return tweet, err
+}
+
+func (TwitterAPI) getTweetByIdAndToken(tweetID string, token string) (*Tweet, error) {
 	client := http.DefaultClient
 	req, _ := http.NewRequest("GET", fmt.Sprintf("https://api.twitter.com/1.1/statuses/show.json?id=%s&tweet_mode=extended", tweetID), nil)
-	req.Header.Add("Authorization", "Bearer AAAAAAAAAAAAAAAAAAAAAPYXBAAAAAAACLXUNDekMxqa8h%2F40K4moUkGsoc%3DTYfbDKbT3jJPCEVnMYqilB28NHfOPqkca3qaAxGfsyKCs0wRbw")
+	req.Header.Add("Authorization", "Bearer "+token)
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -49,7 +68,7 @@ func (TwitterAPI) get(tweetID string) (*Tweet, error) {
 
 // CreateMedia is a core.IMediaFactory interface implementation
 func (t *TwitterAPI) CreateMedia(tweetID string, author *core.User) ([]*core.Media, error) {
-	tweet, err := t.get(tweetID)
+	tweet, err := t.getTweetByID(tweetID)
 	if err != nil {
 		return nil, err
 	}
@@ -66,11 +85,12 @@ func (t *TwitterAPI) CreateMedia(tweetID string, author *core.User) ([]*core.Med
 		return []*core.Media{{URL: "", Caption: t.makeCaption(author.Username, tweet), Type: core.TText}}, nil
 	case 1:
 		if media[0].Type == "video" || media[0].Type == "animated_gif" {
+			//TODO: Codec ??
 			return []*core.Media{{URL: media[0].VideoInfo.best().URL, Caption: t.makeCaption(author.Username, tweet), Type: core.TVideo}}, nil
 		} else if media[0].Type == "photo" {
 			return []*core.Media{{URL: media[0].MediaURL, Caption: t.makeCaption(author.Username, tweet), Type: core.TPhoto}}, nil
 		} else {
-			return nil, errors.New("Unknown type: " + media[0].Type)
+			return nil, errors.New("unexpected type: " + media[0].Type)
 		}
 	default:
 		// t.sendAlbum(media, tweet, m)
