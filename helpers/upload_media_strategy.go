@@ -8,8 +8,8 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateUploadMediaStrategy(l core.ILogger, sms core.ISendMediaStrategy, fd core.IFileDownloader, vf core.IVideoFactory, vc core.IVideoConverter) *UploadMediaStrategy {
-	return &UploadMediaStrategy{l, sms, fd, vf, vc}
+func CreateUploadMediaStrategy(l core.ILogger, sms core.ISendMediaStrategy, fd core.IFileDownloader, vf core.IVideoFactory) *UploadMediaStrategy {
+	return &UploadMediaStrategy{l, sms, fd, vf}
 }
 
 type UploadMediaStrategy struct {
@@ -17,7 +17,6 @@ type UploadMediaStrategy struct {
 	sms core.ISendMediaStrategy
 	fd  core.IFileDownloader
 	vf  core.IVideoFactory
-	vc  core.IVideoConverter
 }
 
 // SendMedia is a core.ISendMediaStrategy interface implementation
