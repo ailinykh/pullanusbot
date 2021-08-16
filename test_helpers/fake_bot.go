@@ -20,8 +20,14 @@ func (b *FakeBot) SendMedia(media *core.Media) (*core.Message, error) {
 	return nil, nil
 }
 
-func (FakeBot) SendPhotoAlbum([]*core.Media) ([]*core.Message, error) { return nil, nil }
-func (FakeBot) SendVideo(*core.Video, string) (*core.Message, error)  { return nil, nil }
+func (b *FakeBot) SendPhotoAlbum(media []*core.Media) ([]*core.Message, error) {
+	for _, m := range media {
+		b.SentMedias = append(b.SentMedias, m.URL)
+	}
+	return nil, nil
+}
+
+func (FakeBot) SendVideo(*core.Video, string) (*core.Message, error) { return nil, nil }
 
 func (b *FakeBot) Delete(message *core.Message) error {
 	b.RemovedMessages = append(b.RemovedMessages, message.Text)
