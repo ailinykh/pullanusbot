@@ -21,11 +21,15 @@ type FileDownloader struct{}
 func (FileDownloader) Download(url core.URL, filepath string) (*core.File, error) {
 	name := path.Base(filepath)
 	// Get the data
-	resp, err := http.Get(url)
+	client := http.DefaultClient
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0")
+	req.Header.Set("Referer", url)
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer res.Body.Close()
 
 	// Create the file
 	out, err := os.Create(filepath)
@@ -35,7 +39,7 @@ func (FileDownloader) Download(url core.URL, filepath string) (*core.File, error
 	defer out.Close()
 
 	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
+	_, err = io.Copy(out, res.Body)
 	if err != nil {
 		return nil, err
 	}
