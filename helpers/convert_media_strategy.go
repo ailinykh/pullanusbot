@@ -3,6 +3,7 @@ package helpers
 import (
 	"os"
 	"path"
+	"strings"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
@@ -70,7 +71,13 @@ func (cms *ConvertMediaStrategy) fallbackToConverting(media *core.Media, bot cor
 }
 
 func (cms *ConvertMediaStrategy) downloadMedia(media *core.Media) (*core.File, error) {
-	mediaPath := path.Join(os.TempDir(), path.Base(media.URL))
+	//TODO: duplicated code
+	filename := path.Base(media.URL)
+	if strings.Contains(filename, "?") {
+		parts := strings.Split(media.URL, "?")
+		filename = path.Base(parts[0])
+	}
+	mediaPath := path.Join(os.TempDir(), filename)
 	file, err := cms.fd.Download(media.URL, mediaPath)
 	if err != nil {
 		cms.l.Errorf("video download error: %v", err)
