@@ -63,22 +63,23 @@ func (a *TelebotAdapter) SendAlbum(images []*core.Image) ([]*core.Message, error
 func (a *TelebotAdapter) SendMedia(media *core.Media) (*core.Message, error) {
 	var sent *tb.Message
 	var err error
+	opts := &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true}
 	switch media.Type {
 	case core.TPhoto:
 		a.t.logger.Infof("sending media as photo: %v", media)
-		file := &tb.Photo{File: tb.FromURL(media.URL)}
+		file := &tb.Photo{File: tb.FromURL(media.ResourceURL)}
 		file.Caption = media.Caption
 		a.t.bot.Notify(a.m.Chat, tb.UploadingPhoto)
-		sent, err = a.t.bot.Send(a.m.Chat, file, &tb.SendOptions{ParseMode: tb.ModeHTML})
+		sent, err = a.t.bot.Send(a.m.Chat, file, opts)
 	case core.TVideo:
 		a.t.logger.Infof("sending media as video: %v", media)
-		file := &tb.Video{File: tb.FromURL(media.URL)}
+		file := &tb.Video{File: tb.FromURL(media.ResourceURL)}
 		file.Caption = media.Caption
 		a.t.bot.Notify(a.m.Chat, tb.UploadingVideo)
-		sent, err = a.t.bot.Send(a.m.Chat, file, &tb.SendOptions{ParseMode: tb.ModeHTML})
+		sent, err = a.t.bot.Send(a.m.Chat, file, opts)
 	case core.TText:
 		a.t.logger.Infof("sending media as text: %v", media)
-		sent, err = a.t.bot.Send(a.m.Chat, media.Caption, &tb.SendOptions{ParseMode: tb.ModeHTML})
+		sent, err = a.t.bot.Send(a.m.Chat, media.Caption, opts)
 	}
 
 	if err != nil {
@@ -93,7 +94,7 @@ func (a *TelebotAdapter) SendPhotoAlbum(medias []*core.Media) ([]*core.Message, 
 	var album = tb.Album{}
 
 	for i, m := range medias {
-		photo = &tb.Photo{File: tb.FromURL(m.URL)}
+		photo = &tb.Photo{File: tb.FromURL(m.ResourceURL)}
 		if i == len(medias)-1 {
 			photo.Caption = m.Caption
 			photo.ParseMode = tb.ModeHTML
