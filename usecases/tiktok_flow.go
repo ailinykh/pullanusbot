@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"fmt"
 	"regexp"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
@@ -46,5 +47,8 @@ func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBo
 		return err
 	}
 
+	for _, m := range media {
+		m.Caption = fmt.Sprintf("<a href='%s'>🎵</a> <b>%s</b> (by %s)\n%s", m.URL, m.Title, message.Sender.Username, m.Description)
+	}
 	return ttf.sms.SendMedia(media, bot)
 }
