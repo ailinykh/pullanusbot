@@ -1,5 +1,8 @@
 package core
 
+// URL ...
+type URL = string
+
 // MediaType ...
 type MediaType int
 
@@ -22,6 +25,11 @@ type Media struct {
 	Duration    int    // video only
 	Codec       string // video only
 	Type        MediaType
+}
+
+// IMediaFactory creates Media from URL
+type IMediaFactory interface {
+	CreateMedia(URL) ([]*Media, error)
 }
 
 type ISendMediaStrategy interface {
