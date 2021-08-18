@@ -14,11 +14,14 @@ const (
 
 // Media ...
 type Media struct {
-	URL      string
-	Caption  string
-	Duration int
-	Codec    string // only video
-	Type     MediaType
+	ResourceURL URL
+	URL         URL
+	Title       string
+	Description string
+	Caption     string
+	Duration    int    // video only
+	Codec       string // video only
+	Type        MediaType
 }
 
 type ISendMediaStrategy interface {
