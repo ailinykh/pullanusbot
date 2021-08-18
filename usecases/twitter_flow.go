@@ -1,6 +1,9 @@
 package usecases
 
 import (
+	"fmt"
+	"regexp"
+
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
@@ -27,6 +30,12 @@ func (tf *TwitterFlow) HandleTweet(tweetID string, message *core.Message, bot co
 	if err != nil {
 		tf.l.Error(err)
 		return err
+	}
+
+	for _, m := range media {
+		re := regexp.MustCompile(`\s?http\S+$`)
+		text := re.ReplaceAllString(m.Description, "")
+		m.Caption = fmt.Sprintf("<a href='%s'>🐦</a> <b>%s</b> <i>(by %s)</i>\n%s", m.URL, m.Title, message.Sender.Username, text)
 	}
 
 	err = tf.sms.SendMedia(media, bot)
