@@ -59,7 +59,7 @@ func (c *FfmpegConverter) GetCodec(path string) string {
 }
 
 // CreateMedia is a core.IMediaFactory interface implementation
-func (c *FfmpegConverter) CreateMedia(url string, _ *core.User) ([]*core.Media, error) {
+func (c *FfmpegConverter) CreateMedia(url string) ([]*core.Media, error) {
 	ffprobe, err := c.getFFProbe(url)
 	if err != nil {
 		c.l.Error(err)

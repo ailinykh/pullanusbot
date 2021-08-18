@@ -18,7 +18,7 @@ type OpenGraphParser struct {
 }
 
 // CreateMedia is a core.IMediaFactory interface implementation
-func (ogp *OpenGraphParser) CreateMedia(HTMLString string, _ *core.User) ([]*core.Media, error) {
+func (ogp *OpenGraphParser) CreateMedia(HTMLString string) ([]*core.Media, error) {
 	video := ogp.parseMeta(HTMLString, "og:video")
 	if len(video) == 0 {
 		return nil, errors.New("video not found")

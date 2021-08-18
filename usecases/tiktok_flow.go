@@ -42,7 +42,7 @@ func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBo
 		return err
 	}
 
-	media, err := ttf.mf.CreateMedia(HTMLString, message.Sender)
+	media, err := ttf.mf.CreateMedia(HTMLString)
 	if err != nil {
 		return err
 	}

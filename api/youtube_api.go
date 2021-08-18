@@ -22,7 +22,7 @@ type YoutubeAPI struct {
 }
 
 // CreateMedia is a core.IMediaFactory interface implementation
-func (y *YoutubeAPI) CreateMedia(url string, author *core.User) ([]*core.Media, error) {
+func (y *YoutubeAPI) CreateMedia(url string) ([]*core.Media, error) {
 	video, err := y.getInfo(url)
 	if err != nil {
 		return nil, err

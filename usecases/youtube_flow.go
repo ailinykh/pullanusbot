@@ -43,7 +43,7 @@ func (f *YoutubeFlow) process(id string, message *core.Message, bot core.IBot) e
 	defer f.m.Unlock()
 
 	f.l.Infof("processing %s", id)
-	media, err := f.mf.CreateMedia(id, message.Sender)
+	media, err := f.mf.CreateMedia(id)
 	if err != nil {
 		return err
 	}

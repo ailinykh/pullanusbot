@@ -26,7 +26,7 @@ type TwitterFlow struct {
 // HandleTweet is a ITweetHandler protocol implementation
 func (tf *TwitterFlow) HandleTweet(tweetID string, message *core.Message, bot core.IBot, deleteOriginal bool) error {
 	tf.l.Infof("processing tweet %s, delete original: %t", tweetID, deleteOriginal)
-	media, err := tf.mf.CreateMedia(tweetID, message.Sender)
+	media, err := tf.mf.CreateMedia(tweetID)
 	if err != nil {
 		tf.l.Error(err)
 		return err

@@ -16,7 +16,7 @@ type TwitterMediaFactory struct {
 }
 
 // CreateMedia is a core.IMediaFactory interface implementation
-func (tmf *TwitterMediaFactory) CreateMedia(tweetID string, _ *core.User) ([]*core.Media, error) {
+func (tmf *TwitterMediaFactory) CreateMedia(tweetID string) ([]*core.Media, error) {
 	tweet, err := tmf.api.getTweetByID(tweetID)
 	if err != nil {
 		return nil, err

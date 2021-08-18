@@ -42,7 +42,7 @@ func (lf *LinkFlow) handleURL(message *core.Message, bot core.IBot) error {
 		return nil
 	}
 
-	media, err := lf.mf.CreateMedia(message.Text, message.Sender)
+	media, err := lf.mf.CreateMedia(message.Text)
 	if err != nil {
 		lf.l.Error(err)
 		return err
