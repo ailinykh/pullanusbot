@@ -35,11 +35,12 @@ func (y *YoutubeAPI) CreateMedia(url string, author *core.User) ([]*core.Media, 
 
 	return []*core.Media{
 		{
-			URL:      video.ID,
-			Caption:  video.Title,
-			Duration: video.Duration,
-			Codec:    vf.VCodec,
-			Type:     core.TVideo,
+			URL:         video.ID,
+			Title:       video.Title,
+			Description: video.Description,
+			Duration:    video.Duration,
+			Codec:       vf.VCodec,
+			Type:        core.TVideo,
 		},
 	}, nil
 }

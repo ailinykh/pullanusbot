@@ -53,7 +53,7 @@ func (f *YoutubeFlow) process(id string, message *core.Message, bot core.IBot) e
 		return nil
 	}
 
-	title := media[0].Caption
+	title := media[0].Title
 	f.l.Infof("downloading %s", id)
 	file, err := f.vff.CreateVideo(id)
 	if err != nil {
