@@ -20,7 +20,7 @@ func Test_SendMedia_DoesNotFailOnEmptyMedia(t *testing.T) {
 
 func Test_SendMedia_SendsASingleMediaTroughABot(t *testing.T) {
 	strategy, bot := makeMediaStrategySUT()
-	media := []*core.Media{{URL: "https://a-url.com"}}
+	media := []*core.Media{{ResourceURL: "https://a-url.com"}}
 
 	strategy.SendMedia(media, bot)
 
@@ -29,7 +29,7 @@ func Test_SendMedia_SendsASingleMediaTroughABot(t *testing.T) {
 
 func Test_SendMedia_SendsAGroupMediaTroughABot(t *testing.T) {
 	strategy, bot := makeMediaStrategySUT()
-	media := []*core.Media{{URL: "https://a-url.com"}, {URL: "https://another-url.com"}}
+	media := []*core.Media{{ResourceURL: "https://a-url.com"}, {ResourceURL: "https://another-url.com"}}
 
 	strategy.SendMedia(media, bot)
 

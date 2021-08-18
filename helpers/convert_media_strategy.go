@@ -72,13 +72,13 @@ func (cms *ConvertMediaStrategy) fallbackToConverting(media *core.Media, bot cor
 
 func (cms *ConvertMediaStrategy) downloadMedia(media *core.Media) (*core.File, error) {
 	//TODO: duplicated code
-	filename := path.Base(media.URL)
+	filename := path.Base(media.ResourceURL)
 	if strings.Contains(filename, "?") {
-		parts := strings.Split(media.URL, "?")
+		parts := strings.Split(media.ResourceURL, "?")
 		filename = path.Base(parts[0])
 	}
 	mediaPath := path.Join(os.TempDir(), filename)
-	file, err := cms.fd.Download(media.URL, mediaPath)
+	file, err := cms.fd.Download(media.ResourceURL, mediaPath)
 	if err != nil {
 		cms.l.Errorf("video download error: %v", err)
 		return nil, err

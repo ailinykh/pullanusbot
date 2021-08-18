@@ -31,7 +31,7 @@ func Test_UploadMedia_DoesNotFallbackOnGenericError(t *testing.T) {
 
 func Test_UploadMedia_FallbackOnSpecificError(t *testing.T) {
 	strategy, proxy, bot := makeUploadMediaStrategySUT()
-	media := []*core.Media{{URL: "https://a-url.com"}}
+	media := []*core.Media{{ResourceURL: "https://a-url.com"}}
 	proxy.Err = errors.New("failed to get HTTP URL content")
 
 	err := strategy.SendMedia(media, bot)

@@ -61,13 +61,13 @@ func (ums *UploadMediaStrategy) fallbackToUploading(media *core.Media, bot core.
 
 func (ums *UploadMediaStrategy) downloadMedia(media *core.Media) (*core.File, error) {
 	//TODO: duplicated code
-	filename := path.Base(media.URL)
+	filename := path.Base(media.ResourceURL)
 	if strings.Contains(filename, "?") {
-		parts := strings.Split(media.URL, "?")
+		parts := strings.Split(media.ResourceURL, "?")
 		filename = path.Base(parts[0])
 	}
 	mediaPath := path.Join(os.TempDir(), filename)
-	file, err := ums.fd.Download(media.URL, mediaPath)
+	file, err := ums.fd.Download(media.ResourceURL, mediaPath)
 	if err != nil {
 		ums.l.Errorf("video download error: %v", err)
 		return nil, err
