@@ -59,7 +59,7 @@ func (c *FfmpegConverter) GetCodec(path string) string {
 }
 
 // CreateMedia is a core.IMediaFactory interface implementation
-func (c *FfmpegConverter) CreateMedia(url string, author *core.User) ([]*core.Media, error) {
+func (c *FfmpegConverter) CreateMedia(url string, _ *core.User) ([]*core.Media, error) {
 	ffprobe, err := c.getFFProbe(url)
 	if err != nil {
 		c.l.Error(err)
@@ -73,10 +73,10 @@ func (c *FfmpegConverter) CreateMedia(url string, author *core.User) ([]*core.Me
 	}
 
 	if ffprobe.Format.FormatName == "image2" {
-		return []*core.Media{{URL: url, Codec: stream.CodecName, Type: core.TPhoto}}, nil
+		return []*core.Media{{ResourceURL: url, URL: url, Codec: stream.CodecName, Type: core.TPhoto}}, nil
 	}
 
-	return []*core.Media{{URL: url, Codec: stream.CodecName, Type: core.TVideo}}, nil
+	return []*core.Media{{ResourceURL: url, URL: url, Codec: stream.CodecName, Type: core.TVideo}}, nil
 }
 
 // CreateVideo is a core.IVideoSplitter interface implementation
