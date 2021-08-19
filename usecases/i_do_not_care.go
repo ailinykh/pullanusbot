@@ -18,5 +18,9 @@ func (IDoNotCare) HandleText(message *core.Message, bot core.IBot) error {
 		_, err := bot.SendText("https://coub.com/view/1ov5oi", false)
 		return err
 	}
+	if strings.Contains(strings.ToLower(message.Text), "привет, андрей") {
+		_, err := bot.SendVideo(&core.Video{ID: "BAACAgIAAxkBAAIziWEeZBqlM1_1n2AVaxedGFn3vS-sAAKgDwACSl7xSImLuE-s8DMbIAQ"}, "")
+		return err
+	}
 	return nil
 }
