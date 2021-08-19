@@ -14,3 +14,8 @@ type ITextHandler interface {
 type IImageHandler interface {
 	HandleImage(*Image, *Message, IBot) error
 }
+
+// IVideoHandler responds to videos
+type IVideoHandler interface {
+	HandleImage(*Video, *Message, IBot) error
+}

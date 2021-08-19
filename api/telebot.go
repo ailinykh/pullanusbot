@@ -21,6 +21,7 @@ type Telebot struct {
 	textHandlers     []core.ITextHandler
 	documentHandlers []core.IDocumentHandler
 	imageHandlers    []core.IImageHandler
+	videoHandlers    []core.IVideoHandler
 }
 
 // CreateTelebot is a default Telebot factory
@@ -39,7 +40,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		panic(err)
 	}
 
-	telebot := &Telebot{bot, logger, []string{}, []core.ITextHandler{}, []core.IDocumentHandler{}, []core.IImageHandler{}}
+	telebot := &Telebot{bot, logger, []string{}, []core.ITextHandler{}, []core.IDocumentHandler{}, []core.IImageHandler{}, []core.IVideoHandler{}}
 
 	bot.Handle(tb.OnText, func(m *tb.Message) {
 		for _, h := range telebot.textHandlers {
@@ -95,6 +96,23 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 
 		for _, h := range telebot.imageHandlers {
 			err := h.HandleImage(image, makeMessage(m), &TelebotAdapter{m, telebot})
+			if err != nil {
+				logger.Errorf("%T: %s", h, err)
+				telebot.reportError(m, err)
+			}
+		}
+	})
+
+	bot.Handle(tb.OnVideo, func(m *tb.Message) {
+
+		video := &core.Video{
+			ID:     m.Video.FileID,
+			Width:  m.Video.Width,
+			Height: m.Video.Height,
+		}
+
+		for _, h := range telebot.videoHandlers {
+			err := h.HandleImage(video, makeMessage(m), &TelebotAdapter{m, telebot})
 			if err != nil {
 				logger.Errorf("%T: %s", h, err)
 				telebot.reportError(m, err)
