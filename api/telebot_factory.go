@@ -6,19 +6,24 @@ import (
 )
 
 func makeTbVideo(vf *core.Video, caption string) *tb.Video {
-	video := tb.Video{File: tb.FromDisk(vf.Path)}
-	video.FileName = vf.File.Name
-	video.Width = vf.Width
-	video.Height = vf.Height
-	video.Caption = caption
-	video.Duration = vf.Duration
-	video.SupportsStreaming = true
-	video.Thumbnail = &tb.Photo{
-		File:   tb.FromDisk(vf.Thumb.Path),
-		Width:  vf.Thumb.Width,
-		Height: vf.Thumb.Height,
+	var video *tb.Video
+	if len(vf.ID) > 0 {
+		video = &tb.Video{File: tb.File{FileID: vf.ID}}
+	} else {
+		video = &tb.Video{File: tb.FromDisk(vf.Path)}
+		video.FileName = vf.File.Name
+		video.Width = vf.Width
+		video.Height = vf.Height
+		video.Caption = caption
+		video.Duration = vf.Duration
+		video.SupportsStreaming = true
+		video.Thumbnail = &tb.Photo{
+			File:   tb.FromDisk(vf.Thumb.Path),
+			Width:  vf.Thumb.Width,
+			Height: vf.Thumb.Height,
+		}
 	}
-	return &video
+	return video
 }
 
 func makeTbPhoto(image *core.Image, caption string) *tb.Photo {

@@ -5,6 +5,7 @@ import "os"
 // Video ...
 type Video struct {
 	File
+	ID       string
 	Width    int
 	Height   int
 	Bitrate  int
