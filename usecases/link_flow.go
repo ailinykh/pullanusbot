@@ -26,13 +26,13 @@ type LinkFlow struct {
 func (lf *LinkFlow) HandleText(message *core.Message, bot core.IBot) error {
 	r := regexp.MustCompile(`^http(\S+)$`)
 	if r.MatchString(message.Text) {
-		return lf.handleURL(message, bot)
+		return lf.handleURL(message.Text, message, bot)
 	}
 	return nil
 }
 
-func (lf *LinkFlow) handleURL(message *core.Message, bot core.IBot) error {
-	contentType, err := lf.hc.GetContentType(message.Text)
+func (lf *LinkFlow) handleURL(url core.URL, message *core.Message, bot core.IBot) error {
+	contentType, err := lf.hc.GetContentType(url)
 	if err != nil {
 		lf.l.Error(err)
 		return err
@@ -42,7 +42,7 @@ func (lf *LinkFlow) handleURL(message *core.Message, bot core.IBot) error {
 		return nil
 	}
 
-	media, err := lf.mf.CreateMedia(message.Text)
+	media, err := lf.mf.CreateMedia(url)
 	if err != nil {
 		lf.l.Error(err)
 		return err
