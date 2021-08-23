@@ -34,7 +34,7 @@ func (lf *LinkFlow) HandleText(message *core.Message, bot core.IBot) error {
 func (lf *LinkFlow) handleURL(url core.URL, message *core.Message, bot core.IBot) error {
 	contentType, err := lf.hc.GetContentType(url)
 	if err != nil {
-		lf.l.Error(err)
+		lf.l.Error(err, url)
 		return err
 	}
 

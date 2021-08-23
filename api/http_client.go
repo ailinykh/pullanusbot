@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"io/ioutil"
 	"net/http"
 
@@ -15,14 +16,19 @@ type HttpClient struct{}
 
 // GetContentType is a core.IHttpClient interface implementation
 func (HttpClient) GetContentType(url core.URL) (string, error) {
-	resp, err := http.Get(url)
+	client := http.DefaultClient
+	req, _ := http.NewRequest("HEAD", url, nil)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0")
 
+	res, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
 
-	return resp.Header["Content-Type"][0], nil
+	if header, ok := res.Header["Content-Type"]; ok {
+		return header[0], nil
+	}
+	return "", errors.New("content-type not found")
 }
 
 // GetContent is a core.IHttpClient interface implementation
