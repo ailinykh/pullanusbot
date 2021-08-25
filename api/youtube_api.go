@@ -68,10 +68,7 @@ func (y *YoutubeAPI) CreateVideo(id string) (*core.Video, error) {
 		return nil, errors.New(string(out))
 	}
 
-	thumb := video.thumb()
-	thumbPath := path.Join(os.TempDir(), name+".jpg")
-	y.l.Infof("downloading thumb %s", thumb.URL)
-	file, err := y.fd.Download(thumb.URL, thumbPath) // will be disposed with Video
+	thumb, err := y.getThumbV2(video, vf)
 	if err != nil {
 		return nil, err
 	}
@@ -83,11 +80,7 @@ func (y *YoutubeAPI) CreateVideo(id string) (*core.Video, error) {
 		Bitrate:  0,
 		Duration: video.Duration,
 		Codec:    vf.VCodec,
-		Thumb: &core.Image{
-			File:   *file,
-			Width:  thumb.Width,
-			Height: thumb.Height,
-		},
+		Thumb:    thumb,
 	}, nil
 }
 
@@ -126,4 +119,53 @@ func (y *YoutubeAPI) getFormats(video *Video) (*Format, *Format, error) {
 	}
 
 	return vf, af, nil
+}
+
+func (y *YoutubeAPI) getThumb(video *Video, vf *Format) (*core.Image, error) {
+	thumb := video.thumb()
+	filename := fmt.Sprintf("youtube-%s-%s.jpg", video.ID, vf.FormatID)
+	thumbPath := path.Join(os.TempDir(), filename)
+	y.l.Infof("downloading thumb %s", thumb.URL)
+	file, err := y.fd.Download(thumb.URL, thumbPath)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Image{
+		File:   *file,
+		Width:  thumb.Width,
+		Height: thumb.Height,
+	}, nil
+}
+
+func (y *YoutubeAPI) getThumbV2(video *Video, vf *Format) (*core.Image, error) {
+	filename := fmt.Sprintf("youtube-%s-%s-maxres.jpg", video.ID, vf.FormatID)
+	originalThumbPath := path.Join(os.TempDir(), filename+"-original")
+	thumbPath := path.Join(os.TempDir(), filename)
+	y.l.Infof("downloading thumb %s", video.Thumbnail)
+	file, err := y.fd.Download(video.Thumbnail, originalThumbPath)
+	if err != nil {
+		y.l.Error(err)
+		return y.getThumb(video, vf)
+	}
+	defer file.Dispose()
+
+	cmd := fmt.Sprintf(`ffmpeg -v error -y -i "%s" -vf scale=%d:%d "%s"`, originalThumbPath, vf.Width, vf.Height, thumbPath)
+	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
+	if err != nil {
+		y.l.Error(err)
+		y.l.Error(string(out))
+		return y.getThumb(video, vf)
+	}
+
+	stat, err := os.Stat(thumbPath)
+	if err != nil {
+		y.l.Error(err)
+		return y.getThumb(video, vf)
+	}
+
+	return &core.Image{
+		File:   core.File{Name: filename, Path: thumbPath, Size: stat.Size()},
+		Width:  vf.Width,
+		Height: vf.Height,
+	}, nil
 }
