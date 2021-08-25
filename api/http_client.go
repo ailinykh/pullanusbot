@@ -14,6 +14,19 @@ func CreateHttpClient() *HttpClient {
 
 type HttpClient struct{}
 
+func (HttpClient) GetRedirectLocation(url core.URL) (core.URL, error) {
+	client := http.DefaultClient
+	req, _ := http.NewRequest("HEAD", url, nil)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0")
+
+	res, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	return res.Request.URL.String(), nil
+}
+
 // GetContentType is a core.IHttpClient interface implementation
 func (HttpClient) GetContentType(url core.URL) (string, error) {
 	client := http.DefaultClient
