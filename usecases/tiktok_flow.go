@@ -8,14 +8,13 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateTikTokFlow(l core.ILogger, hc core.IHttpClient, mf core.IMediaFactory, sms core.ISendMediaStrategy) *TikTokFlow {
-	return &TikTokFlow{l, hc, mf, sms}
+func CreateTikTokFlow(l core.ILogger, hc core.IHttpClient, sms core.ISendMediaStrategy) *TikTokFlow {
+	return &TikTokFlow{l, hc, sms}
 }
 
 type TikTokFlow struct {
 	l   core.ILogger
 	hc  core.IHttpClient
-	mf  core.IMediaFactory
 	sms core.ISendMediaStrategy
 }
 
