@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 
@@ -37,18 +38,53 @@ func (ttf *TikTokFlow) HandleText(message *core.Message, bot core.IBot) error {
 
 func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBot) error {
 	ttf.l.Info("processing ", url)
-	HTMLString, err := ttf.hc.GetContent(url)
+	fullURL, err := ttf.hc.GetRedirectLocation(url)
 	if err != nil {
 		return err
 	}
 
-	media, err := ttf.mf.CreateMedia(HTMLString)
+	r := regexp.MustCompile(`tiktok\.com/(@\S+)/video/(\d+)`)
+	match := r.FindStringSubmatch(fullURL)
+	if len(match) != 3 {
+		ttf.l.Error(match)
+		return fmt.Errorf("unexpected redirect location %s", fullURL)
+	}
+
+	apiURL := "https://www.tiktok.com/node/share/video/" + match[1] + "/" + match[2]
+	jsonString, err := ttf.hc.GetContent(apiURL)
 	if err != nil {
 		return err
 	}
 
-	for _, m := range media {
-		m.Caption = fmt.Sprintf("<a href='%s'>🎵</a> <b>%s</b> (by %s)\n%s", m.URL, m.Title, message.Sender.Username, m.Description)
+	var resp TikTokResponse
+	err = json.Unmarshal([]byte(jsonString), &resp)
+	if err != nil {
+		return err
 	}
-	return ttf.sms.SendMedia(media, bot)
+
+	if resp.StatusCode != 0 {
+		ttf.l.Error(jsonString)
+		return fmt.Errorf("%d not equal to zero", resp.StatusCode)
+	}
+
+	title := resp.ItemInfo.ItemStruct.Desc
+	if len(title) == 0 {
+		title = fmt.Sprintf("%s (@%s)", resp.ItemInfo.ItemStruct.Author.Nickname, resp.ItemInfo.ItemStruct.Author.UniqueId)
+	}
+
+	description := fmt.Sprintf("%s (@%s) has created a short video on TikTok with music %s.", resp.ItemInfo.ItemStruct.Author.Nickname, resp.ItemInfo.ItemStruct.Author.UniqueId, resp.ItemInfo.ItemStruct.Music.Title)
+	for _, s := range resp.ItemInfo.ItemStruct.StickersOnItem {
+		for _, t := range s.StickerText {
+			description = description + " | " + t
+		}
+	}
+
+	media := &core.Media{
+		URL:         url,
+		ResourceURL: resp.ItemInfo.ItemStruct.Video.DownloadAddr,
+		Title:       title,
+		Description: description,
+	}
+	media.Caption = fmt.Sprintf("<a href='%s'>🎵</a> <b>%s</b> (by %s)\n%s", url, title, message.Sender.Username, description)
+	return ttf.sms.SendMedia([]*core.Media{media}, bot)
 }
