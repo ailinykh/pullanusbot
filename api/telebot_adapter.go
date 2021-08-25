@@ -121,3 +121,15 @@ func (a *TelebotAdapter) SendVideo(vf *core.Video, caption string) (*core.Messag
 	a.t.logger.Infof("%s successfully sent", vf.Name)
 	return makeMessage(sent), err
 }
+
+// IsUserMemberOfChat is a core.IBot interface implementation
+func (a *TelebotAdapter) IsUserMemberOfChat(user *core.User, chatID int64) bool {
+	chat := &tb.Chat{ID: chatID}
+	member, err := a.t.bot.ChatMemberOf(chat, makeTbUser(user))
+	if err != nil {
+		a.t.logger.Error(err, member)
+	}
+	return member == nil ||
+		member.Role == tb.Left ||
+		member.Role == tb.Kicked
+}

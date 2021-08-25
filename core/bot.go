@@ -9,4 +9,5 @@ type IBot interface {
 	SendMedia(*Media) (*Message, error)
 	SendPhotoAlbum([]*Media) ([]*Message, error)
 	SendVideo(*Video, string) (*Message, error)
+	IsUserMemberOfChat(*User, int64) bool
 }

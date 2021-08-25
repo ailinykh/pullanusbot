@@ -34,3 +34,12 @@ func makeTbPhoto(image *core.Image, caption string) *tb.Photo {
 	photo.Caption = caption
 	return photo
 }
+
+func makeTbUser(user *core.User) *tb.User {
+	return &tb.User{
+		ID:        user.ID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Username:  user.Username,
+	}
+}

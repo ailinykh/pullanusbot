@@ -5,7 +5,7 @@ import "github.com/ailinykh/pullanusbot/v2/core"
 // https://stackoverflow.com/questions/31794141/can-i-create-shared-test-utilities
 
 func CreateFakeBot() *FakeBot {
-	return &FakeBot{[]string{}, []string{}, []string{}, []string{}}
+	return &FakeBot{[]string{}, []string{}, []string{}, []string{}, map[int64][]string{}}
 }
 
 type FakeBot struct {
@@ -13,6 +13,7 @@ type FakeBot struct {
 	SentMessages    []string
 	SentVideos      []string
 	RemovedMessages []string
+	ChatMembers     map[int64][]string
 }
 
 func (FakeBot) SendImage(*core.Image, string) (*core.Message, error) { return nil, nil }
@@ -43,4 +44,13 @@ func (b *FakeBot) Delete(message *core.Message) error {
 func (b *FakeBot) SendText(text string, args ...interface{}) (*core.Message, error) {
 	b.SentMessages = append(b.SentMessages, text)
 	return nil, nil
+}
+
+func (b *FakeBot) IsUserMemberOfChat(user *core.User, chatID int64) bool {
+	for _, username := range b.ChatMembers[chatID] {
+		if username == user.Username {
+			return true
+		}
+	}
+	return false
 }
