@@ -86,6 +86,7 @@ func Test_Play_RespondsWithCurrentGameResult(t *testing.T) {
 		"faggot_game_2_0": "2",
 		"faggot_game_3_0": "%s",
 	})
+	bot.ChatMembers[0] = []string{""}
 	m1 := makeGameMessage(1, "")
 	m2 := makeGameMessage(2, "")
 
@@ -108,6 +109,7 @@ func Test_Play_RespondsWinnerAlreadyKnown(t *testing.T) {
 		"faggot_game_3_0":     "3 %s",
 		"faggot_winner_known": "Winner already known %s",
 	})
+	bot.ChatMembers[0] = []string{"Faggot1", "Faggot2"}
 	m1 := makeGameMessage(1, "Faggot1")
 	m2 := makeGameMessage(2, "Faggot2")
 
@@ -124,6 +126,20 @@ func Test_Play_RespondsWinnerAlreadyKnown(t *testing.T) {
 	game.Play(m1, bot)
 
 	assert.Equal(t, fmt.Sprintf("Winner already known %s", winner), bot.SentMessages[6])
+}
+
+func Test_Play_RespondsWinnerLeftTheChat(t *testing.T) {
+	game, bot, storage := makeSUT(LocalizerDict{
+		"faggot_winner_left": "winner left",
+	})
+	m1 := makeGameMessage(1, "Faggot1")
+	m2 := makeGameMessage(2, "Faggot2")
+	storage.players = []*core.User{m1.Sender, m2.Sender}
+
+	game.Play(m1, bot)
+
+	assert.Equal(t, []*core.Round{}, storage.rounds)
+	assert.Equal(t, []string{"winner left"}, bot.SentMessages)
 }
 
 func Test_Stats_RespondsWithDescendingResultsForCurrentYear(t *testing.T) {
@@ -232,7 +248,7 @@ func makeGameMessage(id int, username string) *core.Message {
 
 func makeSUT(args ...interface{}) (*usecases.GameFlow, *test_helpers.FakeBot, *GameStorageMock) {
 	dict := LocalizerDict{}
-	storage := &GameStorageMock{players: []*core.User{}}
+	storage := &GameStorageMock{players: []*core.User{}, rounds: []*core.Round{}}
 	bot := test_helpers.CreateFakeBot()
 
 	for _, arg := range args {

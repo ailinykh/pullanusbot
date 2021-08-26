@@ -90,6 +90,12 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 	}
 
 	winner := players[rand.Intn(len(players))]
+
+	if !bot.IsUserMemberOfChat(winner, message.ChatID) {
+		_, err := bot.SendText(flow.l.I18n("faggot_winner_left"))
+		return err
+	}
+
 	round := &core.Round{Day: day, Winner: winner}
 	flow.s.AddRound(message.ChatID, round)
 
