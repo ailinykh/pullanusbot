@@ -54,7 +54,7 @@ func (s *GameStorage) GetRounds(gameID int64) ([]*core.Round, error) {
 	s.conn.Where("game_id = ?", gameID).Find(&dbRounds)
 	for _, r := range dbRounds {
 		for _, p := range players {
-			if p.Username == r.Username {
+			if p.ID == r.UserID {
 				coreRounds = append(coreRounds, &core.Round{Day: r.Day, Winner: p})
 				break
 			}
