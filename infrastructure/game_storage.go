@@ -73,8 +73,17 @@ func (s *GameStorage) AddPlayer(gameID int64, user *core.User) error {
 		Username:     user.Username,
 		LanguageCode: user.LanguageCode,
 	}
-	player.GameID = gameID
 	s.conn.Create(&player)
+	return nil
+}
+
+// AddPlayer is a core.IGameStorage interface implementation
+func (s *GameStorage) UpdatePlayer(gameID int64, user *core.User) error {
+	player := Player{
+		GameID: gameID,
+		UserID: user.ID,
+	}
+	s.conn.Model(&player).Updates(Player{FirstName: user.FirstName, LastName: user.LastName, Username: user.Username})
 	return nil
 }
 

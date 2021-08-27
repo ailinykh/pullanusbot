@@ -5,5 +5,6 @@ type IGameStorage interface {
 	GetPlayers(int64) ([]*User, error)
 	GetRounds(int64) ([]*Round, error)
 	AddPlayer(int64, *User) error
+	UpdatePlayer(int64, *User) error
 	AddRound(int64, *Round) error
 }
