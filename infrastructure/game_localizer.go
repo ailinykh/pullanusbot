@@ -24,6 +24,7 @@ var ru = map[string]string{
 
 	"faggot_not_available_for_private": "Извините, данная команда недоступна в личных чатах.",
 	"faggot_added_to_game":             "Ты в игре!",
+	"faggot_info_updated":              "Профиль игрока обновлён!",
 	"faggot_already_in_game":           "Эй! Ты уже в игре!",
 	"faggot_no_players":                "Зарегистрированных в игру еще нет, а значит <b>пидор</b> ты - %s",
 	"faggot_not_enough_players":        "Нужно как минимум два игрока, чтобы начать игру! Зарегистрируйся используя /pidoreg",

@@ -43,6 +43,11 @@ func (flow *GameFlow) Add(message *core.Message, bot core.IBot) error {
 	players, _ := flow.s.GetPlayers(message.ChatID)
 	for _, p := range players {
 		if p.ID == message.Sender.ID {
+			if p.FirstName != message.Sender.FirstName || p.LastName != message.Sender.LastName || p.Username != message.Sender.Username {
+				_ = flow.s.UpdatePlayer(message.ChatID, message.Sender)
+				_, err := bot.SendText(flow.l.I18n("faggot_info_updated"))
+				return err
+			}
 			_, err := bot.SendText(flow.l.I18n("faggot_already_in_game"))
 			return err
 		}

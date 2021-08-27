@@ -38,6 +38,19 @@ func Test_RulesCommand_DeliversRules(t *testing.T) {
 	assert.Equal(t, "Game rules:", bot.SentMessages[0])
 }
 
+func Test_Add_ChecksAndReplacesPlayerInfoIfNeeded(t *testing.T) {
+	game, bot, storage := makeSUT()
+	message := makeGameMessage(1, "Faggot")
+	player := *message.Sender
+	player.Username = "old_username"
+	storage.players = []*core.User{&player}
+
+	game.Add(message, bot)
+
+	assert.Equal(t, []*core.User{message.Sender}, storage.players)
+	assert.Equal(t, []string{"faggot_info_updated"}, bot.SentMessages)
+}
+
 func Test_Add_AppendsPlayerInGameOnlyOnce(t *testing.T) {
 	game, bot, storage := makeSUT(LocalizerDict{
 		"faggot_added_to_game":   "Player added",
@@ -295,6 +308,17 @@ type GameStorageMock struct {
 
 func (s *GameStorageMock) AddPlayer(gameID int64, player *core.User) error {
 	s.players = append(s.players, player)
+	return nil
+}
+
+func (s *GameStorageMock) UpdatePlayer(gameID int64, user *core.User) error {
+	for _, p := range s.players {
+		if p.ID == user.ID {
+			p.FirstName = user.FirstName
+			p.LastName = user.LastName
+			p.Username = user.Username
+		}
+	}
 	return nil
 }
 
