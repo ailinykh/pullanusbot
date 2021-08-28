@@ -140,7 +140,7 @@ func (a *TelebotAdapter) IsUserMemberOfChat(user *core.User, chatID int64) bool 
 	if err != nil {
 		a.t.logger.Error(err, member)
 	}
-	return member == nil ||
-		member.Role == tb.Left ||
-		member.Role == tb.Kicked
+	return member != nil &&
+		member.Role != tb.Left &&
+		member.Role != tb.Kicked
 }
