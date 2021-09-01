@@ -14,12 +14,13 @@ import (
 )
 
 // CreateGameFlow is a simple GameFlow factory
-func CreateGameFlow(t core.ILocalizer, s core.IGameStorage) *GameFlow {
-	return &GameFlow{t, s}
+func CreateGameFlow(l core.ILogger, t core.ILocalizer, s core.IGameStorage) *GameFlow {
+	return &GameFlow{l, t, s}
 }
 
 // GameFlow represents faggot game logic
 type GameFlow struct {
+	l core.ILogger
 	t core.ILocalizer
 	s core.IGameStorage
 }

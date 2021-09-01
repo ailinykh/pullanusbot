@@ -26,7 +26,7 @@ func main() {
 	localizer := infrastructure.GameLocalizer{}
 	dbFile := path.Join(getWorkingDir(), "pullanusbot.db")
 	gameStorage := infrastructure.CreateGameStorage(dbFile)
-	gameFlow := usecases.CreateGameFlow(localizer, gameStorage)
+	gameFlow := usecases.CreateGameFlow(logger, localizer, gameStorage)
 	telebot.AddHandler("/pidorules", gameFlow.Rules)
 	telebot.AddHandler("/pidoreg", gameFlow.Add)
 	telebot.AddHandler("/pidor", gameFlow.Play)

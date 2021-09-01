@@ -271,8 +271,9 @@ func makeSUT(args ...interface{}) (*usecases.GameFlow, *test_helpers.FakeBot, *G
 		}
 	}
 
-	l := &LocalizerMock{dict: dict}
-	game := usecases.CreateGameFlow(l, storage)
+	l := &test_helpers.FakeLogger{}
+	t := &LocalizerMock{dict: dict}
+	game := usecases.CreateGameFlow(l, t, storage)
 	return game, bot, storage
 }
 
