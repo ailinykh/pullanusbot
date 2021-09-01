@@ -66,6 +66,11 @@ func (ums *UploadMediaStrategy) downloadMedia(media *core.Media) (*core.File, er
 		parts := strings.Split(media.ResourceURL, "?")
 		filename = path.Base(parts[0])
 	}
+
+	if !strings.HasSuffix(filename, ".mp4") {
+		filename = filename + ".mp4"
+	}
+
 	mediaPath := path.Join(os.TempDir(), filename)
 	file, err := ums.fd.Download(media.ResourceURL, mediaPath)
 	if err != nil {
