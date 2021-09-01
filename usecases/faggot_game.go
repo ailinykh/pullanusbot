@@ -74,6 +74,8 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 
+	flow.l.Errorf("chat_id: %d, game started by %v", message.ChatID, message.Sender)
+
 	players, _ := flow.s.GetPlayers(message.ChatID)
 	switch len(players) {
 	case 0:
@@ -102,7 +104,7 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 		return err
 	}
 
-	flow.l.Infof("chat_id: %d, day: %s, winner: %v", message.ChatID, day, winner)
+	flow.l.Infof("day: %s, winner: %v", day, winner)
 
 	if winner.ID == message.Sender.ID {
 		if winner.FirstName != message.Sender.FirstName || winner.LastName != message.Sender.LastName || winner.Username != message.Sender.Username {
