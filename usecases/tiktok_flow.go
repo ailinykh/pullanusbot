@@ -82,7 +82,13 @@ func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBo
 		return err
 	}
 
+	if resp.Props.PageProps.ServerCode == 404 {
+		_, err := bot.SendText(apiURL + "\nVideo currently unavailable")
+		return err
+	}
+
 	if resp.Props.PageProps.StatusCode != 0 {
+		ttf.l.Error(match[1])
 		return fmt.Errorf("%d not equal to zero", resp.Props.PageProps.StatusCode)
 	}
 

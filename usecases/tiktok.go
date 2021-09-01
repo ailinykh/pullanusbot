@@ -9,6 +9,7 @@ type TikTokHTMLProps struct {
 }
 
 type TikTokResponse struct {
+	ServerCode int
 	StatusCode int
 	ItemInfo   TikTokItemInfo
 }
