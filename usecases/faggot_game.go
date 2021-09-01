@@ -102,6 +102,19 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 		return err
 	}
 
+	flow.l.Infof("chat_id: %d, day: %s, winner: %v", message.ChatID, day, winner)
+
+	if winner.ID == message.Sender.ID {
+		if winner.FirstName != message.Sender.FirstName || winner.LastName != message.Sender.LastName || winner.Username != message.Sender.Username {
+			err := flow.s.UpdatePlayer(message.ChatID, message.Sender)
+			if err != nil {
+				flow.l.Error(err)
+			} else {
+				flow.l.Infof("player info updated: %v", winner)
+			}
+		}
+	}
+
 	round := &core.Round{Day: day, Winner: winner}
 	flow.s.AddRound(message.ChatID, round)
 
@@ -126,7 +139,7 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 
 		_, err := bot.SendText(phrase)
 		if err != nil {
-			//TODO: logger?
+			flow.l.Error(err)
 		}
 
 		if os.Getenv("GO_ENV") != "testing" {
