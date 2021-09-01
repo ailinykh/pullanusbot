@@ -20,4 +20,5 @@ type IHttpClient interface {
 	GetContentType(URL) (string, error)
 	GetContent(URL) (string, error)
 	GetRedirectLocation(url URL) (URL, error)
+	SetHeader(string, string)
 }
