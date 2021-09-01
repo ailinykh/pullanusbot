@@ -92,14 +92,14 @@ func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBo
 		return fmt.Errorf("%d not equal to zero", resp.Props.PageProps.StatusCode)
 	}
 
-	itemInfo := resp.Props.PageProps.ItemInfo
-	title := itemInfo.ItemStruct.Desc
+	item := resp.Props.PageProps.ItemInfo.ItemStruct
+	title := item.Desc
 	if len(title) == 0 {
-		title = fmt.Sprintf("%s (@%s)", itemInfo.ItemStruct.Author.Nickname, itemInfo.ItemStruct.Author.UniqueId)
+		title = fmt.Sprintf("%s (@%s)", item.Author.Nickname, item.Author.UniqueId)
 	}
 
-	description := fmt.Sprintf("%s (@%s) has created a short video on TikTok with music %s.", itemInfo.ItemStruct.Author.Nickname, itemInfo.ItemStruct.Author.UniqueId, itemInfo.ItemStruct.Music.Title)
-	for _, s := range itemInfo.ItemStruct.StickersOnItem {
+	description := fmt.Sprintf("%s (@%s) has created a short video on TikTok with music %s.", item.Author.Nickname, item.Author.UniqueId, item.Music.Title)
+	for _, s := range item.StickersOnItem {
 		for _, t := range s.StickerText {
 			description = description + " | " + t
 		}
@@ -107,7 +107,7 @@ func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBo
 
 	media := &core.Media{
 		URL:         url,
-		ResourceURL: itemInfo.ItemStruct.Video.DownloadAddr,
+		ResourceURL: item.Video.DownloadAddr,
 		Title:       title,
 		Description: description,
 	}
