@@ -1,5 +1,13 @@
 package usecases
 
+type TikTokHTMLResponse struct {
+	Props TikTokHTMLProps
+}
+
+type TikTokHTMLProps struct {
+	PageProps TikTokResponse
+}
+
 type TikTokResponse struct {
 	StatusCode int
 	ItemInfo   TikTokItemInfo
