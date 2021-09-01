@@ -39,7 +39,7 @@ func (ttf *TikTokFlow) HandleText(message *core.Message, bot core.IBot) error {
 }
 
 func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBot) error {
-	ttf.l.Info("processing ", url)
+	ttf.l.Infof("processing %s", url)
 	fullURL, err := ttf.hc.GetRedirectLocation(url)
 	if err != nil {
 		return err
@@ -53,37 +53,16 @@ func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBo
 	}
 
 	// apiURL := "https://www.tiktok.com/node/share/video/" + match[1] + "/" + match[2]
-	apiURL := "https://www.tiktok.com/" + match[1] + "/video/" + match[2]
-	ttf.l.Info(apiURL)
+	originalURL := "https://www.tiktok.com/" + match[1] + "/video/" + match[2]
+	ttf.l.Infof("original: %s", originalURL)
 
-	getRand := func(count int) string {
-		rv := ""
-		for i := 1; i < count; i++ {
-			rv = rv + strconv.Itoa(rand.Intn(10))
-		}
-		return rv
-	}
-	ttf.hc.SetHeader("Cookie", "tt_webid_v2=69"+getRand(17)+"; Domain=tiktok.com; Path=/; Secure; hostOnly=false; hostOnly=false; aAge=4ms; cAge=4ms")
-	htmlString, err := ttf.hc.GetContent(apiURL)
-	if err != nil {
-		return err
-	}
-
-	r = regexp.MustCompile(`<script id="__NEXT_DATA__" type="application\/json" nonce="[\w-]+" crossorigin="anonymous">(.*?)<\/script>`)
-	match = r.FindStringSubmatch(htmlString)
-	if len(match) < 1 {
-		ttf.l.Error(match)
-		return fmt.Errorf("unexpected html")
-	}
-
-	var resp TikTokHTMLResponse
-	err = json.Unmarshal([]byte(match[1]), &resp)
+	resp, err := ttf.retreiveContentFrom(originalURL)
 	if err != nil {
 		return err
 	}
 
 	if resp.Props.PageProps.ServerCode == 404 {
-		_, err := bot.SendText(apiURL + "\nVideo currently unavailable")
+		_, err := bot.SendText(originalURL + "\nVideo currently unavailable")
 		return err
 	}
 
@@ -113,4 +92,34 @@ func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBo
 	}
 	media.Caption = fmt.Sprintf("<a href='%s'>🎵</a> <b>%s</b> (by %s)\n%s", url, title, message.Sender.Username, description)
 	return ttf.sms.SendMedia([]*core.Media{media}, bot)
+}
+
+func (ttf *TikTokFlow) retreiveContentFrom(url string) (*TikTokHTMLResponse, error) {
+	var resp *TikTokHTMLResponse
+	getRand := func(count int) string {
+		rv := ""
+		for i := 1; i < count; i++ {
+			rv = rv + strconv.Itoa(rand.Intn(10))
+		}
+		return rv
+	}
+	ttf.hc.SetHeader("Cookie", "tt_webid_v2=69"+getRand(17)+"; Domain=tiktok.com; Path=/; Secure; hostOnly=false; hostOnly=false; aAge=4ms; cAge=4ms")
+	htmlString, err := ttf.hc.GetContent(url)
+	if err != nil {
+		return nil, err
+	}
+
+	r := regexp.MustCompile(`<script id="__NEXT_DATA__" type="application\/json" nonce="[\w-]+" crossorigin="anonymous">(.*?)<\/script>`)
+	match := r.FindStringSubmatch(htmlString)
+	if len(match) < 1 {
+		ttf.l.Error(match)
+		return nil, fmt.Errorf("unexpected html")
+	}
+
+	err = json.Unmarshal([]byte(match[1]), &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, err
 }
