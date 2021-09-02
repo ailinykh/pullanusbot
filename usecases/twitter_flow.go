@@ -35,7 +35,7 @@ func (tf *TwitterFlow) HandleTweet(tweetID string, message *core.Message, bot co
 	for _, m := range media {
 		re := regexp.MustCompile(`\s?http\S+$`)
 		text := re.ReplaceAllString(m.Description, "")
-		m.Caption = fmt.Sprintf("<a href='%s'>🐦</a> <b>%s</b> <i>(by %s)</i>\n%s", m.URL, m.Title, message.Sender.Username, text)
+		m.Caption = fmt.Sprintf("<a href='%s'>🐦</a> <b>%s</b> <i>(by %s)</i>\n%s", m.URL, m.Title, message.Sender.DisplayName(), text)
 	}
 
 	err = tf.sms.SendMedia(media, bot)

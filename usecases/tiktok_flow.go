@@ -90,7 +90,7 @@ func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBo
 		Title:       title,
 		Description: description,
 	}
-	media.Caption = fmt.Sprintf("<a href='%s'>🎵</a> <b>%s</b> (by %s)\n%s", url, title, message.Sender.Username, description)
+	media.Caption = fmt.Sprintf("<a href='%s'>🎵</a> <b>%s</b> (by %s)\n%s", url, title, message.Sender.DisplayName(), description)
 	return ttf.sms.SendMedia([]*core.Media{media}, bot)
 }
 

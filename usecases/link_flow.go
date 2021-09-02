@@ -51,9 +51,9 @@ func (lf *LinkFlow) handleURL(url core.URL, message *core.Message, bot core.IBot
 	for _, m := range media {
 		switch m.Type {
 		case core.TPhoto:
-			m.Caption = fmt.Sprintf(`<a href="%s">🖼</a> <b>%s</b> <i>(by %s)</i>`, m.URL, path.Base(m.URL), message.Sender.Username)
+			m.Caption = fmt.Sprintf(`<a href="%s">🖼</a> <b>%s</b> <i>(by %s)</i>`, m.URL, path.Base(m.URL), message.Sender.DisplayName())
 		case core.TVideo:
-			m.Caption = fmt.Sprintf(`<a href="%s">🔗</a> <b>%s</b> <i>(by %s)</i>`, m.URL, path.Base(m.URL), message.Sender.Username)
+			m.Caption = fmt.Sprintf(`<a href="%s">🔗</a> <b>%s</b> <i>(by %s)</i>`, m.URL, path.Base(m.URL), message.Sender.DisplayName())
 		case core.TText:
 			lf.l.Warningf("Unexpected %+v", m)
 		}
