@@ -74,7 +74,7 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	flow.l.Errorf("chat_id: %d, game started by %v", message.ChatID, message.Sender)
+	flow.l.Infof("chat_id: %d, game started by %v", message.ChatID, message.Sender)
 
 	players, _ := flow.s.GetPlayers(message.ChatID)
 	switch len(players) {
