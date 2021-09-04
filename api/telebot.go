@@ -44,7 +44,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 
 	bot.Handle(tb.OnText, func(m *tb.Message) {
 		for _, h := range telebot.textHandlers {
-			err := h.HandleText(makeMessage(m), &TelebotAdapter{m, telebot})
+			err := h.HandleText(makeMessage(m), makeIBot(m, telebot))
 			if err != nil {
 				logger.Errorf("%T: %s", h, err)
 				telebot.reportError(m, err)
@@ -76,7 +76,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 				err := h.HandleDocument(&core.Document{
 					File: core.File{Name: m.Document.FileName, Path: path},
 					MIME: m.Document.MIME,
-				}, makeMessage(m), &TelebotAdapter{m, telebot})
+				}, makeMessage(m), makeIBot(m, telebot))
 				if err != nil {
 					logger.Errorf("%T: %s", h, err)
 					telebot.reportError(m, err)
@@ -95,7 +95,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		}
 
 		for _, h := range telebot.imageHandlers {
-			err := h.HandleImage(image, makeMessage(m), &TelebotAdapter{m, telebot})
+			err := h.HandleImage(image, makeMessage(m), makeIBot(m, telebot))
 			if err != nil {
 				logger.Errorf("%T: %s", h, err)
 				telebot.reportError(m, err)
@@ -112,7 +112,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		}
 
 		for _, h := range telebot.videoHandlers {
-			err := h.HandleImage(video, makeMessage(m), &TelebotAdapter{m, telebot})
+			err := h.HandleImage(video, makeMessage(m), makeIBot(m, telebot))
 			if err != nil {
 				logger.Errorf("%T: %s", h, err)
 				telebot.reportError(m, err)
@@ -217,4 +217,8 @@ func makeFile(name string, path string) *core.File {
 		Name: name,
 		Path: path,
 	}
+}
+
+func makeIBot(m *tb.Message, t *Telebot) core.IBot {
+	return &TelebotAdapter{m, t}
 }
