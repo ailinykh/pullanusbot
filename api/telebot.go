@@ -220,5 +220,7 @@ func makeFile(name string, path string) *core.File {
 }
 
 func makeIBot(m *tb.Message, t *Telebot) core.IBot {
-	return &TelebotAdapter{m, t}
+	adapter := &TelebotAdapter{m, t}
+	decorator := CreateTelebotTimeoutDecorator(t.logger, adapter)
+	return decorator
 }
