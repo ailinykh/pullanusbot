@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path"
 
@@ -22,8 +23,33 @@ func main() {
 	localizer := infrastructure.GameLocalizer{}
 	dbFile := path.Join(getWorkingDir(), "pullanusbot.db")
 	gameStorage := infrastructure.CreateGameStorage(dbFile)
-	rand := infrastructure.CreateMathRand()
-	gameFlow := usecases.CreateGameFlow(logger, localizer, gameStorage, rand)
+	cryptoRand := infrastructure.CreateCryptoRand()
+	mathRand := infrastructure.CreateMathRand()
+
+	players := []string{}
+	for i := 0; i < 20; i++ {
+		players = append(players, fmt.Sprintf("player%03d", i+1))
+	}
+
+	mathWinners := make(map[string]int)
+	cryptoWinners := make(map[string]int)
+
+	for i := 0; i < len(players)*1000; i++ {
+		mathWinners[players[mathRand.GetRand(len(players))]]++
+		cryptoWinners[players[cryptoRand.GetRand(len(players))]]++
+	}
+
+	fmt.Println("MATH:")
+	for _, p := range players {
+		fmt.Printf("%s: %d\n", p, mathWinners[p])
+	}
+
+	fmt.Println("\nCRYPTO:")
+	for _, p := range players {
+		fmt.Printf("%s: %d\n", p, cryptoWinners[p])
+	}
+
+	gameFlow := usecases.CreateGameFlow(logger, localizer, gameStorage, mathRand)
 	telebot.AddHandler("/pidorules", gameFlow.Rules)
 	telebot.AddHandler("/pidoreg", gameFlow.Add)
 	telebot.AddHandler("/pidor", gameFlow.Play)
