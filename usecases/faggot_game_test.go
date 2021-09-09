@@ -273,7 +273,8 @@ func makeSUT(args ...interface{}) (*usecases.GameFlow, *test_helpers.FakeBot, *G
 
 	l := &test_helpers.FakeLogger{}
 	t := &LocalizerMock{dict: dict}
-	game := usecases.CreateGameFlow(l, t, storage)
+	r := &RandMock{}
+	game := usecases.CreateGameFlow(l, t, storage, r)
 	return game, bot, storage
 }
 
@@ -334,4 +335,12 @@ func (s *GameStorageMock) AddRound(gameID int64, round *core.Round) error {
 
 func (s *GameStorageMock) GetRounds(gameID int64) ([]*core.Round, error) {
 	return s.rounds, nil
+}
+
+// IRandMock
+
+type RandMock struct{}
+
+func (RandMock) GetRand(int) int {
+	return 1
 }

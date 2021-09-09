@@ -1,10 +1,8 @@
 package main
 
 import (
-	"math/rand"
 	"os"
 	"path"
-	"time"
 
 	"github.com/ailinykh/pullanusbot/v2/api"
 	"github.com/ailinykh/pullanusbot/v2/core"
@@ -15,8 +13,6 @@ import (
 )
 
 func main() {
-	rand.Seed(time.Now().UTC().UnixNano())
-
 	logger, close := createLogger()
 	defer close()
 
@@ -26,7 +22,8 @@ func main() {
 	localizer := infrastructure.GameLocalizer{}
 	dbFile := path.Join(getWorkingDir(), "pullanusbot.db")
 	gameStorage := infrastructure.CreateGameStorage(dbFile)
-	gameFlow := usecases.CreateGameFlow(logger, localizer, gameStorage)
+	rand := infrastructure.CreateMathRand()
+	gameFlow := usecases.CreateGameFlow(logger, localizer, gameStorage, rand)
 	telebot.AddHandler("/pidorules", gameFlow.Rules)
 	telebot.AddHandler("/pidoreg", gameFlow.Add)
 	telebot.AddHandler("/pidor", gameFlow.Play)
