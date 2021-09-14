@@ -171,7 +171,7 @@ func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
 }
 
 func (c *FfmpegConverter) getFFProbe(file string) (*ffpResponse, error) {
-	cmd := fmt.Sprintf(`ffprobe -v error -of json -show_streams -show_format "%s"`, file)
+	cmd := fmt.Sprintf(`ffprobe -v panic -of json -show_streams -show_format "%s"`, file)
 	c.l.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
