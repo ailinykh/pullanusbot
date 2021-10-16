@@ -27,9 +27,15 @@ func (f *YoutubeFlow) HandleText(message *core.Message, bot core.IBot) error {
 	r := regexp.MustCompile(`youtu\.?be(\.com)?\/(watch\?v=)?([\w\-_]+)`)
 	match := r.FindStringSubmatch(message.Text)
 	if len(match) == 4 {
-		return f.process(match[3], message, bot)
-	}
-	if strings.Contains(message.Text, "youtu") {
+		err := f.process(match[3], message, bot)
+		if err != nil {
+			return err
+		}
+
+		if !strings.Contains(message.Text, " ") {
+			return bot.Delete(message)
+		}
+	} else if strings.Contains(message.Text, "youtu") {
 		for i, m := range match {
 			f.l.Info(i, " ", m)
 		}
@@ -90,9 +96,9 @@ func (f *YoutubeFlow) process(id string, message *core.Message, bot core.IBot) e
 			}
 
 			f.l.Info("All parts successfully sent")
-			return bot.Delete(message)
+			return nil
 		}
 		return err
 	}
-	return bot.Delete(message)
+	return nil
 }
