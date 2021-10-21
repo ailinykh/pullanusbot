@@ -10,7 +10,7 @@ import (
 )
 
 func Test_HandleImage_DownloadsAndUploadsImage(t *testing.T) {
-	logger := test_helpers.CreateFakeLogger()
+	logger := test_helpers.CreateLogger()
 	file_uploader := test_helpers.CreateFileUploader()
 	image_downloader := test_helpers.CreateImageDownloader()
 	image_flow := usecases.CreateImageFlow(logger, file_uploader, image_downloader)

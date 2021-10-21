@@ -1,6 +1,6 @@
 package test_helpers
 
-func CreateFakeLogger() *FakeLogger {
+func CreateLogger() *FakeLogger {
 	return &FakeLogger{}
 }
 
