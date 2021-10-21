@@ -4,7 +4,7 @@ import "github.com/ailinykh/pullanusbot/v2/core"
 
 // https://stackoverflow.com/questions/31794141/can-i-create-shared-test-utilities
 
-func CreateFakeBot() *FakeBot {
+func CreateBot() *FakeBot {
 	return &FakeBot{[]string{}, []string{}, []string{}, []string{}, map[int64][]string{}}
 }
 

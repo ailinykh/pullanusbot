@@ -41,11 +41,11 @@ func Test_UploadMedia_FallbackOnSpecificError(t *testing.T) {
 
 // Helpers
 func makeUploadMediaStrategySUT() (core.ISendMediaStrategy, *test_helpers.FakeSendMediaStrategy, *test_helpers.FakeBot) {
-	logger := test_helpers.CreateFakeLogger()
+	logger := test_helpers.CreateLogger()
 	send_media_strategy := test_helpers.CreateSendMediaStrategy()
 	file_downloader := test_helpers.CreateFileDownloader()
 	video_factory := test_helpers.CreateVideoFactory()
 	strategy := helpers.CreateUploadMediaStrategy(logger, send_media_strategy, file_downloader, video_factory)
-	bot := test_helpers.CreateFakeBot()
+	bot := test_helpers.CreateBot()
 	return strategy, send_media_strategy, bot
 }
