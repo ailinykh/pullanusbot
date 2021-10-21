@@ -262,7 +262,7 @@ func makeGameMessage(id int, username string) *core.Message {
 func makeSUT(args ...interface{}) (*usecases.GameFlow, *test_helpers.FakeBot, *GameStorageMock) {
 	dict := LocalizerDict{}
 	storage := &GameStorageMock{players: []*core.User{}, rounds: []*core.Round{}}
-	bot := test_helpers.CreateFakeBot()
+	bot := test_helpers.CreateBot()
 
 	for _, arg := range args {
 		switch opt := arg.(type) {

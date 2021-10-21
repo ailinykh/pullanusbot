@@ -20,7 +20,7 @@ func Test_HandleImage_DownloadsAndUploadsImage(t *testing.T) {
 	image := &core.Image{FileURL: url, File: core.File{Path: path}}
 
 	message := &core.Message{IsPrivate: true}
-	bot := test_helpers.CreateFakeBot()
+	bot := test_helpers.CreateBot()
 
 	image_flow.HandleImage(image, message, bot)
 

@@ -67,7 +67,7 @@ func Test_HandleText_ReturnsErrorOnError(t *testing.T) {
 func makeTwitterSUT() (*usecases.TwitterParser, *FakeTweetHandler, *test_helpers.FakeBot) {
 	handler := &FakeTweetHandler{[]string{}, nil}
 	parser := usecases.CreateTwitterParser(handler)
-	bot := test_helpers.CreateFakeBot()
+	bot := test_helpers.CreateBot()
 	return parser, handler, bot
 }
 

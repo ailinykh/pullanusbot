@@ -10,7 +10,7 @@ import (
 )
 
 func Test_HandleUrl_ConvertsVideoUrlToVideo(t *testing.T) {
-	bot := test_helpers.CreateFakeBot()
+	bot := test_helpers.CreateBot()
 	logger := test_helpers.CreateFakeLogger()
 	http_client := test_helpers.CreateHttpClient()
 	media_factory := test_helpers.CreateMediaFactory()

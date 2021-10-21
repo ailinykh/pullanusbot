@@ -40,6 +40,6 @@ func Test_SendMedia_SendsAGroupMediaTroughABot(t *testing.T) {
 func makeMediaStrategySUT() (core.ISendMediaStrategy, *test_helpers.FakeBot) {
 	logger := test_helpers.CreateFakeLogger()
 	strategy := helpers.CreateSendMediaStrategy(logger)
-	bot := test_helpers.CreateFakeBot()
+	bot := test_helpers.CreateBot()
 	return strategy, bot
 }
