@@ -41,7 +41,7 @@ func main() {
 	twitterMediaFactory := api.CreateTwitterMediaFactory(logger)
 	twitterFlow := usecases.CreateTwitterFlow(logger, twitterMediaFactory, localMediaSender)
 	twitterTimeout := usecases.CreateTwitterTimeout(logger, twitterFlow)
-	twitterParser := usecases.CreateTwitterParser(twitterTimeout)
+	twitterParser := usecases.CreateTwitterParser(logger, twitterTimeout)
 	telebot.AddHandler(twitterParser)
 
 	httpClient := api.CreateHttpClient()
