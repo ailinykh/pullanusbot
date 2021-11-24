@@ -196,13 +196,17 @@ func (flow *GameFlow) Stats(message *core.Message, bot core.IBot) error {
 
 	sort.Slice(entries, func(i, j int) bool {
 		if entries[i].Score == entries[j].Score {
-			return entries[i].Player.Username > entries[j].Player.Username
+			return entries[i].Player.Username < entries[j].Player.Username
 		}
 		return entries[i].Score > entries[j].Score
 	})
 
 	messages := []string{flow.t.I18n("faggot_stats_top"), ""}
-	for i, e := range entries {
+	max := len(entries)
+	if max > 10 {
+		max = 10 // Top 10 only
+	}
+	for i, e := range entries[:max] {
 		message := flow.t.I18n("faggot_stats_entry", i+1, e.Player.DisplayName(), e.Score)
 		messages = append(messages, message)
 	}

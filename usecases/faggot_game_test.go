@@ -191,6 +191,44 @@ func Test_Stats_RespondsWithDescendingResultsForCurrentYear(t *testing.T) {
 	assert.Equal(t, expected, strings.Split(bot.SentMessages[0], "\n"))
 }
 
+func Test_Stats_RespondsOnlyForTop10Players(t *testing.T) {
+	game, bot, storage := makeSUT(LocalizerDict{
+		"faggot_stats_top":    "top",
+		"faggot_stats_entry":  "index:%d,player:%s,scores:%d",
+		"faggot_stats_bottom": "total_players:%d",
+	})
+
+	expected := []string{
+		"top",
+		"",
+		"index:1,player:Faggot01,scores:1",
+		"index:2,player:Faggot02,scores:1",
+		"index:3,player:Faggot03,scores:1",
+		"index:4,player:Faggot04,scores:1",
+		"index:5,player:Faggot05,scores:1",
+		"index:6,player:Faggot06,scores:1",
+		"index:7,player:Faggot07,scores:1",
+		"index:8,player:Faggot08,scores:1",
+		"index:9,player:Faggot09,scores:1",
+		"index:10,player:Faggot10,scores:1",
+		"",
+		"total_players:99",
+	}
+
+	var messages []*core.Message
+	for i := 1; i < 100; i++ {
+		messages = append(messages, makeGameMessage(i, fmt.Sprintf("Faggot%02d", i)))
+	}
+
+	for i, m := range messages {
+		day := fmt.Sprintf("%d-%02d-%02d", time.Now().Year(), i/30+1, i%30)
+		storage.rounds = append(storage.rounds, &core.Round{Day: day, Winner: m.Sender})
+	}
+
+	game.Stats(messages[0], bot)
+	assert.Equal(t, expected, strings.Split(bot.SentMessages[0], "\n"))
+}
+
 func Test_All_RespondsWithDescendingResultsForAllTime(t *testing.T) {
 	game, bot, storage := makeSUT(LocalizerDict{
 		"faggot_all_top":    "top",
