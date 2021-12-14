@@ -95,7 +95,6 @@ func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBo
 }
 
 func (ttf *TikTokFlow) retreiveContentFrom(url string) (*TikTokHTMLResponse, error) {
-	var resp *TikTokHTMLResponse
 	getRand := func(count int) string {
 		rv := ""
 		for i := 1; i < count; i++ {
@@ -109,6 +108,7 @@ func (ttf *TikTokFlow) retreiveContentFrom(url string) (*TikTokHTMLResponse, err
 		return nil, err
 	}
 
+	// os.WriteFile("tiktok.html", []byte(htmlString), 0644)
 	r := regexp.MustCompile(`<script id="__NEXT_DATA__" type="application\/json" nonce="[\w-]+" crossorigin="anonymous">(.*?)<\/script>`)
 	match := r.FindStringSubmatch(htmlString)
 	if len(match) < 1 {
@@ -116,6 +116,7 @@ func (ttf *TikTokFlow) retreiveContentFrom(url string) (*TikTokHTMLResponse, err
 		return nil, fmt.Errorf("unexpected html")
 	}
 
+	var resp *TikTokHTMLResponse
 	err = json.Unmarshal([]byte(match[1]), &resp)
 	if err != nil {
 		return nil, err
