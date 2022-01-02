@@ -52,10 +52,6 @@ func (f *YoutubeFlow) process(id string, message *core.Message, bot core.IBot) e
 	media, err := f.mf.CreateMedia(id)
 	if err != nil {
 		f.l.Error(err)
-		if strings.Contains(err.Error(), "ERROR: Sign in to confirm your age") {
-			//TODO: Age restriction processing somehow
-			return nil
-		}
 		return err
 	}
 
