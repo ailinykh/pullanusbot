@@ -61,7 +61,7 @@ func (f *YoutubeFlow) process(id string, message *core.Message, bot core.IBot) e
 
 	if !message.IsPrivate && media[0].Duration > 900 {
 		f.l.Infof("skip video in group chat due to duration %d", media[0].Duration)
-		return nil
+		return errors.New("skip video in group chat due to duration")
 	}
 
 	title := media[0].Title
