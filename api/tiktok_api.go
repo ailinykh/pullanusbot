@@ -35,7 +35,7 @@ func (api *TikTokAPI) Get(url string) (*usecases.TikTokHTMLResponse, error) {
 		return nil, err
 	}
 
-	// os.WriteFile("tiktok.html", []byte(htmlString), 0644)
+	// os.WriteFile("tiktok-"+strings.Split(url, "/")[5]+".html", []byte(htmlString), 0644)
 	r := regexp.MustCompile(`<script id="__NEXT_DATA__" type="application\/json" nonce="[\w-]+" crossorigin="anonymous">(.*?)<\/script>`)
 	match := r.FindStringSubmatch(htmlString)
 	if len(match) < 1 {
