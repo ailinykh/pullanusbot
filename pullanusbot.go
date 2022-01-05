@@ -49,7 +49,8 @@ func main() {
 	linkFlow := usecases.CreateLinkFlow(logger, httpClient, converter, convertMediaSender)
 	telebot.AddHandler(linkFlow)
 
-	tiktokFlow := usecases.CreateTikTokFlow(logger, api.CreateHttpClient(), localMediaSender)
+	tiktokApi := api.CreateTikTokAPI(logger, httpClient)
+	tiktokFlow := usecases.CreateTikTokFlow(logger, api.CreateHttpClient(), localMediaSender, tiktokApi)
 	telebot.AddHandler(tiktokFlow)
 
 	fileUploader := api.CreateTelegraphAPI()

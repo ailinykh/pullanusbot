@@ -1,24 +1,26 @@
 package usecases
 
 import (
-	"encoding/json"
 	"fmt"
-	"math/rand"
 	"regexp"
-	"strconv"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateTikTokFlow(l core.ILogger, hc core.IHttpClient, sms core.ISendMediaStrategy) *TikTokFlow {
+func CreateTikTokFlow(l core.ILogger, hc core.IHttpClient, sms core.ISendMediaStrategy, api ITikTokAPI) *TikTokFlow {
 	hc.SetHeader("Referrer", "https://www.tiktok.com/")
-	return &TikTokFlow{l, hc, sms}
+	return &TikTokFlow{l, hc, sms, api}
+}
+
+type ITikTokAPI interface {
+	Get(string) (*TikTokHTMLResponse, error)
 }
 
 type TikTokFlow struct {
 	l   core.ILogger
 	hc  core.IHttpClient
 	sms core.ISendMediaStrategy
+	api ITikTokAPI
 }
 
 // HandleText is a core.ITextHandler protocol implementation
@@ -56,7 +58,7 @@ func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBo
 	originalURL := "https://www.tiktok.com/" + match[1] + "/video/" + match[2]
 	ttf.l.Infof("original: %s", originalURL)
 
-	resp, err := ttf.retreiveContentFrom(originalURL)
+	resp, err := ttf.api.Get(originalURL)
 	if err != nil {
 		return err
 	}
@@ -92,35 +94,4 @@ func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBo
 	}
 	media.Caption = fmt.Sprintf("<a href='%s'>🎵</a> <b>%s</b> (by %s)\n%s", url, title, message.Sender.DisplayName(), description)
 	return ttf.sms.SendMedia([]*core.Media{media}, bot)
-}
-
-func (ttf *TikTokFlow) retreiveContentFrom(url string) (*TikTokHTMLResponse, error) {
-	getRand := func(count int) string {
-		rv := ""
-		for i := 1; i < count; i++ {
-			rv = rv + strconv.Itoa(rand.Intn(10))
-		}
-		return rv
-	}
-	ttf.hc.SetHeader("Cookie", "tt_webid_v2=69"+getRand(17)+"; Domain=tiktok.com; Path=/; Secure; hostOnly=false; hostOnly=false; aAge=4ms; cAge=4ms")
-	htmlString, err := ttf.hc.GetContent(url)
-	if err != nil {
-		return nil, err
-	}
-
-	// os.WriteFile("tiktok.html", []byte(htmlString), 0644)
-	r := regexp.MustCompile(`<script id="__NEXT_DATA__" type="application\/json" nonce="[\w-]+" crossorigin="anonymous">(.*?)<\/script>`)
-	match := r.FindStringSubmatch(htmlString)
-	if len(match) < 1 {
-		ttf.l.Error(match)
-		return nil, fmt.Errorf("unexpected html")
-	}
-
-	var resp *TikTokHTMLResponse
-	err = json.Unmarshal([]byte(match[1]), &resp)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, err
 }
