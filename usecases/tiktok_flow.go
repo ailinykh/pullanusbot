@@ -24,11 +24,11 @@ type TikTokFlow struct {
 }
 
 // HandleText is a core.ITextHandler protocol implementation
-func (ttf *TikTokFlow) HandleText(message *core.Message, bot core.IBot) error {
+func (flow *TikTokFlow) HandleText(message *core.Message, bot core.IBot) error {
 	r := regexp.MustCompile(`https?://\w+\.tiktok.com/\S+`)
 	links := r.FindAllString(message.Text, -1)
 	for _, l := range links {
-		err := ttf.handleURL(l, message, bot)
+		err := flow.handleURL(l, message, bot)
 		if err != nil {
 			return err
 		}
@@ -40,9 +40,9 @@ func (ttf *TikTokFlow) HandleText(message *core.Message, bot core.IBot) error {
 	return nil
 }
 
-func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBot) error {
-	ttf.l.Infof("processing %s", url)
-	fullURL, err := ttf.hc.GetRedirectLocation(url)
+func (flow *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBot) error {
+	flow.l.Infof("processing %s", url)
+	fullURL, err := flow.hc.GetRedirectLocation(url)
 	if err != nil {
 		return err
 	}
@@ -50,15 +50,15 @@ func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBo
 	r := regexp.MustCompile(`tiktok\.com/(@\S+)/video/(\d+)`)
 	match := r.FindStringSubmatch(fullURL)
 	if len(match) != 3 {
-		ttf.l.Error(match)
+		flow.l.Error(match)
 		return fmt.Errorf("unexpected redirect location %s", fullURL)
 	}
 
 	// apiURL := "https://www.tiktok.com/node/share/video/" + match[1] + "/" + match[2]
 	originalURL := "https://www.tiktok.com/" + match[1] + "/video/" + match[2]
-	ttf.l.Infof("original: %s", originalURL)
+	flow.l.Infof("original: %s", originalURL)
 
-	resp, err := ttf.api.Get(originalURL)
+	resp, err := flow.api.Get(originalURL)
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBo
 	}
 
 	if resp.StatusCode != 0 {
-		ttf.l.Error(match[1])
+		flow.l.Error(match[1])
 		return fmt.Errorf("%d not equal to zero", resp.StatusCode)
 	}
 
@@ -93,5 +93,5 @@ func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBo
 		Description: description,
 	}
 	media.Caption = fmt.Sprintf("<a href='%s'>🎵</a> <b>%s</b> (by %s)\n%s", url, title, message.Sender.DisplayName(), description)
-	return ttf.sms.SendMedia([]*core.Media{media}, bot)
+	return flow.sms.SendMedia([]*core.Media{media}, bot)
 }
