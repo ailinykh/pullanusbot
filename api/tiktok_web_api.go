@@ -21,15 +21,7 @@ type TikTokWebAPI struct {
 }
 
 func (api *TikTokWebAPI) Get(url string) (*usecases.TikTokResponse, error) {
-
-	getRand := func(count int) string {
-		rv := ""
-		for i := 1; i < count; i++ {
-			rv = rv + strconv.Itoa(api.r.GetRand(10))
-		}
-		return rv
-	}
-	api.hc.SetHeader("Cookie", "tt_webid_v2=69"+getRand(17)+"; Domain=tiktok.com; Path=/; Secure; hostOnly=false; hostOnly=false; aAge=4ms; cAge=4ms")
+	api.hc.SetHeader("Cookie", "tt_webid_v2=69"+api.randomDigits(17)+"; Domain=tiktok.com; Path=/; Secure; hostOnly=false; hostOnly=false; aAge=4ms; cAge=4ms")
 	htmlString, err := api.hc.GetContent(url)
 	if err != nil {
 		return nil, err
@@ -50,4 +42,12 @@ func (api *TikTokWebAPI) Get(url string) (*usecases.TikTokResponse, error) {
 	}
 
 	return &resp.Props.PageProps, err
+}
+
+func (api *TikTokWebAPI) randomDigits(count int) string {
+	rv := ""
+	for i := 1; i < count; i++ {
+		rv = rv + strconv.Itoa(api.r.GetRand(10))
+	}
+	return rv
 }
