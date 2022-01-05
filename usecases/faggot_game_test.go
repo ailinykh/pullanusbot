@@ -170,16 +170,18 @@ func Test_Stats_RespondsWithDescendingResultsForCurrentYear(t *testing.T) {
 		"index:2,player:Faggot1,scores:2",
 		"index:3,player:Faggot2,scores:1",
 		"",
-		"total_players:3",
+		"total_players:4",
 	}
 
 	m1 := makeGameMessage(1, "Faggot1")
 	m2 := makeGameMessage(2, "Faggot2")
 	m3 := makeGameMessage(3, "Faggot3")
+	m4 := makeGameMessage(4, "Faggot4")
 
 	storage.rounds = []*core.Round{
 		{Day: year + "-01-01", Winner: m2.Sender},
 		{Day: "2020-01-02", Winner: m3.Sender},
+		{Day: "2020-01-03", Winner: m4.Sender},
 		{Day: year + "-01-02", Winner: m3.Sender},
 		{Day: year + "-01-03", Winner: m3.Sender},
 		{Day: year + "-01-04", Winner: m3.Sender},

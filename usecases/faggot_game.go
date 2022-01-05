@@ -182,8 +182,10 @@ func (flow *GameFlow) Stats(message *core.Message, bot core.IBot) error {
 	year := strconv.Itoa(time.Now().Year())
 	rounds, _ := flow.s.GetRounds(message.ChatID)
 	entries := []Stat{}
+	players := map[int]bool{}
 
 	for _, r := range rounds {
+		players[r.Winner.ID] = true
 		if strings.HasPrefix(r.Day, year) {
 			index := Find(entries, r.Winner.ID)
 			if index == -1 {
@@ -210,7 +212,7 @@ func (flow *GameFlow) Stats(message *core.Message, bot core.IBot) error {
 		message := flow.t.I18n("faggot_stats_entry", i+1, e.Player.DisplayName(), e.Score)
 		messages = append(messages, message)
 	}
-	messages = append(messages, "", flow.t.I18n("faggot_stats_bottom", len(entries)))
+	messages = append(messages, "", flow.t.I18n("faggot_stats_bottom", len(players)))
 	_, err := bot.SendText(strings.Join(messages, "\n"))
 	return err
 }
