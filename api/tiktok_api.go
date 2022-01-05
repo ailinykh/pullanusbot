@@ -20,7 +20,7 @@ type TikTokAPI struct {
 	hc core.IHttpClient
 }
 
-func (api *TikTokAPI) Get(url string) (*usecases.TikTokHTMLResponse, error) {
+func (api *TikTokAPI) Get(url string) (*usecases.TikTokResponse, error) {
 
 	getRand := func(count int) string {
 		rv := ""
@@ -49,5 +49,5 @@ func (api *TikTokAPI) Get(url string) (*usecases.TikTokHTMLResponse, error) {
 		return nil, err
 	}
 
-	return resp, err
+	return &resp.Props.PageProps, err
 }

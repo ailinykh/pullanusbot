@@ -13,7 +13,7 @@ func CreateTikTokFlow(l core.ILogger, hc core.IHttpClient, sms core.ISendMediaSt
 }
 
 type ITikTokAPI interface {
-	Get(string) (*TikTokHTMLResponse, error)
+	Get(string) (*TikTokResponse, error)
 }
 
 type TikTokFlow struct {
@@ -63,17 +63,17 @@ func (ttf *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBo
 		return err
 	}
 
-	if resp.Props.PageProps.ServerCode == 404 {
+	if resp.ServerCode == 404 {
 		_, err := bot.SendText(originalURL + "\nVideo currently unavailable")
 		return err
 	}
 
-	if resp.Props.PageProps.StatusCode != 0 {
+	if resp.StatusCode != 0 {
 		ttf.l.Error(match[1])
-		return fmt.Errorf("%d not equal to zero", resp.Props.PageProps.StatusCode)
+		return fmt.Errorf("%d not equal to zero", resp.StatusCode)
 	}
 
-	item := resp.Props.PageProps.ItemInfo.ItemStruct
+	item := resp.ItemInfo.ItemStruct
 	title := item.Desc
 	if len(title) == 0 {
 		title = fmt.Sprintf("%s (@%s)", item.Author.Nickname, item.Author.UniqueId)
