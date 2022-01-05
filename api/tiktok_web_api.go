@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"regexp"
 	"strconv"
 
@@ -11,13 +10,14 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/usecases"
 )
 
-func CreateTikTokWebAPI(l core.ILogger, hc core.IHttpClient) usecases.ITikTokAPI {
-	return &TikTokWebAPI{l, hc}
+func CreateTikTokWebAPI(l core.ILogger, hc core.IHttpClient, r core.IRand) usecases.ITikTokAPI {
+	return &TikTokWebAPI{l, hc, r}
 }
 
 type TikTokWebAPI struct {
 	l  core.ILogger
 	hc core.IHttpClient
+	r  core.IRand
 }
 
 func (api *TikTokWebAPI) Get(url string) (*usecases.TikTokResponse, error) {
@@ -25,7 +25,7 @@ func (api *TikTokWebAPI) Get(url string) (*usecases.TikTokResponse, error) {
 	getRand := func(count int) string {
 		rv := ""
 		for i := 1; i < count; i++ {
-			rv = rv + strconv.Itoa(rand.Intn(10))
+			rv = rv + strconv.Itoa(api.r.GetRand(10))
 		}
 		return rv
 	}
