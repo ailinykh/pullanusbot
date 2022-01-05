@@ -11,16 +11,16 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/usecases"
 )
 
-func CreateTikTokAPI(l core.ILogger, hc core.IHttpClient) usecases.ITikTokAPI {
-	return &TikTokAPI{l, hc}
+func CreateTikTokWebAPI(l core.ILogger, hc core.IHttpClient) usecases.ITikTokAPI {
+	return &TikTokWebAPI{l, hc}
 }
 
-type TikTokAPI struct {
+type TikTokWebAPI struct {
 	l  core.ILogger
 	hc core.IHttpClient
 }
 
-func (api *TikTokAPI) Get(url string) (*usecases.TikTokResponse, error) {
+func (api *TikTokWebAPI) Get(url string) (*usecases.TikTokResponse, error) {
 
 	getRand := func(count int) string {
 		rv := ""
