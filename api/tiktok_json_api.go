@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
@@ -33,7 +32,7 @@ func (api *TikTokJsonAPI) CreateMedia(url string) ([]*core.Media, error) {
 		return nil, err
 	}
 
-	os.WriteFile("tiktok-"+parts[5]+".json", []byte(jsonString), 0644)
+	// os.WriteFile("tiktok-"+parts[5]+".json", []byte(jsonString), 0644)
 
 	var resp TikTokJSONResponse
 	err = json.Unmarshal([]byte(jsonString), &resp)
