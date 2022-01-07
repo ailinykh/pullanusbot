@@ -1,5 +1,9 @@
 package api
 
+type TikTokJSONResponse struct {
+	ItemInfo TikTokItemInfo
+}
+
 type TikTokHTMLResponse struct {
 	Props TikTokHTMLProps
 }
