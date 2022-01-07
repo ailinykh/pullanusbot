@@ -10,17 +10,17 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateTikTokWebAPI(l core.ILogger, hc core.IHttpClient, r core.IRand) core.IMediaFactory {
-	return &TikTokWebAPI{l, hc, r}
+func CreateTikTokHTMLAPI(l core.ILogger, hc core.IHttpClient, r core.IRand) core.IMediaFactory {
+	return &TikTokHTMLAPI{l, hc, r}
 }
 
-type TikTokWebAPI struct {
+type TikTokHTMLAPI struct {
 	l  core.ILogger
 	hc core.IHttpClient
 	r  core.IRand
 }
 
-func (api *TikTokWebAPI) CreateMedia(url string) ([]*core.Media, error) {
+func (api *TikTokHTMLAPI) CreateMedia(url string) ([]*core.Media, error) {
 	api.hc.SetHeader("Cookie", "tt_webid_v2=69"+api.randomDigits(17)+"; Domain=tiktok.com; Path=/; Secure; hostOnly=false; hostOnly=false; aAge=4ms; cAge=4ms")
 	htmlString, err := api.hc.GetContent(url)
 	if err != nil {
@@ -72,7 +72,7 @@ func (api *TikTokWebAPI) CreateMedia(url string) ([]*core.Media, error) {
 	return []*core.Media{media}, nil
 }
 
-func (api *TikTokWebAPI) randomDigits(count int) string {
+func (api *TikTokHTMLAPI) randomDigits(count int) string {
 	rv := ""
 	for i := 1; i < count; i++ {
 		rv = rv + strconv.Itoa(api.r.GetRand(10))
