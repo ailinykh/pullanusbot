@@ -1,4 +1,4 @@
-package usecases
+package api
 
 type TikTokHTMLResponse struct {
 	Props TikTokHTMLProps

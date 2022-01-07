@@ -7,20 +7,16 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateTikTokFlow(l core.ILogger, hc core.IHttpClient, sms core.ISendMediaStrategy, api ITikTokAPI) *TikTokFlow {
+func CreateTikTokFlow(l core.ILogger, hc core.IHttpClient, mf core.IMediaFactory, sms core.ISendMediaStrategy) *TikTokFlow {
 	hc.SetHeader("Referrer", "https://www.tiktok.com/")
-	return &TikTokFlow{l, hc, sms, api}
-}
-
-type ITikTokAPI interface {
-	Get(string) (*TikTokResponse, error)
+	return &TikTokFlow{l, hc, mf, sms}
 }
 
 type TikTokFlow struct {
 	l   core.ILogger
 	hc  core.IHttpClient
+	mf  core.IMediaFactory
 	sms core.ISendMediaStrategy
-	api ITikTokAPI
 }
 
 // HandleText is a core.ITextHandler protocol implementation
@@ -58,40 +54,19 @@ func (flow *TikTokFlow) handleURL(url string, message *core.Message, bot core.IB
 	originalURL := "https://www.tiktok.com/" + match[1] + "/video/" + match[2]
 	flow.l.Infof("original: %s", originalURL)
 
-	resp, err := flow.api.Get(originalURL)
+	media, err := flow.mf.CreateMedia(originalURL)
 	if err != nil {
-		return err
-	}
-
-	if resp.ServerCode == 404 {
-		_, err := bot.SendText(originalURL + "\nVideo currently unavailable")
-		return err
-	}
-
-	if resp.StatusCode != 0 {
-		flow.l.Error(match[1])
-		return fmt.Errorf("%d not equal to zero", resp.StatusCode)
-	}
-
-	item := resp.ItemInfo.ItemStruct
-	title := item.Desc
-	if len(title) == 0 {
-		title = fmt.Sprintf("%s (@%s)", item.Author.Nickname, item.Author.UniqueId)
-	}
-
-	description := fmt.Sprintf("%s (@%s) has created a short video on TikTok with music %s.", item.Author.Nickname, item.Author.UniqueId, item.Music.Title)
-	for _, s := range item.StickersOnItem {
-		for _, t := range s.StickerText {
-			description = description + " | " + t
+		if err.Error() == "Video currently unavailable" {
+			_, err := bot.SendText(originalURL + "\nV" + err.Error())
+			return err
 		}
+		return err
 	}
 
-	media := &core.Media{
-		URL:         url,
-		ResourceURL: item.Video.DownloadAddr,
-		Title:       title,
-		Description: description,
+	for _, m := range media {
+		m.URL = url
+		m.Caption = fmt.Sprintf("<a href='%s'>🎵</a> <b>%s</b> (by %s)\n%s", url, m.Title, message.Sender.DisplayName(), m.Description)
 	}
-	media.Caption = fmt.Sprintf("<a href='%s'>🎵</a> <b>%s</b> (by %s)\n%s", url, title, message.Sender.DisplayName(), description)
-	return flow.sms.SendMedia([]*core.Media{media}, bot)
+
+	return flow.sms.SendMedia(media, bot)
 }

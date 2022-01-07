@@ -2,15 +2,15 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
-	"github.com/ailinykh/pullanusbot/v2/usecases"
 )
 
-func CreateTikTokWebAPI(l core.ILogger, hc core.IHttpClient, r core.IRand) usecases.ITikTokAPI {
+func CreateTikTokWebAPI(l core.ILogger, hc core.IHttpClient, r core.IRand) core.IMediaFactory {
 	return &TikTokWebAPI{l, hc, r}
 }
 
@@ -20,7 +20,7 @@ type TikTokWebAPI struct {
 	r  core.IRand
 }
 
-func (api *TikTokWebAPI) Get(url string) (*usecases.TikTokResponse, error) {
+func (api *TikTokWebAPI) CreateMedia(url string) ([]*core.Media, error) {
 	api.hc.SetHeader("Cookie", "tt_webid_v2=69"+api.randomDigits(17)+"; Domain=tiktok.com; Path=/; Secure; hostOnly=false; hostOnly=false; aAge=4ms; cAge=4ms")
 	htmlString, err := api.hc.GetContent(url)
 	if err != nil {
@@ -35,13 +35,41 @@ func (api *TikTokWebAPI) Get(url string) (*usecases.TikTokResponse, error) {
 		return nil, fmt.Errorf("unexpected html")
 	}
 
-	var resp *usecases.TikTokHTMLResponse
+	var resp TikTokHTMLResponse
 	err = json.Unmarshal([]byte(match[1]), &resp)
 	if err != nil {
 		return nil, err
 	}
 
-	return &resp.Props.PageProps, err
+	if resp.Props.PageProps.ServerCode == 404 {
+		return nil, errors.New("Video currently unavailable")
+	}
+
+	if resp.Props.PageProps.StatusCode != 0 {
+		return nil, fmt.Errorf("%d not equal to zero", resp.Props.PageProps.StatusCode)
+	}
+
+	item := resp.Props.PageProps.ItemInfo.ItemStruct
+	title := item.Desc
+	if len(title) == 0 {
+		title = fmt.Sprintf("%s (@%s)", item.Author.Nickname, item.Author.UniqueId)
+	}
+
+	description := fmt.Sprintf("%s (@%s) has created a short video on TikTok with music %s.", item.Author.Nickname, item.Author.UniqueId, item.Music.Title)
+	for _, s := range item.StickersOnItem {
+		for _, t := range s.StickerText {
+			description = description + " | " + t
+		}
+	}
+
+	media := &core.Media{
+		URL:         url,
+		ResourceURL: item.Video.DownloadAddr,
+		Title:       title,
+		Description: description,
+	}
+
+	return []*core.Media{media}, nil
 }
 
 func (api *TikTokWebAPI) randomDigits(count int) string {
