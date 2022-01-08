@@ -20,7 +20,7 @@ type TikTokAPI struct {
 	r  core.IRand
 }
 
-func (api *TikTokAPI) getItemUsingJsonApi(username string, videoId string) (*TikTokItemInfo, error) {
+func (api *TikTokAPI) getItemUsingJsonApi(username string, videoId string) (*TikTokItemStruct, error) {
 	url := "https://www.tiktok.com/node/share/video/" + username + "/" + videoId
 	api.l.Infof("processing %s", url)
 	api.hc.SetHeader("Cookie", "tt_webid_v2=69"+api.randomDigits(17)+"; Domain=tiktok.com; Path=/; Secure; hostOnly=false; hostOnly=false; aAge=4ms; cAge=4ms")
@@ -35,10 +35,10 @@ func (api *TikTokAPI) getItemUsingJsonApi(username string, videoId string) (*Tik
 		return nil, err
 	}
 
-	return &resp.ItemInfo, nil
+	return &resp.ItemInfo.ItemStruct, nil
 }
 
-func (api *TikTokAPI) getItemUsingHtmlApi(username string, videoId string) (*TikTokItemInfo, error) {
+func (api *TikTokAPI) getItemUsingHtmlApi(username string, videoId string) (*TikTokItemStruct, error) {
 	url := "https://www.tiktok.com/" + username + "/video/" + videoId
 	api.l.Infof("processing %s", url)
 	api.hc.SetHeader("Cookie", "tt_webid_v2=69"+api.randomDigits(17)+"; Domain=tiktok.com; Path=/; Secure; hostOnly=false; hostOnly=false; aAge=4ms; cAge=4ms")
@@ -69,7 +69,7 @@ func (api *TikTokAPI) getItemUsingHtmlApi(username string, videoId string) (*Tik
 		return nil, fmt.Errorf("%d not equal to zero", resp.Props.PageProps.StatusCode)
 	}
 
-	return &resp.Props.PageProps.ItemInfo, nil
+	return &resp.Props.PageProps.ItemInfo.ItemStruct, nil
 }
 
 func (api *TikTokAPI) randomDigits(count int) string {
