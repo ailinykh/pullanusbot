@@ -10,7 +10,7 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateTikTokHTMLAPI(l core.ILogger, hc core.IHttpClient, r core.IRand) core.IMediaFactory {
+func CreateTikTokHTMLAPI(l core.ILogger, hc core.IHttpClient, r core.IRand) ITikTokAPI {
 	return &TikTokHTMLAPI{l, hc, r}
 }
 
@@ -20,7 +20,9 @@ type TikTokHTMLAPI struct {
 	r  core.IRand
 }
 
-func (api *TikTokHTMLAPI) CreateMedia(url string) ([]*core.Media, error) {
+func (api *TikTokHTMLAPI) GetItem(username string, videoId string) (*TikTokItemStruct, error) {
+	url := "https://www.tiktok.com/" + username + "/video/" + videoId
+	api.l.Infof("processing %s", url)
 	api.hc.SetHeader("Cookie", "tt_webid_v2=69"+api.randomDigits(17)+"; Domain=tiktok.com; Path=/; Secure; hostOnly=false; hostOnly=false; aAge=4ms; cAge=4ms")
 	htmlString, err := api.hc.GetContent(url)
 	if err != nil {
@@ -49,27 +51,7 @@ func (api *TikTokHTMLAPI) CreateMedia(url string) ([]*core.Media, error) {
 		return nil, fmt.Errorf("%d not equal to zero", resp.Props.PageProps.StatusCode)
 	}
 
-	item := resp.Props.PageProps.ItemInfo.ItemStruct
-	title := item.Desc
-	if len(title) == 0 {
-		title = fmt.Sprintf("%s (@%s)", item.Author.Nickname, item.Author.UniqueId)
-	}
-
-	description := fmt.Sprintf("%s (@%s) has created a short video on TikTok with music %s.", item.Author.Nickname, item.Author.UniqueId, item.Music.Title)
-	for _, s := range item.StickersOnItem {
-		for _, t := range s.StickerText {
-			description = description + " | " + t
-		}
-	}
-
-	media := &core.Media{
-		URL:         url,
-		ResourceURL: item.Video.DownloadAddr,
-		Title:       title,
-		Description: description,
-	}
-
-	return []*core.Media{media}, nil
+	return &resp.Props.PageProps.ItemInfo.ItemStruct, nil
 }
 
 func (api *TikTokHTMLAPI) randomDigits(count int) string {
