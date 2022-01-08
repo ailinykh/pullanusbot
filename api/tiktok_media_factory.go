@@ -11,13 +11,13 @@ type ITikTokAPI interface {
 	GetItem(string, string) (*TikTokItemStruct, error)
 }
 
-func CreateTikTokMediaFactory(l core.ILogger, hc core.IHttpClient, r core.IRand) core.IMediaFactory {
-	return &TikTokMediaFactory{l, &TikTokAPI{l, hc, r}}
+func CreateTikTokMediaFactory(l core.ILogger, api ITikTokAPI) core.IMediaFactory {
+	return &TikTokMediaFactory{l, api}
 }
 
 type TikTokMediaFactory struct {
 	l   core.ILogger
-	api *TikTokAPI
+	api ITikTokAPI
 }
 
 func (factory *TikTokMediaFactory) CreateMedia(url string) ([]*core.Media, error) {
@@ -26,13 +26,9 @@ func (factory *TikTokMediaFactory) CreateMedia(url string) ([]*core.Media, error
 		return nil, fmt.Errorf("unexpected url %s", url)
 	}
 
-	item, err := factory.api.getItemUsingJsonApi(parts[3], parts[5])
+	item, err := factory.api.GetItem(parts[3], parts[5])
 	if err != nil {
-		item, err = factory.api.getItemUsingHtmlApi(parts[3], parts[5])
-
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	title := item.Desc
