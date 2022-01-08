@@ -7,6 +7,10 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
+type ITikTokAPI interface {
+	GetItem(string, string) (*TikTokItemStruct, error)
+}
+
 func CreateTikTokMediaFactory(l core.ILogger, hc core.IHttpClient, r core.IRand) core.IMediaFactory {
 	return &TikTokMediaFactory{l, &TikTokAPI{l, hc, r}}
 }
