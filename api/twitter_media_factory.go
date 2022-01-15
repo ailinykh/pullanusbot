@@ -22,13 +22,13 @@ func (tmf *TwitterMediaFactory) CreateMedia(tweetID string) ([]*core.Media, erro
 		return nil, err
 	}
 
-	if len(tweet.ExtendedEntities.Media) == 0 && tweet.QuotedStatus != nil && len(tweet.QuotedStatus.ExtendedEntities.Media) > 0 {
-		tweet = tweet.QuotedStatus
+	url := "https://twitter.com/" + tweet.User.ScreenName + "/status/" + tweet.ID
+	media := tweet.ExtendedEntities.Media
+
+	if len(media) == 0 && tweet.QuotedStatus != nil && len(tweet.QuotedStatus.ExtendedEntities.Media) > 0 {
+		media = tweet.QuotedStatus.ExtendedEntities.Media
 		tmf.l.Warningf("tweet media is empty, using QuotedStatus instead %s", tweet.ID)
 	}
-
-	media := tweet.ExtendedEntities.Media
-	url := "https://twitter.com/" + tweet.User.ScreenName + "/status/" + tweet.ID
 
 	switch len(media) {
 	case 0:
