@@ -54,6 +54,8 @@ func (TwitterAPI) getTweetByIdAndToken(tweetID string, token string) (*Tweet, er
 		return nil, err
 	}
 
+	// os.WriteFile("tweet-"+tweetID+".json", body, 0644)
+
 	if len(tweet.Errors) > 0 {
 		if tweet.Errors[0].Code == 88 { // "Rate limit exceeded 88"
 			return nil, errors.New(tweet.Errors[0].Message + " " + res.Header["X-Rate-Limit-Reset"][0])
