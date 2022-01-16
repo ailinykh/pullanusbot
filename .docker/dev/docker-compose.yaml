@@ -7,5 +7,24 @@ services:
       BOT_TOKEN: 12345678:XXXXXXXXxxxxxxxxXXXXXXXXxxxxxxxxXXX
       ADMIN_CHAT_ID: 1488
     volumes:
-      - ./pullanusbot-data:/usr/local/share/pullanusbot-data
+      - ./.directory/pullanusbot-data:/usr/local/share/pullanusbot-data
     restart: always
+
+  # Create service with RabbitMQ.
+  message-broker:
+    image: rabbitmq:3-management-alpine
+    container_name: message-broker
+    ports:
+      - 5672:5672   # for sender and consumer connections
+      - 15672:15672 # for serve RabbitMQ GUI
+    volumes:
+      - ./.directory/rabbitmq-data/data/:/var/lib/rabbitmq
+      - ./.directory/rabbitmq-data/log/:/var/log/rabbitmq
+    restart: always
+    networks:
+      - dev-network
+
+networks:
+  # Create a new Docker network.
+  dev-network:
+    driver: bridge

@@ -6,6 +6,7 @@ services:
     environment:
       BOT_TOKEN: 12345678:XXXXXXXXxxxxxxxxXXXXXXXXxxxxxxxxXXX
       ADMIN_CHAT_ID: 1488
+      AMQP_URL: amqp://guest:guest@localhost:5672/
     volumes:
       - ./pullanusbot-data:/usr/local/share/pullanusbot-data
     restart: always
