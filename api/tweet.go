@@ -63,3 +63,9 @@ type VideoInfoVariant struct {
 	ContentType string `json:"content_type"`
 	URL         string `json:"url"`
 }
+
+type TweetScreenshot struct {
+	TweetId  string `json:"tweetId"`
+	Username string `json:"username"`
+	URL      string `json:"url"`
+}

@@ -7,11 +7,14 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
+
+	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
 // CreateTwitterAPI is a default Twitter factory
-func CreateTwitterAPI() *TwitterAPI {
-	return &TwitterAPI{[]string{
+func CreateTwitterAPI(l core.ILogger, t core.ITask) *TwitterAPI {
+	return &TwitterAPI{l, t, []string{
 		"AAAAAAAAAAAAAAAAAAAAAPYXBAAAAAAACLXUNDekMxqa8h%2F40K4moUkGsoc%3DTYfbDKbT3jJPCEVnMYqilB28NHfOPqkca3qaAxGfsyKCs0wRbw",
 		"AAAAAAAAAAAAAAAAAAAAAPAh2AAAAAAAoInuXrJ%2BcqfgfR5PlJGnQsOniNY%3Dn9galDg4iUr7KyRAU47JGDbQz2q7sdwXRTkonzBX2uLxXRgNv0",
 		"AAAAAAAAAAAAAAAAAAAAAA4JLwEAAAAAXIyoETwtg%2BiTlR1VTNxGXnphfu4%3D6iSv0IXHo4NWGndWWLC8Bk3XuPkLMyATMxM0h6CfomnfRbGpgK",
@@ -21,6 +24,8 @@ func CreateTwitterAPI() *TwitterAPI {
 
 // Twitter API
 type TwitterAPI struct {
+	l      core.ILogger
+	task   core.ITask
 	tokens []string
 }
 
@@ -64,4 +69,39 @@ func (TwitterAPI) getTweetByIdAndToken(tweetID string, token string) (*Tweet, er
 	}
 
 	return &tweet, err
+}
+
+func (api *TwitterAPI) getScreenshot(tweet *Tweet) (*TweetScreenshot, error) {
+	ch := make(chan []byte)
+	task := TweetScreenshot{TweetId: tweet.ID, Username: tweet.User.ScreenName}
+	data, err := json.Marshal(task)
+	if err != nil {
+		api.l.Error(err)
+		return nil, err
+	}
+
+	err = api.task.Perform(data, ch)
+	if err != nil {
+		api.l.Error(err)
+		return nil, err
+	}
+
+	api.l.Infof("retreiving screenshot for %s/%s", tweet.User.ScreenName, tweet.ID)
+
+	select {
+	case data := <-ch:
+		api.l.Info(string(data))
+
+		var screenshot TweetScreenshot
+		err = json.Unmarshal(data, &screenshot)
+		if err != nil {
+			api.l.Error(err)
+			return nil, err
+		}
+
+		return &screenshot, nil
+
+	case <-time.After(1 * time.Minute):
+		return nil, fmt.Errorf("screenshot timeout for %s/%s", tweet.User.ScreenName, tweet.ID)
+	}
 }

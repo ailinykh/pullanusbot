@@ -6,8 +6,8 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateTwitterMediaFactory(l core.ILogger) *TwitterMediaFactory {
-	return &TwitterMediaFactory{l, CreateTwitterAPI()}
+func CreateTwitterMediaFactory(l core.ILogger, t core.ITask) *TwitterMediaFactory {
+	return &TwitterMediaFactory{l, CreateTwitterAPI(l, t)}
 }
 
 type TwitterMediaFactory struct {
@@ -32,7 +32,12 @@ func (tmf *TwitterMediaFactory) CreateMedia(tweetID string) ([]*core.Media, erro
 
 	switch len(media) {
 	case 0:
-		return []*core.Media{{URL: url, Title: tweet.User.Name, Description: tweet.FullText, Type: core.TText}}, nil
+		screenshot, err := tmf.api.getScreenshot(tweet)
+		if err != nil {
+			tmf.l.Error(err)
+			return []*core.Media{{URL: url, Title: tweet.User.Name, Description: tweet.FullText, Type: core.TText}}, nil
+		}
+		return []*core.Media{{ResourceURL: screenshot.URL, URL: url, Title: tweet.User.Name, Description: "", Type: core.TPhoto}}, nil
 	case 1:
 		if media[0].Type == "video" || media[0].Type == "animated_gif" {
 			//TODO: Codec ??

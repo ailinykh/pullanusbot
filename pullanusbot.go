@@ -38,7 +38,12 @@ func main() {
 	fileDownloader := infrastructure.CreateFileDownloader()
 	remoteMediaSender := helpers.CreateSendMediaStrategy(logger)
 	localMediaSender := helpers.CreateUploadMediaStrategy(logger, remoteMediaSender, fileDownloader, converter)
-	twitterMediaFactory := api.CreateTwitterMediaFactory(logger)
+
+	rabbit, close := infrastructure.CreateRabbitFactory(logger, os.Getenv("AMQP_URL"))
+	defer close()
+	task := rabbit.NewTask("twitter_queue")
+
+	twitterMediaFactory := api.CreateTwitterMediaFactory(logger, task)
 	twitterFlow := usecases.CreateTwitterFlow(logger, twitterMediaFactory, localMediaSender)
 	twitterTimeout := usecases.CreateTwitterTimeout(logger, twitterFlow)
 	twitterParser := usecases.CreateTwitterParser(logger, twitterTimeout)
