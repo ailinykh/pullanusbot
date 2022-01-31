@@ -9,6 +9,7 @@ func makeTbVideo(vf *core.Video, caption string) *tb.Video {
 	var video *tb.Video
 	if len(vf.ID) > 0 {
 		video = &tb.Video{File: tb.File{FileID: vf.ID}}
+		video.Caption = caption
 	} else {
 		video = &tb.Video{File: tb.FromDisk(vf.Path)}
 		video.FileName = vf.File.Name
