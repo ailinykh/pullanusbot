@@ -8,4 +8,5 @@ type Message struct {
 	Sender    *User
 	Text      string
 	ReplyTo   *Message
+	Video     *Video
 }

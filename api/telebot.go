@@ -205,6 +205,10 @@ func makeMessage(m *tb.Message) *core.Message {
 		message.ReplyTo = makeMessage(m.ReplyTo)
 	}
 
+	if m.Video != nil {
+		message.Video = makeVideo(m.Video)
+	}
+
 	return message
 }
 
@@ -215,6 +219,35 @@ func makeUser(u *tb.User) *core.User {
 		LastName:     u.LastName,
 		Username:     u.Username,
 		LanguageCode: u.LanguageCode,
+	}
+}
+
+func makeVideo(v *tb.Video) *core.Video {
+	return &core.Video{
+		File: core.File{
+			Name: v.FileName,
+			Path: v.FileURL,
+		},
+		ID:       v.FileID,
+		Width:    v.Width,
+		Height:   v.Height,
+		Bitrate:  0,
+		Duration: v.Duration,
+		Codec:    "",
+		Thumb:    makePhoto(v.Thumbnail),
+	}
+}
+
+func makePhoto(p *tb.Photo) *core.Image {
+	return &core.Image{
+		File: core.File{
+			Name: p.FileLocal,
+			Path: p.FilePath,
+		},
+		ID:      p.FileID,
+		FileURL: p.FileURL,
+		Width:   p.Width,
+		Height:  p.Height,
 	}
 }
 
