@@ -7,4 +7,5 @@ type Message struct {
 	IsPrivate bool
 	Sender    *User
 	Text      string
+	ReplyTo   *Message
 }

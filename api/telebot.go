@@ -193,13 +193,19 @@ func makeMessage(m *tb.Message) *core.Message {
 	if m.Document != nil {
 		text = m.Caption
 	}
-	return &core.Message{
+	message := &core.Message{
 		ID:        m.ID,
 		ChatID:    m.Chat.ID,
 		IsPrivate: m.Private(),
 		Sender:    makeUser(m.Sender),
 		Text:      text,
 	}
+
+	if m.ReplyTo != nil {
+		message.ReplyTo = makeMessage(m.ReplyTo)
+	}
+
+	return message
 }
 
 func makeUser(u *tb.User) *core.User {
