@@ -11,6 +11,11 @@ func CreateRabbitFactory(l core.ILogger, url string) (core.ITaskFactory, func())
 		panic(err)
 	}
 
+	go func() {
+		err := <-conn.NotifyClose(make(chan *amqp.Error))
+		l.Error("connection closed", err)
+	}()
+
 	ch, err := conn.Channel()
 	if err != nil {
 		panic(err)
