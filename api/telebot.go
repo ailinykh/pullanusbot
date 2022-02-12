@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
+	"github.com/ailinykh/pullanusbot/v2/helpers"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -128,7 +129,7 @@ func (t *Telebot) Download(image *core.Image) (*core.File, error) {
 	//TODO: potential race condition
 	file := tb.FromURL(image.FileURL)
 	file.FileID = image.ID
-	name := RandStringRunes(4) + ".jpg"
+	name := helpers.RandStringRunes(4) + ".jpg"
 	path := path.Join(os.TempDir(), name)
 	err := t.bot.Download(&file, path)
 	if err != nil {
