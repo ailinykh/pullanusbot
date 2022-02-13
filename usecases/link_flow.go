@@ -10,31 +10,31 @@ import (
 )
 
 // CreateLinkFlow is a basic LinkFlow factory
-func CreateLinkFlow(l core.ILogger, hc core.IHttpClient, mf core.IMediaFactory, ms core.ISendMediaStrategy) *LinkFlow {
-	return &LinkFlow{l, hc, mf, ms}
+func CreateLinkFlow(l core.ILogger, httpClient core.IHttpClient, mediaFactory core.IMediaFactory, sendMediaStrategy core.ISendMediaStrategy) *LinkFlow {
+	return &LinkFlow{l, httpClient, mediaFactory, sendMediaStrategy}
 }
 
 // LinkFlow converts hotlink to video/photo attachment
 type LinkFlow struct {
-	l   core.ILogger
-	hc  core.IHttpClient
-	mf  core.IMediaFactory
-	sms core.ISendMediaStrategy
+	l                 core.ILogger
+	httpClient        core.IHttpClient
+	mediaFactory      core.IMediaFactory
+	sendMediaStrategy core.ISendMediaStrategy
 }
 
 // HandleText is a core.ITextHandler protocol implementation
-func (lf *LinkFlow) HandleText(message *core.Message, bot core.IBot) error {
+func (flow *LinkFlow) HandleText(message *core.Message, bot core.IBot) error {
 	r := regexp.MustCompile(`^http(\S+)$`)
 	if r.MatchString(message.Text) {
-		return lf.handleURL(message.Text, message, bot)
+		return flow.handleURL(message.Text, message, bot)
 	}
 	return nil
 }
 
-func (lf *LinkFlow) handleURL(url core.URL, message *core.Message, bot core.IBot) error {
-	contentType, err := lf.hc.GetContentType(url)
+func (flow *LinkFlow) handleURL(url core.URL, message *core.Message, bot core.IBot) error {
+	contentType, err := flow.httpClient.GetContentType(url)
 	if err != nil {
-		lf.l.Error(err, url)
+		flow.l.Error(err, url)
 		return err
 	}
 
@@ -42,9 +42,9 @@ func (lf *LinkFlow) handleURL(url core.URL, message *core.Message, bot core.IBot
 		return nil
 	}
 
-	media, err := lf.mf.CreateMedia(url)
+	media, err := flow.mediaFactory.CreateMedia(url)
 	if err != nil {
-		lf.l.Error(err)
+		flow.l.Error(err)
 		return err
 	}
 
@@ -55,13 +55,13 @@ func (lf *LinkFlow) handleURL(url core.URL, message *core.Message, bot core.IBot
 		case core.TVideo:
 			m.Caption = fmt.Sprintf(`<a href="%s">🔗</a> <b>%s</b> <i>(by %s)</i>`, m.URL, path.Base(m.URL), message.Sender.DisplayName())
 		case core.TText:
-			lf.l.Warningf("Unexpected %+v", m)
+			flow.l.Warningf("Unexpected %+v", m)
 		}
 	}
 
-	err = lf.sms.SendMedia(media, bot)
+	err = flow.sendMediaStrategy.SendMedia(media, bot)
 	if err != nil {
-		lf.l.Error(err)
+		flow.l.Error(err)
 		return err
 	}
 
