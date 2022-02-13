@@ -16,18 +16,18 @@ type RemoveSourceDecorator struct {
 
 // HandleText is a core.ITextHandler protocol implementation
 func (decorator *RemoveSourceDecorator) HandleText(message *core.Message, bot core.IBot) error {
-	settings, err := decorator.settingsStorage.GetSettings(message.ChatID)
-	if err != nil {
-		decorator.l.Error(err)
-		return decorator.decoratee.HandleText(message, bot)
-	}
-
-	err = decorator.decoratee.HandleText(message, bot)
+	err := decorator.decoratee.HandleText(message, bot)
 	//TODO: error handling protocol
 	if err != nil && err.Error() == "not implemented" {
 		return nil
 	}
 
+	if err != nil {
+		decorator.l.Error(err)
+		return err
+	}
+
+	settings, err := decorator.settingsStorage.GetSettings(message.ChatID)
 	if err != nil {
 		decorator.l.Error(err)
 		return err
