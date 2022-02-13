@@ -77,7 +77,8 @@ func main() {
 	sendVideoStrategy := helpers.CreateSendVideoStrategy(logger)
 	sendVideoStrategySplitDecorator := helpers.CreateSendVideoStrategySplitDecorator(logger, sendVideoStrategy, converter)
 	youtubeFlow := usecases.CreateYoutubeFlow(logger, youtubeAPI, youtubeAPI, sendVideoStrategySplitDecorator)
-	telebot.AddHandler(youtubeFlow)
+	removeYoutubeSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, youtubeFlow, settingsStorage)
+	telebot.AddHandler(removeYoutubeSourceDecorator)
 
 	telebot.AddHandler("/proxy", func(m *core.Message, bot core.IBot) error {
 		_, err := bot.SendText("tg://proxy?server=proxy.ailinykh.com&port=443&secret=dd71ce3b5bf1b7015dc62a76dc244c5aec")

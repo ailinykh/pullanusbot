@@ -32,7 +32,7 @@ func (flow *YoutubeFlow) HandleText(message *core.Message, bot core.IBot) error 
 		}
 
 		if !strings.Contains(message.Text, " ") {
-			return bot.Delete(message)
+			return nil
 		}
 	} else if strings.Contains(message.Text, "youtu") {
 		for i, m := range match {
@@ -40,7 +40,7 @@ func (flow *YoutubeFlow) HandleText(message *core.Message, bot core.IBot) error 
 		}
 		return fmt.Errorf("possibble regexp mismatch: %s", message.Text)
 	}
-	return nil
+	return fmt.Errorf("not implemented")
 }
 
 func (flow *YoutubeFlow) process(id string, message *core.Message, bot core.IBot) error {
