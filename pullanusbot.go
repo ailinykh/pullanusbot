@@ -53,8 +53,8 @@ func main() {
 	httpClient := api.CreateHttpClient()
 	convertMediaSender := helpers.CreateConvertMediaStrategy(logger, localMediaSender, fileDownloader, converter, converter)
 	linkFlow := usecases.CreateLinkFlow(logger, httpClient, converter, convertMediaSender)
-	_ = usecases.CreateRemoveSourceDecorator(logger, linkFlow, settingsStorage)
-	telebot.AddHandler(linkFlow)
+	removeLinkSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, linkFlow, settingsStorage)
+	telebot.AddHandler(removeLinkSourceDecorator)
 
 	tiktokHttpClient := api.CreateHttpClient() // domain specific headers and cookies
 	tiktokJsonApi := api.CreateTikTokJsonAPI(logger, tiktokHttpClient, rand)

@@ -23,6 +23,11 @@ func (decorator *RemoveSourceDecorator) HandleText(message *core.Message, bot co
 	}
 
 	err = decorator.decoratee.HandleText(message, bot)
+	//TODO: error handling protocol
+	if err != nil && err.Error() == "not implemented" {
+		return nil
+	}
+
 	if err != nil {
 		decorator.l.Error(err)
 		return err
