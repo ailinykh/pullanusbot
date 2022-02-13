@@ -10,24 +10,24 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateYoutubeFlow(l core.ILogger, mf core.IMediaFactory, vff core.IVideoFactory, vfs core.IVideoSplitter) *YoutubeFlow {
-	return &YoutubeFlow{l: l, mf: mf, vff: vff, vfs: vfs}
+func CreateYoutubeFlow(l core.ILogger, mediaFactory core.IMediaFactory, videoFactory core.IVideoFactory, videoSplitter core.IVideoSplitter) *YoutubeFlow {
+	return &YoutubeFlow{l: l, mediaFactory: mediaFactory, videoFactory: videoFactory, videoSplitter: videoSplitter}
 }
 
 type YoutubeFlow struct {
-	m   sync.Mutex
-	l   core.ILogger
-	mf  core.IMediaFactory
-	vff core.IVideoFactory
-	vfs core.IVideoSplitter
+	mutex         sync.Mutex
+	l             core.ILogger
+	mediaFactory  core.IMediaFactory
+	videoFactory  core.IVideoFactory
+	videoSplitter core.IVideoSplitter
 }
 
 // HandleText is a core.ITextHandler protocol implementation
-func (f *YoutubeFlow) HandleText(message *core.Message, bot core.IBot) error {
+func (flow *YoutubeFlow) HandleText(message *core.Message, bot core.IBot) error {
 	r := regexp.MustCompile(`youtu\.?be(\.com)?\/(watch\?v=)?([\w\-_]+)`)
 	match := r.FindStringSubmatch(message.Text)
 	if len(match) == 4 {
-		err := f.process(match[3], message, bot)
+		err := flow.process(match[3], message, bot)
 		if err != nil {
 			return err
 		}
@@ -37,32 +37,32 @@ func (f *YoutubeFlow) HandleText(message *core.Message, bot core.IBot) error {
 		}
 	} else if strings.Contains(message.Text, "youtu") {
 		for i, m := range match {
-			f.l.Info(i, " ", m)
+			flow.l.Info(i, " ", m)
 		}
 		return errors.New("possibble regexp mismatch: " + message.Text)
 	}
 	return nil
 }
 
-func (f *YoutubeFlow) process(id string, message *core.Message, bot core.IBot) error {
-	f.m.Lock()
-	defer f.m.Unlock()
+func (flow *YoutubeFlow) process(id string, message *core.Message, bot core.IBot) error {
+	flow.mutex.Lock()
+	defer flow.mutex.Unlock()
 
-	f.l.Infof("processing %s", id)
-	media, err := f.mf.CreateMedia(id)
+	flow.l.Infof("processing %s", id)
+	media, err := flow.mediaFactory.CreateMedia(id)
 	if err != nil {
-		f.l.Error(err)
+		flow.l.Error(err)
 		return err
 	}
 
 	if !message.IsPrivate && media[0].Duration > 900 {
-		f.l.Infof("skip video in group chat due to duration %d", media[0].Duration)
+		flow.l.Infof("skip video in group chat due to duration %d", media[0].Duration)
 		return errors.New("skip video in group chat due to duration")
 	}
 
 	title := media[0].Title
-	f.l.Infof("downloading %s", id)
-	file, err := f.vff.CreateVideo(id)
+	flow.l.Infof("downloading %s", id)
+	file, err := flow.videoFactory.CreateVideo(id)
 	if err != nil {
 		return err
 	}
@@ -71,10 +71,10 @@ func (f *YoutubeFlow) process(id string, message *core.Message, bot core.IBot) e
 	caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, id, title, message.Sender.DisplayName())
 	_, err = bot.SendVideo(file, caption)
 	if err != nil {
-		f.l.Error("Can't send video: ", err)
+		flow.l.Error("Can't send video: ", err)
 		if err.Error() == "telegram: Request Entity Too Large (400)" {
-			f.l.Info("Fallback to splitting")
-			files, err := f.vfs.Split(file, 50000000)
+			flow.l.Info("Fallback to splitting")
+			files, err := flow.videoSplitter.Split(file, 50000000)
 			if err != nil {
 				return err
 			}
@@ -91,7 +91,7 @@ func (f *YoutubeFlow) process(id string, message *core.Message, bot core.IBot) e
 				}
 			}
 
-			f.l.Info("All parts successfully sent")
+			flow.l.Info("All parts successfully sent")
 			return nil
 		}
 		return err
