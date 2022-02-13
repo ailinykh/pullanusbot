@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"errors"
 	"fmt"
 	"path"
 	"regexp"
@@ -39,7 +40,7 @@ func (flow *LinkFlow) handleURL(url core.URL, message *core.Message, bot core.IB
 	}
 
 	if !strings.HasPrefix(contentType, "video") && !strings.HasPrefix(contentType, "image") {
-		return nil
+		return errors.New("not implemented")
 	}
 
 	media, err := flow.mediaFactory.CreateMedia(url)
@@ -65,5 +66,5 @@ func (flow *LinkFlow) handleURL(url core.URL, message *core.Message, bot core.IB
 		return err
 	}
 
-	return bot.Delete(message)
+	return nil
 }

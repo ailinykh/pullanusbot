@@ -21,6 +21,7 @@ func main() {
 
 	localizer := infrastructure.GameLocalizer{}
 	dbFile := path.Join(getWorkingDir(), "pullanusbot.db")
+	settingsStorage := infrastructure.CreateSettingsStorage(dbFile, logger)
 	gameStorage := infrastructure.CreateGameStorage(dbFile)
 	rand := infrastructure.CreateMathRand()
 	gameFlow := usecases.CreateGameFlow(logger, localizer, gameStorage, rand)
@@ -52,7 +53,8 @@ func main() {
 	httpClient := api.CreateHttpClient()
 	convertMediaSender := helpers.CreateConvertMediaStrategy(logger, localMediaSender, fileDownloader, converter, converter)
 	linkFlow := usecases.CreateLinkFlow(logger, httpClient, converter, convertMediaSender)
-	telebot.AddHandler(linkFlow)
+	removeLinkSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, linkFlow, settingsStorage)
+	telebot.AddHandler(removeLinkSourceDecorator)
 
 	tiktokHttpClient := api.CreateHttpClient() // domain specific headers and cookies
 	tiktokJsonApi := api.CreateTikTokJsonAPI(logger, tiktokHttpClient, rand)
