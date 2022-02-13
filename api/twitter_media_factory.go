@@ -1,7 +1,7 @@
 package api
 
 import (
-	"errors"
+	"fmt"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
@@ -45,7 +45,7 @@ func (tmf *TwitterMediaFactory) CreateMedia(tweetID string) ([]*core.Media, erro
 		} else if media[0].Type == "photo" {
 			return []*core.Media{{ResourceURL: media[0].MediaURL, URL: url, Title: tweet.User.Name, Description: tweet.FullText, Type: core.TPhoto}}, nil
 		} else {
-			return nil, errors.New("unexpected type: " + media[0].Type)
+			return nil, fmt.Errorf("unexpected type: %s", media[0].Type)
 		}
 	default:
 		// t.sendAlbum(media, tweet, m)

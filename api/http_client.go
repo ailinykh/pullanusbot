@@ -1,7 +1,7 @@
 package api
 
 import (
-	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -49,7 +49,7 @@ func (c *HttpClient) GetContentType(url core.URL) (string, error) {
 	if header, ok := res.Header["Content-Type"]; ok {
 		return header[0], nil
 	}
-	return "", errors.New("content-type not found")
+	return "", fmt.Errorf("content-type not found")
 }
 
 // GetContent is a core.IHttpClient interface implementation

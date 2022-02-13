@@ -1,7 +1,6 @@
 package usecases
 
 import (
-	"errors"
 	"fmt"
 	"path"
 	"regexp"
@@ -29,7 +28,7 @@ func (flow *LinkFlow) HandleText(message *core.Message, bot core.IBot) error {
 	if r.MatchString(message.Text) {
 		return flow.handleURL(message.Text, message, bot)
 	}
-	return errors.New("not implemented")
+	return fmt.Errorf("not implemented")
 }
 
 func (flow *LinkFlow) handleURL(url core.URL, message *core.Message, bot core.IBot) error {
@@ -40,7 +39,7 @@ func (flow *LinkFlow) handleURL(url core.URL, message *core.Message, bot core.IB
 	}
 
 	if !strings.HasPrefix(contentType, "video") && !strings.HasPrefix(contentType, "image") {
-		return errors.New("not implemented")
+		return fmt.Errorf("not implemented")
 	}
 
 	media, err := flow.mediaFactory.CreateMedia(url)

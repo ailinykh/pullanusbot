@@ -1,7 +1,6 @@
 package usecases
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"regexp"
@@ -61,7 +60,7 @@ func (tt *TwitterTimeout) parseTimeout(err error) (int64, error) {
 	r := regexp.MustCompile(`(\-?\d+)$`)
 	match := r.FindStringSubmatch(err.Error())
 	if len(match) < 2 {
-		return 0, errors.New("rate limit not found")
+		return 0, fmt.Errorf("rate limit not found")
 	}
 
 	limit, err := strconv.ParseInt(match[1], 10, 64)

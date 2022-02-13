@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -65,7 +64,7 @@ func (y *YoutubeAPI) CreateVideo(id string) (*core.Video, error) {
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		y.l.Error(err)
-		return nil, errors.New(string(out))
+		return nil, fmt.Errorf(string(out))
 	}
 
 	thumb, err := y.getThumbV2(video, vf)
@@ -89,7 +88,7 @@ func (y *YoutubeAPI) getInfo(id string) (*Video, error) {
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		y.l.Error(err)
-		return nil, errors.New(string(out))
+		return nil, fmt.Errorf(string(out))
 	}
 
 	var video Video

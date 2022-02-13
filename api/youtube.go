@@ -1,7 +1,7 @@
 package api
 
 import (
-	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -23,7 +23,7 @@ func (v Video) audioFormat() (*Format, error) {
 		}
 	}
 
-	return nil, errors.New("140 not found for " + v.ID)
+	return nil, fmt.Errorf("140 not found for %s", v.ID)
 }
 
 // might be empty
@@ -47,7 +47,7 @@ func (v Video) formatByID(id string) (*Format, error) {
 			return f, nil
 		}
 	}
-	return nil, errors.New("can't find format with id " + id)
+	return nil, fmt.Errorf("can't find format with id %s", id)
 }
 
 func (v Video) thumb() *Thumbnail {

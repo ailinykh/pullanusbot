@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -31,7 +30,7 @@ type TwitterAPI struct {
 
 func (api *TwitterAPI) getTweetByID(tweetID string) (*Tweet, error) {
 	var tweet *Tweet
-	var err = errors.New("tokens not set")
+	var err = fmt.Errorf("tokens not set")
 	for _, t := range api.tokens {
 		tweet, err = api.getTweetByIdAndToken(tweetID, t)
 		if err == nil || !strings.HasPrefix(err.Error(), "Rate limit exceeded") {
@@ -63,9 +62,9 @@ func (TwitterAPI) getTweetByIdAndToken(tweetID string, token string) (*Tweet, er
 
 	if len(tweet.Errors) > 0 {
 		if tweet.Errors[0].Code == 88 { // "Rate limit exceeded 88"
-			return nil, errors.New(tweet.Errors[0].Message + " " + res.Header["X-Rate-Limit-Reset"][0])
+			return nil, fmt.Errorf("%s %s", tweet.Errors[0].Message, res.Header["X-Rate-Limit-Reset"][0])
 		}
-		return nil, errors.New(tweet.Errors[0].Message)
+		return nil, fmt.Errorf(tweet.Errors[0].Message)
 	}
 
 	return &tweet, err

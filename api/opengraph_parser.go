@@ -1,7 +1,6 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"html"
 	"regexp"
@@ -21,7 +20,7 @@ type OpenGraphParser struct {
 func (ogp *OpenGraphParser) CreateMedia(HTMLString string) ([]*core.Media, error) {
 	video := ogp.parseMeta(HTMLString, "og:video")
 	if len(video) == 0 {
-		return nil, errors.New("video not found")
+		return nil, fmt.Errorf("video not found")
 	}
 
 	video = html.UnescapeString(video)

@@ -1,7 +1,7 @@
 package usecases_test
 
 import (
-	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
@@ -57,7 +57,7 @@ func Test_HandleText_DoesNotRemoveOriginalMessage(t *testing.T) {
 func Test_HandleText_ReturnsErrorOnError(t *testing.T) {
 	parser, handler, bot := makeTwitterSUT()
 	m := makeTweetMessage("a message with https://twitter.com/status/username/123456")
-	handler.err = errors.New("an error")
+	handler.err = fmt.Errorf("an error")
 
 	err := parser.HandleText(m, bot)
 

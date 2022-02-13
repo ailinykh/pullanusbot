@@ -1,6 +1,6 @@
 package infrastructure
 
-import "errors"
+import "fmt"
 
 type ffpResponse struct {
 	Streams []ffpStream `json:"streams"`
@@ -31,5 +31,5 @@ func (f ffpResponse) getVideoStream() (ffpStream, error) {
 			return stream, nil
 		}
 	}
-	return ffpStream{}, errors.New("no video stream found")
+	return ffpStream{}, fmt.Errorf("no video stream found")
 }

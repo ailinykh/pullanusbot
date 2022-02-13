@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -44,7 +43,7 @@ func (api *TikTokHTMLAPI) GetItem(username string, videoId string) (*TikTokItemS
 	}
 
 	if resp.Props.PageProps.ServerCode == 404 {
-		return nil, errors.New("Video currently unavailable")
+		return nil, fmt.Errorf("Video currently unavailable")
 	}
 
 	if resp.Props.PageProps.StatusCode != 0 {

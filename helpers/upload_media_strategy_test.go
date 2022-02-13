@@ -1,7 +1,7 @@
 package helpers_test
 
 import (
-	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
@@ -22,7 +22,7 @@ func Test_UploadMedia_DoesNotFailOnEmptyMedia(t *testing.T) {
 func Test_UploadMedia_DoesNotFallbackOnGenericError(t *testing.T) {
 	strategy, proxy, bot := makeUploadMediaStrategySUT()
 	media := []*core.Media{}
-	proxy.Err = errors.New("an error")
+	proxy.Err = fmt.Errorf("an error")
 
 	err := strategy.SendMedia(media, bot)
 
@@ -32,7 +32,7 @@ func Test_UploadMedia_DoesNotFallbackOnGenericError(t *testing.T) {
 func Test_UploadMedia_FallbackOnSpecificError(t *testing.T) {
 	strategy, proxy, bot := makeUploadMediaStrategySUT()
 	media := []*core.Media{{ResourceURL: "https://a-url.com"}}
-	proxy.Err = errors.New("failed to get HTTP URL content")
+	proxy.Err = fmt.Errorf("failed to get HTTP URL content")
 
 	err := strategy.SendMedia(media, bot)
 

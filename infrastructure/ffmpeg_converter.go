@@ -2,7 +2,6 @@ package infrastructure
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -35,7 +34,7 @@ func (c *FfmpegConverter) Convert(vf *core.Video, bitrate int) (*core.Video, err
 	if err != nil {
 		os.Remove(path)
 		c.l.Error(err)
-		return nil, errors.New(string(out))
+		return nil, fmt.Errorf(string(out))
 	}
 
 	return c.CreateVideo(path)
@@ -90,7 +89,7 @@ func (c *FfmpegConverter) Split(video *core.Video, limit int) ([]*core.Video, er
 		out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 		if err != nil {
 			c.l.Error(err)
-			return nil, errors.New(string(out))
+			return nil, fmt.Errorf(string(out))
 		}
 
 		file, err := c.CreateVideo(path)
@@ -132,7 +131,7 @@ func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
 
 	if duration < 2 {
 		c.l.Errorf("expected duration at least 2 seconds, got %f", duration)
-		return nil, errors.New("file is too short")
+		return nil, fmt.Errorf("file is too short")
 	}
 
 	stream, err := ffprobe.getVideoStream()
@@ -176,7 +175,7 @@ func (c *FfmpegConverter) getFFProbe(file string) (*ffpResponse, error) {
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		c.l.Error(err)
-		return nil, errors.New(string(out))
+		return nil, fmt.Errorf(string(out))
 	}
 
 	var resp ffpResponse
@@ -197,7 +196,7 @@ func (c *FfmpegConverter) createThumb(videoPath string, scale string) (*core.Ima
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		c.l.Error(err)
-		return nil, errors.New(string(out))
+		return nil, fmt.Errorf(string(out))
 	}
 
 	ffprobe, err := c.getFFProbe(thumbPath)

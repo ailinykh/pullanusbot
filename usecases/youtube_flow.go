@@ -1,7 +1,6 @@
 package usecases
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -39,7 +38,7 @@ func (flow *YoutubeFlow) HandleText(message *core.Message, bot core.IBot) error 
 		for i, m := range match {
 			flow.l.Info(i, " ", m)
 		}
-		return errors.New("possibble regexp mismatch: " + message.Text)
+		return fmt.Errorf("possibble regexp mismatch: %s", message.Text)
 	}
 	return nil
 }
@@ -57,7 +56,7 @@ func (flow *YoutubeFlow) process(id string, message *core.Message, bot core.IBot
 
 	if !message.IsPrivate && media[0].Duration > 900 {
 		flow.l.Infof("skip video in group chat due to duration %d", media[0].Duration)
-		return errors.New("skip video in group chat due to duration")
+		return fmt.Errorf("skip video in group chat due to duration")
 	}
 
 	title := media[0].Title
