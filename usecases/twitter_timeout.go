@@ -24,8 +24,8 @@ type TwitterTimeout struct {
 }
 
 // HandleTweet is a ITweetHandler protocol implementation
-func (tt *TwitterTimeout) HandleTweet(tweetID string, message *core.Message, bot core.IBot, deleteOriginal bool) error {
-	err := tt.th.HandleTweet(tweetID, message, bot, deleteOriginal)
+func (tt *TwitterTimeout) HandleTweet(tweetID string, message *core.Message, bot core.IBot) error {
+	err := tt.th.HandleTweet(tweetID, message, bot)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Rate limit exceeded") {
 			timeout, err := tt.parseTimeout(err)
@@ -35,7 +35,7 @@ func (tt *TwitterTimeout) HandleTweet(tweetID string, message *core.Message, bot
 
 			go func() {
 				time.Sleep(time.Duration(timeout) * time.Second)
-				tt.HandleTweet(tweetID, message, bot, deleteOriginal)
+				_ = tt.HandleTweet(tweetID, message, bot)
 			}()
 
 			minutes := timeout / 60
@@ -46,6 +46,7 @@ func (tt *TwitterTimeout) HandleTweet(tweetID string, message *core.Message, bot
 				return err
 			}
 			tt.replies[*message] = *sent
+			//TODO: delay original message removing somehow
 			return nil
 		}
 		tt.l.Error(err)

@@ -48,7 +48,8 @@ func main() {
 	twitterFlow := usecases.CreateTwitterFlow(logger, twitterMediaFactory, localMediaSender)
 	twitterTimeout := usecases.CreateTwitterTimeout(logger, twitterFlow)
 	twitterParser := usecases.CreateTwitterParser(logger, twitterTimeout)
-	telebot.AddHandler(twitterParser)
+	twitterRemoveSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, twitterParser, settingsStorage)
+	telebot.AddHandler(twitterRemoveSourceDecorator)
 
 	httpClient := api.CreateHttpClient()
 	convertMediaSender := helpers.CreateConvertMediaStrategy(logger, localMediaSender, fileDownloader, converter, converter)

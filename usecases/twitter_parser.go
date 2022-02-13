@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"fmt"
 	"regexp"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
@@ -22,10 +23,12 @@ func (tp *TwitterParser) HandleText(message *core.Message, bot core.IBot) error 
 
 	if len(match) > 0 {
 		tp.l.Infof("Processing %s", match[0][0])
+	} else {
+		return fmt.Errorf("not implemented")
 	}
 
 	for _, m := range match {
-		err := tp.th.HandleTweet(m[1], message, bot, message.Text == m[0])
+		err := tp.th.HandleTweet(m[1], message, bot)
 		if err != nil {
 			return err
 		}
