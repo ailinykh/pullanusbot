@@ -74,7 +74,9 @@ func main() {
 	telebot.AddHandler("/loh666", publisherFlow.HandleRequest)
 
 	youtubeAPI := api.CreateYoutubeAPI(logger, fileDownloader)
-	youtubeFlow := usecases.CreateYoutubeFlow(logger, youtubeAPI, youtubeAPI, converter)
+	sendVideoStrategy := helpers.CreateSendVideoStrategy(logger)
+	sendVideoStrategySplitDecorator := helpers.CreateSendVideoStrategySplitDecorator(logger, sendVideoStrategy, converter)
+	youtubeFlow := usecases.CreateYoutubeFlow(logger, youtubeAPI, youtubeAPI, sendVideoStrategySplitDecorator)
 	telebot.AddHandler(youtubeFlow)
 
 	telebot.AddHandler("/proxy", func(m *core.Message, bot core.IBot) error {

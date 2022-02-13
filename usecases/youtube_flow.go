@@ -10,16 +10,16 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateYoutubeFlow(l core.ILogger, mediaFactory core.IMediaFactory, videoFactory core.IVideoFactory, videoSplitter core.IVideoSplitter) *YoutubeFlow {
-	return &YoutubeFlow{l: l, mediaFactory: mediaFactory, videoFactory: videoFactory, videoSplitter: videoSplitter}
+func CreateYoutubeFlow(l core.ILogger, mediaFactory core.IMediaFactory, videoFactory core.IVideoFactory, sendStrategy core.ISendVideoStrategy) *YoutubeFlow {
+	return &YoutubeFlow{l: l, mediaFactory: mediaFactory, videoFactory: videoFactory, sendStrategy: sendStrategy}
 }
 
 type YoutubeFlow struct {
-	mutex         sync.Mutex
-	l             core.ILogger
-	mediaFactory  core.IMediaFactory
-	videoFactory  core.IVideoFactory
-	videoSplitter core.IVideoSplitter
+	mutex        sync.Mutex
+	l            core.ILogger
+	mediaFactory core.IMediaFactory
+	videoFactory core.IVideoFactory
+	sendStrategy core.ISendVideoStrategy
 }
 
 // HandleText is a core.ITextHandler protocol implementation
@@ -69,32 +69,5 @@ func (flow *YoutubeFlow) process(id string, message *core.Message, bot core.IBot
 	defer file.Dispose()
 
 	caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, id, title, message.Sender.DisplayName())
-	_, err = bot.SendVideo(file, caption)
-	if err != nil {
-		flow.l.Error("Can't send video: ", err)
-		if err.Error() == "telegram: Request Entity Too Large (400)" {
-			flow.l.Info("Fallback to splitting")
-			files, err := flow.videoSplitter.Split(file, 50000000)
-			if err != nil {
-				return err
-			}
-
-			for _, file := range files {
-				defer file.Dispose()
-			}
-
-			for i, file := range files {
-				caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🎞</a> <b>[%d/%d] %s</b> <i>(by %s)</i>`, id, i+1, len(files), title, message.Sender.DisplayName())
-				_, err := bot.SendVideo(file, caption)
-				if err != nil {
-					return err
-				}
-			}
-
-			flow.l.Info("All parts successfully sent")
-			return nil
-		}
-		return err
-	}
-	return nil
+	return flow.sendStrategy.SendVideo(file, caption, bot)
 }
