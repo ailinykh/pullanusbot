@@ -36,15 +36,6 @@ func Test_HandleText_FoundMultipleTweetLinks(t *testing.T) {
 	assert.Equal(t, []string{"123456", "789010"}, handler.tweets)
 }
 
-func Test_HandleText_RemovesOriginalMessageInCaseOfFullMatch(t *testing.T) {
-	parser, _, bot := makeTwitterSUT()
-	m := makeTweetMessage("https://twitter.com/username/status/123456")
-
-	parser.HandleText(m, bot)
-
-	assert.Equal(t, []string{"https://twitter.com/username/status/123456"}, bot.RemovedMessages)
-}
-
 func Test_HandleText_DoesNotRemoveOriginalMessage(t *testing.T) {
 	parser, _, bot := makeTwitterSUT()
 	m := makeTweetMessage("https://twitter.com/username/status/123456 and some other text")
