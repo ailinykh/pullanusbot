@@ -9,22 +9,22 @@ import (
 )
 
 // CreateVideoFlow is a basic VideoFlow factory
-func CreateVideoFlow(l core.ILogger, f core.IVideoFactory, c core.IVideoConverter) *VideoFlow {
-	return &VideoFlow{c, f, l}
+func CreateVideoFlow(l core.ILogger, videoFactory core.IVideoFactory, converter core.IVideoConverter) *VideoFlow {
+	return &VideoFlow{l, converter, videoFactory}
 }
 
 // VideoFlow represents convert file to video logic
 type VideoFlow struct {
-	c core.IVideoConverter
-	f core.IVideoFactory
-	l core.ILogger
+	l            core.ILogger
+	converter    core.IVideoConverter
+	videoFactory core.IVideoFactory
 }
 
 // HandleDocument is a core.IDocumentHandler protocol implementation
-func (f *VideoFlow) HandleDocument(document *core.Document, message *core.Message, bot core.IBot) error {
-	vf, err := f.f.CreateVideo(document.File.Path)
+func (flow *VideoFlow) HandleDocument(document *core.Document, message *core.Message, bot core.IBot) error {
+	vf, err := flow.videoFactory.CreateVideo(document.File.Path)
 	if err != nil {
-		f.l.Error(err)
+		flow.l.Error(err)
 		bot.SendText(err.Error())
 		return err
 	}
@@ -33,10 +33,10 @@ func (f *VideoFlow) HandleDocument(document *core.Document, message *core.Messag
 	expectedBitrate := int(math.Min(float64(vf.Bitrate), 568320))
 
 	if expectedBitrate != vf.Bitrate {
-		f.l.Infof("Converting %s because of bitrate", vf.Name)
-		cvf, err := f.c.Convert(vf, expectedBitrate)
+		flow.l.Infof("Converting %s because of bitrate", vf.Name)
+		cvf, err := flow.converter.Convert(vf, expectedBitrate)
 		if err != nil {
-			f.l.Error(err)
+			flow.l.Error(err)
 			return err
 		}
 		defer cvf.Dispose()
@@ -45,17 +45,17 @@ func (f *VideoFlow) HandleDocument(document *core.Document, message *core.Messag
 		caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>\n<i>src: %.2f MB (%d kb/s) %s\ndst: %.2f MB (%d kb/s) %s</i>", vf.Name, message.Sender.DisplayName(), float32(fi1.Size())/1048576, vf.Bitrate/1024, vf.Codec, float32(fi2.Size())/1048576, cvf.Bitrate/1024, cvf.Codec)
 		_, err = bot.SendVideo(cvf, caption)
 		if err != nil {
-			f.l.Error(err)
+			flow.l.Error(err)
 			return err
 		}
 		return bot.Delete(message)
 	}
 
 	if vf.Codec != "h264" {
-		f.l.Infof("Converting %s because of codec %s", vf.Name, vf.Codec)
-		cvf, err := f.c.Convert(vf, 0)
+		flow.l.Infof("Converting %s because of codec %s", vf.Name, vf.Codec)
+		cvf, err := flow.converter.Convert(vf, 0)
 		if err != nil {
-			f.l.Error(err)
+			flow.l.Error(err)
 			return err
 		}
 		defer cvf.Dispose()
@@ -64,13 +64,13 @@ func (f *VideoFlow) HandleDocument(document *core.Document, message *core.Messag
 		caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>\n<i>src: %.2f MB (%d kb/s) %s\ndst: %.2f MB (%d kb/s) %s</i>", vf.Name, message.Sender.DisplayName(), float32(fi1.Size())/1048576, vf.Bitrate/1024, vf.Codec, float32(fi2.Size())/1048576, cvf.Bitrate/1024, cvf.Codec)
 		_, err = bot.SendVideo(cvf, caption)
 		if err != nil {
-			f.l.Error(err)
+			flow.l.Error(err)
 			return err
 		}
 		return bot.Delete(message)
 	}
 
-	f.l.Infof("No need to convert %s", vf.Name)
+	flow.l.Infof("No need to convert %s", vf.Name)
 	caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>", vf.Name, message.Sender.DisplayName())
 	_, err = bot.SendVideo(vf, caption)
 	if err != nil {
