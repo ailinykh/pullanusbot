@@ -3,7 +3,7 @@ package core
 type Keyboard = [][]*Button
 
 type IButtonHandler interface {
-	AllButtons() []*Button
+	GetButtonIds() []string
 	ButtonPressed(string, *Message, IBot) error
 }
 
