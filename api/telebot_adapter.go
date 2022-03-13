@@ -20,6 +20,8 @@ func (a *TelebotAdapter) SendText(text string, params ...interface{}) (*core.Mes
 			opts.ReplyTo = &tb.Message{ID: m.ID}
 		case bool:
 			opts.DisableWebPagePreview = m
+		case core.Keyboard:
+			opts.ReplyMarkup = &tb.ReplyMarkup{InlineKeyboard: makeInlineKeyboard(m)}
 		default:
 			break
 		}

@@ -5,6 +5,21 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
+func makeTbMessage(m *core.Message) *tb.Message {
+	message := &tb.Message{
+		ID:     m.ID,
+		Chat:   &tb.Chat{ID: m.ChatID},
+		Sender: makeTbUser(m.Sender),
+	}
+	if m.ReplyTo != nil {
+		message.ReplyTo = makeTbMessage(m.ReplyTo)
+	}
+	if m.Video != nil {
+		message.Video = makeTbVideo(m.Video, m.Text)
+	}
+	return message
+}
+
 func makeTbVideo(vf *core.Video, caption string) *tb.Video {
 	var video *tb.Video
 	if len(vf.ID) > 0 {
@@ -43,4 +58,17 @@ func makeTbUser(user *core.User) *tb.User {
 		LastName:  user.LastName,
 		Username:  user.Username,
 	}
+}
+
+func makeInlineKeyboard(k core.Keyboard) [][]tb.InlineButton {
+	keyboard := [][]tb.InlineButton{}
+	for _, buttons := range k {
+		btns := []tb.InlineButton{}
+		for _, b := range buttons {
+			btn := tb.InlineButton{Unique: b.ID, Text: b.Text, Data: b.ID}
+			btns = append(btns, btn)
+		}
+		keyboard = append(keyboard, btns)
+	}
+	return keyboard
 }

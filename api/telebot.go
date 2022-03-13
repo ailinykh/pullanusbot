@@ -162,6 +162,19 @@ func (t *Telebot) AddHandler(handler ...interface{}) {
 	default:
 		panic(fmt.Sprintf("something wrong with %s", h))
 	}
+
+	if h, ok := handler[0].(core.IButtonHandler); ok {
+		for _, button := range h.AllButtons() {
+			t.bot.Handle("\f"+button.ID, func(c *tb.Callback) {
+				err := h.ButtonPressed(c.Data, makeMessage(c.Message), makeIBot(c.Message, t))
+				if err != nil {
+					t.logger.Error(err)
+					t.reportError(c.Message, err)
+				}
+				t.bot.Respond(c, &tb.CallbackResponse{CallbackID: c.ID})
+			})
+		}
+	}
 }
 
 // Run bot loop
