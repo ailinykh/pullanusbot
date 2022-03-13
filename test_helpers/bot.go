@@ -1,6 +1,10 @@
 package test_helpers
 
-import "github.com/ailinykh/pullanusbot/v2/core"
+import (
+	"fmt"
+
+	"github.com/ailinykh/pullanusbot/v2/core"
+)
 
 // https://stackoverflow.com/questions/31794141/can-i-create-shared-test-utilities
 
@@ -39,6 +43,10 @@ func (b *FakeBot) SendVideo(video *core.Video, caption string) (*core.Message, e
 func (b *FakeBot) Delete(message *core.Message) error {
 	b.RemovedMessages = append(b.RemovedMessages, message.Text)
 	return nil
+}
+
+func (b *FakeBot) Edit(message *core.Message, what interface{}, options ...interface{}) (*core.Message, error) {
+	return nil, fmt.Errorf("not implemented")
 }
 
 func (b *FakeBot) SendText(text string, args ...interface{}) (*core.Message, error) {

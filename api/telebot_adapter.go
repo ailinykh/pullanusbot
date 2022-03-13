@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/ailinykh/pullanusbot/v2/core"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -36,6 +38,33 @@ func (a *TelebotAdapter) SendText(text string, params ...interface{}) (*core.Mes
 // Delete is a core.IBot interface implementation
 func (a *TelebotAdapter) Delete(message *core.Message) error {
 	return a.t.bot.Delete(&tb.Message{ID: message.ID, Chat: &tb.Chat{ID: message.ChatID}})
+}
+
+// Edit is a core.IBot interface implementation
+func (a *TelebotAdapter) Edit(message *core.Message, what interface{}, options ...interface{}) (*core.Message, error) {
+	switch v := what.(type) {
+	case core.Keyboard:
+		replyMarkup := &tb.ReplyMarkup{InlineKeyboard: makeInlineKeyboard(v)}
+		m, err := a.t.bot.EditReplyMarkup(makeTbMessage(message), replyMarkup)
+		if err != nil {
+			return nil, err
+		}
+		return makeMessage(m), nil
+	// case tb.InputMedia:
+	// 	m, err := a.t.bot.EditMedia(makeTbMessage(message), v, options...)
+	// 	if err == nil {
+	// 		msg = makeMessage(m)
+	// 	}
+	case string:
+		m, err := a.t.bot.Edit(makeTbMessage(message), v)
+		if err != nil {
+			return nil, err
+		}
+		return makeMessage(m), nil
+	// case Location:
+	default:
+	}
+	return nil, fmt.Errorf("not implemented")
 }
 
 // SendImage is a core.IBot interface implementation
