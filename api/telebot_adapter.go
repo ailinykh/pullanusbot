@@ -50,18 +50,21 @@ func (a *TelebotAdapter) Edit(message *core.Message, what interface{}, options .
 			return nil, err
 		}
 		return makeMessage(m), nil
-	// case tb.InputMedia:
-	// 	m, err := a.t.bot.EditMedia(makeTbMessage(message), v, options...)
-	// 	if err == nil {
-	// 		msg = makeMessage(m)
-	// 	}
 	case string:
-		m, err := a.t.bot.Edit(makeTbMessage(message), v)
+		opts := &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true}
+		for _, opt := range options {
+			switch o := opt.(type) {
+			case core.Keyboard:
+				opts.ReplyMarkup = &tb.ReplyMarkup{InlineKeyboard: makeInlineKeyboard(o)}
+			default:
+				break
+			}
+		}
+		m, err := a.t.bot.Edit(makeTbMessage(message), v, opts)
 		if err != nil {
 			return nil, err
 		}
 		return makeMessage(m), nil
-	// case Location:
 	default:
 	}
 	return nil, fmt.Errorf("not implemented")
