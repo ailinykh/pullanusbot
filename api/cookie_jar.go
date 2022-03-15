@@ -2,46 +2,69 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
+func CreateCookieJar(l core.ILogger, cookiesFile string) *CookieJar {
+	return &CookieJar{l, cookiesFile, make(map[string][]*http.Cookie)}
+}
+
 type CookieJar struct {
-	cookies map[string][]*http.Cookie
+	l        core.ILogger
+	filename string
+	cookies  map[string][]*http.Cookie
 }
 
-func (j *CookieJar) SetCookies(u *url.URL, cookies []*http.Cookie) {
-	j.cookies[u.Host] = cookies
-	data, err := json.MarshalIndent(j.cookies, "", "  ")
+func (jar *CookieJar) SetCookies(u *url.URL, cookies []*http.Cookie) {
+	jar.cookies[u.Host] = jar.merge(jar.cookies[u.Host], cookies)
+	data, err := json.MarshalIndent(jar.cookies, "", "  ")
 	if err != nil {
-		fmt.Println("❌⚠️", err)
+		jar.l.Error(err)
 		return
 	}
-	filename := "cookies.json"
-	err = ioutil.WriteFile(filename, data, 0644)
+
+	err = ioutil.WriteFile(jar.filename, data, 0644)
 	if err != nil {
-		fmt.Println("❌⚠️", err)
+		jar.l.Error(err)
 		return
 	}
 }
 
-func (j *CookieJar) Cookies(u *url.URL) []*http.Cookie {
-	filename := "cookies.json"
-	data, err := ioutil.ReadFile(filename)
+func (jar *CookieJar) Cookies(u *url.URL) []*http.Cookie {
+	data, err := ioutil.ReadFile(jar.filename)
 	if err != nil {
-		fmt.Println("⚠️", err)
-		j.cookies = map[string][]*http.Cookie{}
+		jar.l.Error(err)
+		jar.cookies = map[string][]*http.Cookie{}
 		return []*http.Cookie{}
 	}
 
-	err = json.Unmarshal(data, &j.cookies)
+	err = json.Unmarshal(data, &jar.cookies)
 	if err != nil {
-		fmt.Println("⚠️", err)
-		j.cookies = map[string][]*http.Cookie{}
+		jar.l.Error(err)
+		jar.cookies = map[string][]*http.Cookie{}
 		return []*http.Cookie{}
 	}
 
-	return j.cookies[u.Host]
+	return jar.cookies[u.Host]
+}
+
+func (j *CookieJar) merge(lhs []*http.Cookie, rhs []*http.Cookie) []*http.Cookie {
+	for _, r := range rhs {
+		found := false
+		for _, l := range lhs {
+			if l.Name == r.Name {
+				found = true
+				l = r
+				break
+			}
+		}
+		if !found {
+			lhs = append(lhs, r)
+		}
+	}
+	return lhs
 }

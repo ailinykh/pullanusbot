@@ -88,6 +88,11 @@ func main() {
 
 	iDoNotCare := usecases.CreateIDoNotCare()
 	telebot.AddHandler(iDoNotCare)
+
+	reelsAPI := api.CreateInstagramMediaFactory(logger, path.Join(getWorkingDir(), "cookies.json"))
+	reelsFlow := usecases.CreateReelsFlow(logger, reelsAPI, localMediaSender)
+	telebot.AddHandler(reelsFlow)
+
 	// Start endless loop
 	telebot.Run()
 }
