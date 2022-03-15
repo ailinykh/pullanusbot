@@ -19,7 +19,6 @@ type ReelsFlow struct {
 
 // HandleText is a core.ITextHandler protocol implementation
 func (flow *ReelsFlow) HandleText(message *core.Message, bot core.IBot) error {
-	flow.l.Infof("%+v\n", message)
 	r := regexp.MustCompile(`https://www.instagram.com/reel/\S+`)
 	match := r.FindAllStringSubmatch(message.Text, -1)
 
