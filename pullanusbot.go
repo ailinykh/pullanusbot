@@ -91,7 +91,8 @@ func main() {
 
 	reelsAPI := api.CreateInstagramMediaFactory(logger, path.Join(getWorkingDir(), "cookies.json"))
 	reelsFlow := usecases.CreateReelsFlow(logger, reelsAPI, localMediaSender)
-	telebot.AddHandler(reelsFlow)
+	removeReelsSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, reelsFlow, settingsStorage)
+	telebot.AddHandler(removeReelsSourceDecorator)
 
 	// Start endless loop
 	telebot.Run()
