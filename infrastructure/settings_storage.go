@@ -60,15 +60,16 @@ func (s *SettingsStorage) SetSettings(chatID int64, settings *core.Settings) err
 		return err
 	}
 
-	sett := &Settings{ChatID: chatID, Data: data}
+	sett := &Settings{ChatID: chatID}
 	res := s.conn.First(&sett, chatID)
+	sett.Data = data
 
 	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		s.l.Infof("creating settings %d %s", chatID, string(data))
-		res = s.conn.Create(&settings)
+		res = s.conn.Create(&sett)
 	} else {
 		s.l.Infof("updating settings %d %s", chatID, string(data))
-		res = s.conn.Save(&settings)
+		res = s.conn.Save(&sett)
 	}
 
 	return res.Error
