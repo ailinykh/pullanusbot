@@ -14,7 +14,7 @@ import (
 )
 
 func Test_AllTheCommands_WorksOnlyInGroupChats(t *testing.T) {
-	game, bot, _ := makeSUT(LocalizerDict{"faggot_not_available_for_private": "group only"})
+	game, bot, _ := makeSUT(map[string]string{"faggot_not_available_for_private": "group only"})
 	message := makeGameMessage(1, "Faggot")
 	message.IsPrivate = true
 
@@ -30,7 +30,7 @@ func Test_AllTheCommands_WorksOnlyInGroupChats(t *testing.T) {
 	}
 }
 func Test_RulesCommand_DeliversRules(t *testing.T) {
-	game, bot, _ := makeSUT(LocalizerDict{"faggot_rules": "Game rules:"})
+	game, bot, _ := makeSUT(map[string]string{"faggot_rules": "Game rules:"})
 	message := makeGameMessage(1, "Faggot")
 
 	game.Rules(message, bot)
@@ -52,7 +52,7 @@ func Test_Add_ChecksAndReplacesPlayerInfoIfNeeded(t *testing.T) {
 }
 
 func Test_Add_AppendsPlayerInGameOnlyOnce(t *testing.T) {
-	game, bot, storage := makeSUT(LocalizerDict{
+	game, bot, storage := makeSUT(map[string]string{
 		"faggot_added_to_game":   "Player added",
 		"faggot_already_in_game": "Player already in game",
 	})
@@ -70,7 +70,7 @@ func Test_Add_AppendsPlayerInGameOnlyOnce(t *testing.T) {
 }
 
 func Test_Play_RespondsWithNoPlayers(t *testing.T) {
-	game, bot, _ := makeSUT(LocalizerDict{
+	game, bot, _ := makeSUT(map[string]string{
 		"faggot_no_players": "Nobody in game. So you win, %s!",
 	})
 	message := makeGameMessage(1, "Faggot")
@@ -81,7 +81,7 @@ func Test_Play_RespondsWithNoPlayers(t *testing.T) {
 }
 
 func Test_Play_RespondsNotEnoughPlayers(t *testing.T) {
-	game, bot, _ := makeSUT(LocalizerDict{
+	game, bot, _ := makeSUT(map[string]string{
 		"faggot_not_enough_players": "Not enough players",
 	})
 	message := makeGameMessage(1, "Faggot")
@@ -93,7 +93,7 @@ func Test_Play_RespondsNotEnoughPlayers(t *testing.T) {
 }
 
 func Test_Play_RespondsWithCurrentGameResult(t *testing.T) {
-	game, bot, storage := makeSUT(LocalizerDict{
+	game, bot, storage := makeSUT(map[string]string{
 		"faggot_game_0_0": "0",
 		"faggot_game_1_0": "1",
 		"faggot_game_2_0": "2",
@@ -115,7 +115,7 @@ func Test_Play_RespondsWithCurrentGameResult(t *testing.T) {
 	assert.Equal(t, phrase, bot.SentMessages[5])
 }
 func Test_Play_RespondsWinnerAlreadyKnown(t *testing.T) {
-	game, bot, storage := makeSUT(LocalizerDict{
+	game, bot, storage := makeSUT(map[string]string{
 		"faggot_game_0_0":     "0",
 		"faggot_game_1_0":     "1",
 		"faggot_game_2_0":     "2",
@@ -142,7 +142,7 @@ func Test_Play_RespondsWinnerAlreadyKnown(t *testing.T) {
 }
 
 func Test_Play_RespondsWinnerLeftTheChat(t *testing.T) {
-	game, bot, storage := makeSUT(LocalizerDict{
+	game, bot, storage := makeSUT(map[string]string{
 		"faggot_winner_left": "winner left",
 	})
 	m1 := makeGameMessage(1, "Faggot1")
@@ -157,7 +157,7 @@ func Test_Play_RespondsWinnerLeftTheChat(t *testing.T) {
 
 func Test_Stats_RespondsWithDescendingResultsForCurrentYear(t *testing.T) {
 	year := strconv.Itoa(time.Now().Year())
-	game, bot, storage := makeSUT(LocalizerDict{
+	game, bot, storage := makeSUT(map[string]string{
 		"faggot_stats_top":    "top",
 		"faggot_stats_entry":  "index:%d,player:%s,scores:%d",
 		"faggot_stats_bottom": "total_players:%d",
@@ -194,7 +194,7 @@ func Test_Stats_RespondsWithDescendingResultsForCurrentYear(t *testing.T) {
 }
 
 func Test_Stats_RespondsOnlyForTop10Players(t *testing.T) {
-	game, bot, storage := makeSUT(LocalizerDict{
+	game, bot, storage := makeSUT(map[string]string{
 		"faggot_stats_top":    "top",
 		"faggot_stats_entry":  "index:%d,player:%s,scores:%d",
 		"faggot_stats_bottom": "total_players:%d",
@@ -232,7 +232,7 @@ func Test_Stats_RespondsOnlyForTop10Players(t *testing.T) {
 }
 
 func Test_All_RespondsWithDescendingResultsForAllTime(t *testing.T) {
-	game, bot, storage := makeSUT(LocalizerDict{
+	game, bot, storage := makeSUT(map[string]string{
 		"faggot_all_top":    "top",
 		"faggot_all_entry":  "index:%d,player:%s,scores:%d",
 		"faggot_all_bottom": "total_players:%d",
@@ -267,7 +267,7 @@ func Test_All_RespondsWithDescendingResultsForAllTime(t *testing.T) {
 }
 
 func Test_Me_RespondsWithPersonalStat(t *testing.T) {
-	game, bot, storage := makeSUT(LocalizerDict{
+	game, bot, storage := makeSUT(map[string]string{
 		"faggot_me": "username:%s,scores:%d",
 	})
 
@@ -300,45 +300,22 @@ func makeGameMessage(id int, username string) *core.Message {
 }
 
 func makeSUT(args ...interface{}) (*usecases.GameFlow, *test_helpers.FakeBot, *GameStorageMock) {
-	dict := LocalizerDict{}
+	dict := map[string]string{}
 	storage := &GameStorageMock{players: []*core.User{}, rounds: []*core.Round{}}
 	bot := test_helpers.CreateBot()
 
 	for _, arg := range args {
 		switch opt := arg.(type) {
-		case LocalizerDict:
+		case map[string]string:
 			dict = opt
 		}
 	}
 
 	l := &test_helpers.FakeLogger{}
-	t := &LocalizerMock{dict: dict}
+	t := test_helpers.CreateLocalizer(dict)
 	r := &RandMock{}
 	game := usecases.CreateGameFlow(l, t, storage, r)
 	return game, bot, storage
-}
-
-// LocalizerMock
-
-type LocalizerMock struct {
-	dict LocalizerDict
-}
-
-type LocalizerDict = map[string]string
-
-func (l *LocalizerMock) I18n(key string, args ...interface{}) string {
-	if val, ok := l.dict[key]; ok {
-		return fmt.Sprintf(val, args...)
-	}
-	return key
-}
-
-func (l *LocalizerMock) AllKeys() []string {
-	keys := make([]string, 0, len(l.dict))
-	for k := range l.dict {
-		keys = append(keys, k)
-	}
-	return keys
 }
 
 // GameStorageMock
