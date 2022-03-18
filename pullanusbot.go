@@ -96,7 +96,7 @@ func main() {
 
 	commonLocalizer := infrastructure.CreateCommonLocalizer()
 	startFlow := usecases.CreateStartFlow(logger, commonLocalizer, settingsStorage)
-	telebot.AddHandler("/start", startFlow.HandleText)
+	telebot.AddHandler(startFlow)
 	// Start endless loop
 	telebot.Run()
 }
