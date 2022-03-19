@@ -2,12 +2,13 @@ package usecases
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
 func CreateStartFlow(l core.ILogger, loc core.ILocalizer, settingsStorage core.ISettingsStorage) core.ITextHandler {
-	return &StartFlow{l, loc, settingsStorage, make(map[int64]bool)}
+	return &StartFlow{l, loc, settingsStorage, make(map[int64]bool), sync.Mutex{}}
 }
 
 type StartFlow struct {
@@ -15,10 +16,14 @@ type StartFlow struct {
 	loc             core.ILocalizer
 	settingsStorage core.ISettingsStorage
 	cache           map[int64]bool
+	lock            sync.Mutex
 }
 
 // HandleText is a core.ITextHandler protocol implementation
 func (flow *StartFlow) HandleText(message *core.Message, bot core.IBot) error {
+	flow.lock.Lock()
+	defer flow.lock.Unlock()
+
 	if strings.HasPrefix(message.Text, "/start") {
 		return flow.handleStart(message, bot)
 	}
