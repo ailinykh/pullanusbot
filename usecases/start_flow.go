@@ -52,6 +52,7 @@ func (flow *StartFlow) handleStart(message *core.Message, bot core.IBot) error {
 
 func (flow *StartFlow) handleSettingsChack(message *core.Message, bot core.IBot) error {
 	if _, ok := flow.cache[message.ChatID]; !ok {
+		flow.l.Infof("%+v %+v", message, message.Sender)
 		flow.cache[message.ChatID] = true
 		_, err := flow.settingsStorage.GetSettings(message.ChatID) // create settings if needed
 		if err != nil {
