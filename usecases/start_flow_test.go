@@ -13,7 +13,8 @@ func Test_HandleText_CreatesSettingsWithPayload(t *testing.T) {
 	logger := test_helpers.CreateLogger()
 	loc := test_helpers.CreateLocalizer(map[string]string{})
 	settingsStorage := test_helpers.CreateSettingsStorage()
-	startFlow := usecases.CreateStartFlow(logger, loc, settingsStorage)
+	userStorage := test_helpers.CreateUserStorage()
+	startFlow := usecases.CreateStartFlow(logger, loc, settingsStorage, userStorage)
 
 	message := &core.Message{Text: "/start payload", ChatID: 1488}
 	bot := test_helpers.CreateBot()
@@ -29,7 +30,8 @@ func Test_HandleText_MergePayloadInSettings(t *testing.T) {
 	logger := test_helpers.CreateLogger()
 	loc := test_helpers.CreateLocalizer(map[string]string{})
 	settingsStorage := test_helpers.CreateSettingsStorage()
-	startFlow := usecases.CreateStartFlow(logger, loc, settingsStorage)
+	userStorage := test_helpers.CreateUserStorage()
+	startFlow := usecases.CreateStartFlow(logger, loc, settingsStorage, userStorage)
 
 	initialSettings := core.DefaultSettings()
 	initialSettings.Payload = []string{"payload"}
