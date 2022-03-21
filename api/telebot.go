@@ -46,7 +46,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 	bot.Handle(tb.OnText, func(m *tb.Message) {
 		for _, h := range telebot.textHandlers {
 			err := h.HandleText(makeMessage(m), makeIBot(m, telebot))
-			if err != nil {
+			if err != nil && err.Error() != "not implemented" {
 				logger.Errorf("%T: %s", h, err)
 				telebot.reportError(m, err)
 			}
