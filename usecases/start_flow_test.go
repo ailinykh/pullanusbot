@@ -1,6 +1,7 @@
 package usecases_test
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
@@ -9,41 +10,87 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_HandleText_CreatesSettingsWithPayload(t *testing.T) {
+func Test_HandleText_CreateUserData(t *testing.T) {
 	logger := test_helpers.CreateLogger()
 	loc := test_helpers.CreateLocalizer(map[string]string{})
 	settingsStorage := test_helpers.CreateSettingsStorage()
+	chatStorage := test_helpers.CreateChatStorage()
 	userStorage := test_helpers.CreateUserStorage()
-	startFlow := usecases.CreateStartFlow(logger, loc, settingsStorage, userStorage)
+	startFlow := usecases.CreateStartFlow(logger, loc, settingsStorage, chatStorage, userStorage)
 
-	message := &core.Message{Text: "/start payload", ChatID: 1488}
 	bot := test_helpers.CreateBot()
 
-	startFlow.HandleText(message, bot)
+	messages := []string{
+		"/start",
+		"/start payload",
+		"/start another_payload",
+	}
+	wg := sync.WaitGroup{}
 
-	expectedSettings := core.DefaultSettings()
-	expectedSettings.Payload = []string{"payload"}
-	assert.Equal(t, map[int64]*core.Settings{1488: &expectedSettings}, settingsStorage.Data)
+	for _, message := range messages {
+		wg.Add(1)
+		go func(text string) {
+			startFlow.HandleText(makeMessage(text), bot)
+			wg.Done()
+		}(message)
+	}
+
+	wg.Wait()
+
+	assert.Equal(t, 1, len(userStorage.Users))
+
+	message := makeMessage("/start")
+	user, _ := userStorage.GetUserById(message.Sender.ID)
+	assert.Equal(t, message.Sender, user)
 }
 
-func Test_HandleText_MergePayloadInSettings(t *testing.T) {
+func Test_HandleText_CreateChatData(t *testing.T) {
 	logger := test_helpers.CreateLogger()
 	loc := test_helpers.CreateLocalizer(map[string]string{})
 	settingsStorage := test_helpers.CreateSettingsStorage()
+	chatStorage := test_helpers.CreateChatStorage()
 	userStorage := test_helpers.CreateUserStorage()
-	startFlow := usecases.CreateStartFlow(logger, loc, settingsStorage, userStorage)
+	startFlow := usecases.CreateStartFlow(logger, loc, settingsStorage, chatStorage, userStorage)
 
-	initialSettings := core.DefaultSettings()
-	initialSettings.Payload = []string{"payload"}
-	settingsStorage.SetSettings(1488, &initialSettings)
 	bot := test_helpers.CreateBot()
 
-	startFlow.HandleText(&core.Message{Text: "/start another_payload", ChatID: 1488}, bot)
+	messages := []string{
+		"/start",
+		"/start payload",
+		"/start another_payload",
+	}
+	wg := sync.WaitGroup{}
 
-	expectedSettings := core.DefaultSettings()
-	expectedSettings.Payload = []string{"payload", "another_payload"}
-	assert.Equal(t, map[int64]*core.Settings{1488: &expectedSettings}, settingsStorage.Data)
+	for _, message := range messages {
+		wg.Add(1)
+		go func(text string) {
+			startFlow.HandleText(makeMessage(text), bot)
+			wg.Done()
+		}(message)
+	}
 
-	startFlow.HandleText(&core.Message{Text: "/start payload", ChatID: 1488}, bot)
-	assert.Equal(t, map[int64]*core.Settings{1488: &expectedSettings}, settingsStorage.Data)
+	wg.Wait()
+
+	assert.Equal(t, 1, len(chatStorage.Chats))
+
+	message := makeMessage("/start")
+	chat, _ := chatStorage.GetChatByID(message.Chat.ID)
+	assert.Equal(t, true, contains("payload", chat.Settings.Payload))
+	assert.Equal(t, true, contains("another_payload", chat.Settings.Payload))
+}
+
+func makeMessage(text string) *core.Message {
+	settings := core.DefaultSettings()
+	chat := core.Chat{ID: 1488, Title: "Paul Durov", Type: "private", Settings: &settings}
+	sender := core.User{ID: 1, FirstName: "Paul", LastName: "Durov"}
+	return &core.Message{Text: text, Chat: &chat, Sender: &sender}
+}
+
+func contains(message string, messages []string) bool {
+	for _, m := range messages {
+		if m == message {
+			return true
+		}
+	}
+	return false
 }
