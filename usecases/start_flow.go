@@ -7,20 +7,19 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateStartFlow(l core.ILogger, loc core.ILocalizer, settingsStorage core.ISettingsStorage, chatStorage core.IChatStorage, userStorage core.IUserStorage) core.ITextHandler {
-	return &StartFlow{l, loc, settingsStorage, chatStorage, userStorage, make(map[int64]bool), make(map[int]bool), make(map[int64]bool), sync.Mutex{}}
+func CreateStartFlow(l core.ILogger, loc core.ILocalizer, chatStorage core.IChatStorage, userStorage core.IUserStorage) core.ITextHandler {
+	return &StartFlow{l, loc, chatStorage, userStorage, make(map[int64]bool), make(map[int]bool), make(map[int64]bool), sync.Mutex{}}
 }
 
 type StartFlow struct {
-	l               core.ILogger
-	loc             core.ILocalizer
-	settingsStorage core.ISettingsStorage
-	chatStorage     core.IChatStorage
-	userStorage     core.IUserStorage
-	settingsCache   map[int64]bool
-	usersCache      map[core.UserID]bool
-	chatCache       map[int64]bool
-	lock            sync.Mutex
+	l             core.ILogger
+	loc           core.ILocalizer
+	chatStorage   core.IChatStorage
+	userStorage   core.IUserStorage
+	settingsCache map[int64]bool
+	usersCache    map[core.UserID]bool
+	chatCache     map[int64]bool
+	lock          sync.Mutex
 }
 
 // HandleText is a core.ITextHandler protocol implementation
@@ -88,16 +87,6 @@ func (flow *StartFlow) ensureChatExists(message *core.Message, bot core.IBot) er
 }
 
 func (flow *StartFlow) ensureUserExists(message *core.Message, bot core.IBot) error {
-	if _, ok := flow.settingsCache[message.Chat.ID]; !ok {
-		flow.l.Infof("%+v %+v", message, message.Sender)
-		flow.settingsCache[message.Chat.ID] = true
-		_, err := flow.settingsStorage.GetSettings(message.Chat.ID) // create settings if needed
-		if err != nil {
-			flow.l.Error(err)
-			return err
-		}
-	}
-
 	if _, ok := flow.usersCache[message.Sender.ID]; !ok {
 		flow.usersCache[message.Sender.ID] = true
 		_, err := flow.userStorage.GetUserById(message.Sender.ID)

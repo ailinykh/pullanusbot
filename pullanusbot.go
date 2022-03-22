@@ -95,8 +95,9 @@ func main() {
 	telebot.AddHandler(removeReelsSourceDecorator)
 
 	commonLocalizer := infrastructure.CreateCommonLocalizer()
+	chatStorage := infrastructure.CreateChatStorage(dbFile, logger)
 	userStorage := infrastructure.CreateUserStorage(dbFile, logger)
-	startFlow := usecases.CreateStartFlow(logger, commonLocalizer, settingsStorage, userStorage)
+	startFlow := usecases.CreateStartFlow(logger, commonLocalizer, chatStorage, userStorage)
 	telebot.AddHandler(startFlow)
 	// Start endless loop
 	telebot.Run()

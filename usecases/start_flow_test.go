@@ -13,10 +13,9 @@ import (
 func Test_HandleText_CreateUserData(t *testing.T) {
 	logger := test_helpers.CreateLogger()
 	loc := test_helpers.CreateLocalizer(map[string]string{})
-	settingsStorage := test_helpers.CreateSettingsStorage()
 	chatStorage := test_helpers.CreateChatStorage()
 	userStorage := test_helpers.CreateUserStorage()
-	startFlow := usecases.CreateStartFlow(logger, loc, settingsStorage, chatStorage, userStorage)
+	startFlow := usecases.CreateStartFlow(logger, loc, chatStorage, userStorage)
 
 	bot := test_helpers.CreateBot()
 
@@ -47,10 +46,9 @@ func Test_HandleText_CreateUserData(t *testing.T) {
 func Test_HandleText_CreateChatData(t *testing.T) {
 	logger := test_helpers.CreateLogger()
 	loc := test_helpers.CreateLocalizer(map[string]string{})
-	settingsStorage := test_helpers.CreateSettingsStorage()
 	chatStorage := test_helpers.CreateChatStorage()
 	userStorage := test_helpers.CreateUserStorage()
-	startFlow := usecases.CreateStartFlow(logger, loc, settingsStorage, chatStorage, userStorage)
+	startFlow := usecases.CreateStartFlow(logger, loc, chatStorage, userStorage)
 
 	bot := test_helpers.CreateBot()
 
