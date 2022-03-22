@@ -62,13 +62,11 @@ func (s *ChatStorage) GetChatByID(chatID int64) (*core.Chat, error) {
 // CreateChat is a core.IChatStorage interface implementation
 func (s *ChatStorage) CreateChat(chatID int64, title string, type_ string, settings *core.Settings) error {
 	data, err := json.Marshal(&settings)
-
 	if err != nil {
 		s.l.Error(err)
 		return err
 	}
 
-	s.l.Infof("creating chat id: %d, title: %s, type: %s, data: %s", chatID, title, type_, data)
 	chat := Chat{ID: chatID, Title: title, Type: type_, Settings: data}
 	err = s.conn.Create(&chat).Error
 	if err != nil {
@@ -76,7 +74,7 @@ func (s *ChatStorage) CreateChat(chatID int64, title string, type_ string, setti
 		return err
 	}
 
-	s.l.Info("chat created: %+v", chat)
+	s.l.Infof("chat created: {%d %s %s}", chat.ID, chat.Title, chat.Type)
 	return nil
 }
 
@@ -86,6 +84,18 @@ func (s *ChatStorage) UpdateSettings(chatID int64, settings *core.Settings) erro
 	if err != nil {
 		return err
 	}
-	chat.Settings = settings
-	return s.conn.Save(&chat).Error
+
+	data, err := json.Marshal(&settings)
+	if err != nil {
+		s.l.Error(err)
+		return err
+	}
+
+	c := Chat{
+		ID:       chat.ID,
+		Title:    chat.Title,
+		Type:     chat.Type,
+		Settings: data,
+	}
+	return s.conn.Save(&c).Error
 }
