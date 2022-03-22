@@ -3,7 +3,7 @@ package core
 // Message from chat
 type Message struct {
 	ID        int
-	ChatID    int64
+	Chat      *Chat
 	IsPrivate bool
 	Sender    *User
 	Text      string

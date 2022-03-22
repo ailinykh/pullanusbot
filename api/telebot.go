@@ -209,7 +209,7 @@ func makeMessage(m *tb.Message) *core.Message {
 	}
 	message := &core.Message{
 		ID:        m.ID,
-		ChatID:    m.Chat.ID,
+		Chat:      makeChat(m.Chat),
 		IsPrivate: m.Private(),
 		Sender:    makeUser(m.Sender),
 		Text:      text,
@@ -224,6 +224,19 @@ func makeMessage(m *tb.Message) *core.Message {
 	}
 
 	return message
+}
+
+func makeChat(c *tb.Chat) *core.Chat {
+	title := c.Title
+	if c.Type == tb.ChatPrivate {
+		title = c.FirstName + " " + c.LastName
+	}
+	return &core.Chat{
+		ID:       c.ID,
+		Title:    title,
+		Type:     string(c.Type),
+		Settings: nil, //TODO: obtain settings from database
+	}
 }
 
 func makeUser(u *tb.User) *core.User {

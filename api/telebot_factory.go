@@ -8,7 +8,7 @@ import (
 func makeTbMessage(m *core.Message) *tb.Message {
 	message := &tb.Message{
 		ID:     m.ID,
-		Chat:   &tb.Chat{ID: m.ChatID},
+		Chat:   &tb.Chat{ID: m.Chat.ID},
 		Sender: makeTbUser(m.Sender),
 	}
 	if m.ReplyTo != nil {

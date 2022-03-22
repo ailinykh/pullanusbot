@@ -37,7 +37,7 @@ func (a *TelebotAdapter) SendText(text string, params ...interface{}) (*core.Mes
 
 // Delete is a core.IBot interface implementation
 func (a *TelebotAdapter) Delete(message *core.Message) error {
-	return a.t.bot.Delete(&tb.Message{ID: message.ID, Chat: &tb.Chat{ID: message.ChatID}})
+	return a.t.bot.Delete(&tb.Message{ID: message.ID, Chat: &tb.Chat{ID: message.Chat.ID}})
 }
 
 // Edit is a core.IBot interface implementation

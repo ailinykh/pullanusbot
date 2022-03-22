@@ -51,7 +51,7 @@ type msgSource struct {
 
 // HandleImage is a core.IImageHandler protocol implementation
 func (p *PublisherFlow) HandleImage(image *core.Image, message *core.Message, bot core.IBot) error {
-	if message.ChatID == p.chatID && message.Sender.Username == p.username {
+	if message.Chat.ID == p.chatID && message.Sender.Username == p.username {
 		p.imageChan <- imgSource{image.ID, bot}
 	}
 
@@ -59,7 +59,7 @@ func (p *PublisherFlow) HandleImage(image *core.Image, message *core.Message, bo
 }
 
 func (p *PublisherFlow) HandleRequest(message *core.Message, bot core.IBot) error {
-	if message.ChatID == p.chatID {
+	if message.Chat.ID == p.chatID {
 		p.requestChan <- msgSource{*message, bot}
 	}
 
@@ -72,7 +72,7 @@ func (p *PublisherFlow) runLoop() {
 
 	disposal := func(m core.Message, bot core.IBot, timeout int) {
 		time.Sleep(time.Duration(timeout) * time.Second)
-		p.l.Infof("disposing message %d from chat %d", m.ID, m.ChatID)
+		p.l.Infof("disposing message %d from chat %d", m.ID, m.Chat.ID)
 		err := bot.Delete(&m)
 		if err != nil {
 			p.l.Error(err)

@@ -33,7 +33,7 @@ func (flow *StartFlow) HandleText(message *core.Message, bot core.IBot) error {
 }
 
 func (flow *StartFlow) handleStart(message *core.Message, bot core.IBot) error {
-	settings, err := flow.settingsStorage.GetSettings(message.ChatID)
+	settings, err := flow.settingsStorage.GetSettings(message.Chat.ID)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (flow *StartFlow) handleStart(message *core.Message, bot core.IBot) error {
 		payload := message.Text[7:]
 		if !flow.contains(payload, settings.Payload) {
 			settings.Payload = append(settings.Payload, payload)
-			err = flow.settingsStorage.SetSettings(message.ChatID, settings)
+			err = flow.settingsStorage.SetSettings(message.Chat.ID, settings)
 			if err != nil {
 				return err
 			}
@@ -53,10 +53,10 @@ func (flow *StartFlow) handleStart(message *core.Message, bot core.IBot) error {
 }
 
 func (flow *StartFlow) checkSettingsAndUserPresence(message *core.Message, bot core.IBot) error {
-	if _, ok := flow.settingsCache[message.ChatID]; !ok {
+	if _, ok := flow.settingsCache[message.Chat.ID]; !ok {
 		flow.l.Infof("%+v %+v", message, message.Sender)
-		flow.settingsCache[message.ChatID] = true
-		_, err := flow.settingsStorage.GetSettings(message.ChatID) // create settings if needed
+		flow.settingsCache[message.Chat.ID] = true
+		_, err := flow.settingsStorage.GetSettings(message.Chat.ID) // create settings if needed
 		if err != nil {
 			flow.l.Error(err)
 			return err

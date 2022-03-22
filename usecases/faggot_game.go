@@ -42,11 +42,11 @@ func (flow *GameFlow) Add(message *core.Message, bot core.IBot) error {
 		_, err := bot.SendText(flow.t.I18n("faggot_not_available_for_private"))
 		return err
 	}
-	players, _ := flow.s.GetPlayers(message.ChatID)
+	players, _ := flow.s.GetPlayers(message.Chat.ID)
 	for _, p := range players {
 		if p.ID == message.Sender.ID {
 			if p.FirstName != message.Sender.FirstName || p.LastName != message.Sender.LastName || p.Username != message.Sender.Username {
-				_ = flow.s.UpdatePlayer(message.ChatID, message.Sender)
+				_ = flow.s.UpdatePlayer(message.Chat.ID, message.Sender)
 				_, err := bot.SendText(flow.t.I18n("faggot_info_updated"))
 				return err
 			}
@@ -55,7 +55,7 @@ func (flow *GameFlow) Add(message *core.Message, bot core.IBot) error {
 		}
 	}
 
-	err := flow.s.AddPlayer(message.ChatID, message.Sender)
+	err := flow.s.AddPlayer(message.Chat.ID, message.Sender)
 	if err != nil {
 		return err
 	}
@@ -75,9 +75,9 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	flow.l.Infof("chat_id: %d, game started by %v", message.ChatID, message.Sender)
+	flow.l.Infof("chat_id: %d, game started by %v", message.Chat.ID, message.Sender)
 
-	players, _ := flow.s.GetPlayers(message.ChatID)
+	players, _ := flow.s.GetPlayers(message.Chat.ID)
 	switch len(players) {
 	case 0:
 		_, err := bot.SendText(flow.t.I18n("faggot_no_players", message.Sender.DisplayName()))
@@ -87,7 +87,7 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 		return err
 	}
 
-	games, _ := flow.s.GetRounds(message.ChatID)
+	games, _ := flow.s.GetRounds(message.Chat.ID)
 	loc, _ := time.LoadLocation("Europe/Zurich")
 	day := time.Now().In(loc).Format("2006-01-02")
 
@@ -100,7 +100,7 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 
 	winner := players[rand.Intn(len(players))]
 
-	if !bot.IsUserMemberOfChat(winner, message.ChatID) {
+	if !bot.IsUserMemberOfChat(winner, message.Chat.ID) {
 		_, err := bot.SendText(flow.t.I18n("faggot_winner_left"))
 		return err
 	}
@@ -109,7 +109,7 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 
 	if winner.ID == message.Sender.ID {
 		if winner.FirstName != message.Sender.FirstName || winner.LastName != message.Sender.LastName || winner.Username != message.Sender.Username {
-			err := flow.s.UpdatePlayer(message.ChatID, message.Sender)
+			err := flow.s.UpdatePlayer(message.Chat.ID, message.Sender)
 			if err != nil {
 				flow.l.Error(err)
 			} else {
@@ -119,7 +119,7 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 	}
 
 	round := &core.Round{Day: day, Winner: winner}
-	flow.s.AddRound(message.ChatID, round)
+	flow.s.AddRound(message.Chat.ID, round)
 
 	for i := 0; i <= 3; i++ {
 		templates := []string{}
@@ -180,7 +180,7 @@ func (flow *GameFlow) Stats(message *core.Message, bot core.IBot) error {
 	}
 
 	year := strconv.Itoa(time.Now().Year())
-	rounds, _ := flow.s.GetRounds(message.ChatID)
+	rounds, _ := flow.s.GetRounds(message.Chat.ID)
 	entries := []Stat{}
 	players := map[int]bool{}
 
@@ -237,7 +237,7 @@ func (flow *GameFlow) Me(message *core.Message, bot core.IBot) error {
 
 func (flow *GameFlow) getStat(message *core.Message) ([]Stat, error) {
 	entries := []Stat{}
-	rounds, err := flow.s.GetRounds(message.ChatID)
+	rounds, err := flow.s.GetRounds(message.Chat.ID)
 
 	if err != nil {
 		return nil, err

@@ -296,7 +296,7 @@ func makeGameMessage(id int, username string) *core.Message {
 		LastName:  "LastName" + fmt.Sprint(id),
 		Username:  username,
 	}
-	return &core.Message{ID: 0, Sender: player}
+	return &core.Message{ID: 0, Chat: &core.Chat{ID: 0}, Sender: player}
 }
 
 func makeSUT(args ...interface{}) (*usecases.GameFlow, *test_helpers.FakeBot, *GameStorageMock) {

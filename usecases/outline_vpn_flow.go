@@ -58,7 +58,7 @@ func (flow *OutlineVpnFlow) HandleText(message *core.Message, bot core.IBot) err
 		return fmt.Errorf("not implemented")
 	}
 
-	if state, ok := flow.state[message.ChatID]; ok {
+	if state, ok := flow.state[message.Chat.ID]; ok {
 		return flow.handleAction(state, message, bot)
 	}
 
@@ -70,7 +70,7 @@ func (flow *OutlineVpnFlow) HandleText(message *core.Message, bot core.IBot) err
 }
 
 func (flow *OutlineVpnFlow) help(message *core.Message, bot core.IBot) error {
-	keys, err := flow.api.GetKeys(message.ChatID)
+	keys, err := flow.api.GetKeys(message.Chat.ID)
 	if err != nil {
 		flow.l.Error(err)
 		return err
@@ -81,7 +81,7 @@ func (flow *OutlineVpnFlow) help(message *core.Message, bot core.IBot) error {
 }
 
 func (flow *OutlineVpnFlow) create(message *core.Message, bot core.IBot) error {
-	flow.state[message.ChatID] = OutlineVpnState{"create", message.ID}
+	flow.state[message.Chat.ID] = OutlineVpnState{"create", message.ID}
 	keyboard := core.Keyboard{[]*core.Button{{ID: "vpn_back", Text: flow.loc.I18n("vpn_button_back")}}}
 
 	_, err := bot.Edit(message, flow.loc.I18n("vpn_enter_create_key_name"), keyboard)
@@ -89,7 +89,7 @@ func (flow *OutlineVpnFlow) create(message *core.Message, bot core.IBot) error {
 }
 
 func (flow *OutlineVpnFlow) manage(message *core.Message, bot core.IBot) error {
-	keys, err := flow.api.GetKeys(message.ChatID)
+	keys, err := flow.api.GetKeys(message.Chat.ID)
 	if err != nil {
 		flow.l.Error(err)
 		return err
@@ -112,26 +112,26 @@ func (flow *OutlineVpnFlow) manage(message *core.Message, bot core.IBot) error {
 }
 
 func (flow *OutlineVpnFlow) back(message *core.Message, bot core.IBot) error {
-	keys, err := flow.api.GetKeys(message.ChatID)
+	keys, err := flow.api.GetKeys(message.Chat.ID)
 	if err != nil {
 		flow.l.Error(err)
 		return err
 	}
 
-	delete(flow.state, message.ChatID)
+	delete(flow.state, message.Chat.ID)
 
 	_, err = bot.Edit(message, flow.loc.I18n("vpn_welcome"), flow.getKeyboard(keys))
 	return err
 }
 
 func (flow *OutlineVpnFlow) delete(message *core.Message, bot core.IBot) error {
-	keys, err := flow.api.GetKeys(message.ChatID)
+	keys, err := flow.api.GetKeys(message.Chat.ID)
 	if err != nil {
 		flow.l.Error(err)
 		return err
 	}
 
-	flow.state[message.ChatID] = OutlineVpnState{"delete", message.ID}
+	flow.state[message.Chat.ID] = OutlineVpnState{"delete", message.ID}
 
 	text := []string{flow.loc.I18n("vpn_enter_delete_key_name_top")}
 
@@ -170,15 +170,15 @@ func (flow *OutlineVpnFlow) handleAction(state OutlineVpnState, message *core.Me
 			_, err := bot.SendText(flow.loc.I18n("vpn_enter_create_key_name_too_long"))
 			return err
 		}
-		key, err := flow.api.CreateKey(message.ChatID, message.Text)
+		key, err := flow.api.CreateKey(message.Chat.ID, message.Text)
 		if err != nil {
 			flow.l.Error(err)
 			return err
 		}
 
-		delete(flow.state, message.ChatID)
+		delete(flow.state, message.Chat.ID)
 
-		_ = bot.Delete(&core.Message{ID: state.source, ChatID: message.ChatID})
+		_ = bot.Delete(&core.Message{ID: state.source, Chat: message.Chat})
 
 		keyboard := core.Keyboard{[]*core.Button{{ID: "vpn_manage_key", Text: flow.loc.I18n("vpn_button_manage_key")}}}
 		_, err = bot.SendText(flow.loc.I18n("vpn_key_created", key.Key), keyboard)
@@ -186,15 +186,15 @@ func (flow *OutlineVpnFlow) handleAction(state OutlineVpnState, message *core.Me
 	}
 
 	if state.action == "delete" {
-		keys, err := flow.api.GetKeys(message.ChatID)
+		keys, err := flow.api.GetKeys(message.Chat.ID)
 		if err != nil {
 			flow.l.Error(err)
 			return err
 		}
 
-		delete(flow.state, message.ChatID)
+		delete(flow.state, message.Chat.ID)
 
-		_ = bot.Delete(&core.Message{ID: state.source, ChatID: message.ChatID})
+		_ = bot.Delete(&core.Message{ID: state.source, Chat: message.Chat})
 
 		keyboard := core.Keyboard{
 			[]*core.Button{{ID: "vpn_back", Text: flow.loc.I18n("vpn_button_back")}},

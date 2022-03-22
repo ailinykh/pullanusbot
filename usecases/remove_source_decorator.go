@@ -27,14 +27,14 @@ func (decorator *RemoveSourceDecorator) HandleText(message *core.Message, bot co
 		return err
 	}
 
-	settings, err := decorator.settingsStorage.GetSettings(message.ChatID)
+	settings, err := decorator.settingsStorage.GetSettings(message.Chat.ID)
 	if err != nil {
 		decorator.l.Error(err)
 		return err
 	}
 
 	if settings.RemoveSourceOnSucccess {
-		decorator.l.Infof("removing chat %d message %d", message.ChatID, message.ID)
+		decorator.l.Infof("removing chat %d message %d", message.Chat.ID, message.ID)
 		return bot.Delete(message)
 	}
 
