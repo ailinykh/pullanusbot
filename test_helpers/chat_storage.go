@@ -20,7 +20,7 @@ func (storage *FakeChatStorage) GetChatByID(chatID int64) (*core.Chat, error) {
 	if user, ok := storage.chats[chatID]; ok {
 		return user, nil
 	}
-	return nil, fmt.Errorf("chat with id %d not found", chatID)
+	return nil, fmt.Errorf("record not found")
 }
 
 // CreateChat is a core.IChatStorage interface implementation
