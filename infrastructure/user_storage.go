@@ -52,12 +52,19 @@ func (storage *UserStorage) GetUserById(userID core.UserID) (*core.User, error) 
 
 // CreateUser is a core.IUserStorage interface implementation
 func (storage *UserStorage) CreateUser(user *core.User) error {
-	res := storage.conn.Create(User{
+	u := User{
 		UserID:       user.ID,
 		FirstName:    user.FirstName,
 		LastName:     user.LastName,
 		Username:     user.Username,
 		LanguageCode: user.LanguageCode,
-	})
-	return res.Error
+	}
+	err := storage.conn.Create(&u).Error
+	if err != nil {
+		storage.l.Error(err)
+		return err
+	}
+
+	storage.l.Infof("user created: %v", user)
+	return nil
 }
