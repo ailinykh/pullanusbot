@@ -25,6 +25,15 @@ func (storage *FakeChatStorage) GetChatByID(chatID int64) (*core.Chat, error) {
 
 // CreateChat is a core.IChatStorage interface implementation
 func (s *FakeChatStorage) CreateChat(chatID int64, title string, type_ string, settings *core.Settings) error {
-	s.chats[chatID] = &core.Chat{ID: chatID, Title: title, Type: type_, Settings: settings}
+	return nil
+}
+
+// UpdateSettings is a core.IChatStorage interface implementation
+func (s *FakeChatStorage) UpdateSettings(chatID int64, settings *core.Settings) error {
+	chat, err := s.GetChatByID(chatID)
+	if err != nil {
+		return err
+	}
+	chat.Settings = settings
 	return nil
 }

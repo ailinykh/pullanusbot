@@ -79,3 +79,13 @@ func (s *ChatStorage) CreateChat(chatID int64, title string, type_ string, setti
 	s.l.Info("chat created: %+v", chat)
 	return nil
 }
+
+// UpdateSettings is a core.IChatStorage interface implementation
+func (s *ChatStorage) UpdateSettings(chatID int64, settings *core.Settings) error {
+	chat, err := s.GetChatByID(chatID)
+	if err != nil {
+		return err
+	}
+	chat.Settings = settings
+	return s.conn.Save(&chat).Error
+}
