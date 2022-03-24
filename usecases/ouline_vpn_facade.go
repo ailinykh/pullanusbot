@@ -56,7 +56,7 @@ func (facade *OutlineVpnFacade) CreateKey(chatID int64, title string) (*core.Vpn
 		return nil, err
 	}
 
-	user, err := facade.userStorage.GetUserById(int(chatID)) // should exist
+	user, err := facade.userStorage.GetUserById(chatID) // should exist
 	if err != nil {
 		facade.l.Error(err)
 		return nil, err

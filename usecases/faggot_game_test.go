@@ -218,7 +218,8 @@ func Test_Stats_RespondsOnlyForTop10Players(t *testing.T) {
 	}
 
 	var messages []*core.Message
-	for i := 1; i < 100; i++ {
+	var i int64
+	for i = 1; i < 100; i++ {
 		messages = append(messages, makeGameMessage(i, fmt.Sprintf("Faggot%02d", i)))
 	}
 
@@ -289,7 +290,7 @@ func Test_Me_RespondsWithPersonalStat(t *testing.T) {
 
 // Helpers
 
-func makeGameMessage(id int, username string) *core.Message {
+func makeGameMessage(id int64, username string) *core.Message {
 	player := &core.User{
 		ID:        id,
 		FirstName: "FirstName" + fmt.Sprint(id),

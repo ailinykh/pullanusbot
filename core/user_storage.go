@@ -1,6 +1,6 @@
 package core
 
 type IUserStorage interface {
-	GetUserById(UserID) (*User, error)
+	GetUserById(int64) (*User, error)
 	CreateUser(*User) error
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func CreateStartFlow(l core.ILogger, loc core.ILocalizer, chatStorage core.IChatStorage, userStorage core.IUserStorage) core.ITextHandler {
-	return &StartFlow{l, loc, chatStorage, userStorage, make(map[int]bool), make(map[int64]bool), sync.Mutex{}}
+	return &StartFlow{l, loc, chatStorage, userStorage, make(map[int64]bool), make(map[int64]bool), sync.Mutex{}}
 }
 
 type StartFlow struct {
@@ -16,7 +16,7 @@ type StartFlow struct {
 	loc         core.ILocalizer
 	chatStorage core.IChatStorage
 	userStorage core.IUserStorage
-	usersCache  map[core.UserID]bool
+	usersCache  map[int64]bool
 	chatCache   map[int64]bool
 	lock        sync.Mutex
 }

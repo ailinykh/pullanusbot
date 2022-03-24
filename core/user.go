@@ -1,10 +1,8 @@
 package core
 
-type UserID = int
-
 // User ...
 type User struct {
-	ID           UserID
+	ID           int64
 	FirstName    string
 	LastName     string
 	Username     string

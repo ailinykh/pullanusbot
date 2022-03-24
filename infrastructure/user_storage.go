@@ -26,7 +26,7 @@ type UserStorage struct {
 
 // User
 type User struct {
-	UserID       int `gorm:"primaryKey"`
+	UserID       int64 `gorm:"primaryKey"`
 	FirstName    string
 	LastName     string
 	Username     string
@@ -34,7 +34,7 @@ type User struct {
 }
 
 // GetUserById is a core.IUserStorage interface implementation
-func (storage *UserStorage) GetUserById(userID core.UserID) (*core.User, error) {
+func (storage *UserStorage) GetUserById(userID int64) (*core.User, error) {
 	var user User
 	res := storage.conn.First(&user, userID)
 

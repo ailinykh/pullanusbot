@@ -182,7 +182,7 @@ func (flow *GameFlow) Stats(message *core.Message, bot core.IBot) error {
 	year := strconv.Itoa(time.Now().Year())
 	rounds, _ := flow.s.GetRounds(message.Chat.ID)
 	entries := []Stat{}
-	players := map[int]bool{}
+	players := map[int64]bool{}
 
 	for _, r := range rounds {
 		players[r.Winner.ID] = true

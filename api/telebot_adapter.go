@@ -133,17 +133,17 @@ func (a *TelebotAdapter) SendMedia(media *core.Media) (*core.Message, error) {
 func (a *TelebotAdapter) SendPhotoAlbum(medias []*core.Media) ([]*core.Message, error) {
 	var photo *tb.Photo
 	var album = tb.Album{}
+	opts := &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true}
 
 	for i, m := range medias {
 		photo = &tb.Photo{File: tb.FromURL(m.ResourceURL)}
 		if i == len(medias)-1 {
 			photo.Caption = m.Caption
-			photo.ParseMode = tb.ModeHTML
 		}
 		album = append(album, photo)
 	}
 
-	sent, err := a.t.bot.SendAlbum(a.m.Chat, album)
+	sent, err := a.t.bot.SendAlbum(a.m.Chat, album, opts)
 	if err != nil {
 		return nil, err
 	}

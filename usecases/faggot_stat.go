@@ -11,7 +11,7 @@ type Stat struct {
 }
 
 // Find player by username in current stat
-func Find(a []Stat, id int) int {
+func Find(a []Stat, id int64) int {
 	for i, n := range a {
 		if id == n.Player.ID {
 			return i

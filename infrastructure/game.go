@@ -3,7 +3,7 @@ package infrastructure
 // Player that can be persistent on disk
 type Player struct {
 	GameID       int64 `gorm:"primaryKey"`
-	UserID       int   `gorm:"primaryKey"`
+	UserID       int64 `gorm:"primaryKey"`
 	FirstName    string
 	LastName     string
 	Username     string
@@ -18,7 +18,7 @@ func (Player) TableName() string {
 // Round that can be persistent on disk
 type Round struct {
 	GameID   int64
-	UserID   int
+	UserID   int64
 	Day      string `gorm:"primaryKey"`
 	Username string
 }
