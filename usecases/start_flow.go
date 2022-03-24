@@ -26,13 +26,13 @@ func (flow *StartFlow) HandleText(message *core.Message, bot core.IBot) error {
 	flow.lock.Lock()
 	defer flow.lock.Unlock()
 
-	err := flow.ensureUserExists(message, bot)
+	err := flow.ensureUserExists(message.Sender)
 	if err != nil {
 		flow.l.Error(err)
 		//Do not return?
 	}
 
-	err = flow.ensureChatExists(message, bot)
+	err = flow.ensureChatExists(message.Chat)
 	if err != nil {
 		flow.l.Error(err)
 		//Do not return?
@@ -69,14 +69,14 @@ func (flow *StartFlow) handlePayload(payload string, chatID int64) error {
 	return flow.chatStorage.UpdateSettings(chat.ID, chat.Settings)
 }
 
-func (flow *StartFlow) ensureChatExists(message *core.Message, bot core.IBot) error {
-	if _, ok := flow.chatCache[message.Chat.ID]; !ok {
-		flow.chatCache[message.Chat.ID] = true
-		_, err := flow.chatStorage.GetChatByID(message.Chat.ID)
+func (flow *StartFlow) ensureChatExists(chat *core.Chat) error {
+	if _, ok := flow.chatCache[chat.ID]; !ok {
+		flow.chatCache[chat.ID] = true
+		_, err := flow.chatStorage.GetChatByID(chat.ID)
 		if err != nil {
 			if err.Error() == "record not found" {
 				settings := core.DefaultSettings()
-				return flow.chatStorage.CreateChat(message.Chat.ID, message.Chat.Title, message.Chat.Type, &settings)
+				return flow.chatStorage.CreateChat(chat.ID, chat.Title, chat.Type, &settings)
 			}
 			flow.l.Error(err)
 			return err
@@ -85,13 +85,13 @@ func (flow *StartFlow) ensureChatExists(message *core.Message, bot core.IBot) er
 	return nil
 }
 
-func (flow *StartFlow) ensureUserExists(message *core.Message, bot core.IBot) error {
-	if _, ok := flow.usersCache[message.Sender.ID]; !ok {
-		flow.usersCache[message.Sender.ID] = true
-		_, err := flow.userStorage.GetUserById(message.Sender.ID)
+func (flow *StartFlow) ensureUserExists(user *core.User) error {
+	if _, ok := flow.usersCache[user.ID]; !ok {
+		flow.usersCache[user.ID] = true
+		_, err := flow.userStorage.GetUserById(user.ID)
 		if err != nil {
 			if err.Error() == "record not found" {
-				return flow.userStorage.CreateUser(message.Sender)
+				return flow.userStorage.CreateUser(user)
 			}
 			flow.l.Error(err)
 			return err
