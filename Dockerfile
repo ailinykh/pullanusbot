@@ -12,7 +12,7 @@ RUN apk update && apk add tzdata python3 --no-cache && \
     wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl && \
     chmod a+rx /usr/local/bin/youtube-dl && \
     ln -s /usr/bin/python3 /usr/bin/python
-COPY --from=builder /go/src/github.com/ailinykh/pullanusbot/bin/pullanusbot /usr/local/bin/pullanusbot
+COPY --from=builder /go/src/github.com/ailinykh/pullanusbot/pullanusbot /usr/local/bin/pullanusbot
 WORKDIR /usr/local/share
 VOLUME [ "/usr/local/share/pullanusbot-data" ]
 ENTRYPOINT pullanusbot
