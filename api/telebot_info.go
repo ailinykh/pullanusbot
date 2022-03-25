@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"strings"
 
-	tb "gopkg.in/tucnak/telebot.v2"
+	tb "gopkg.in/telebot.v3"
 )
 
 // SetupInfo ...
 func (t *Telebot) SetupInfo() {
-	t.bot.Handle("/info", func(m *tb.Message) {
+	t.bot.Handle("/info", func(c tb.Context) error {
+		m := c.Message()
 		info := []string{
 			"💬 Chat",
 			fmt.Sprintf("ID: *%d*", m.Chat.ID),
@@ -47,6 +48,7 @@ func (t *Telebot) SetupInfo() {
 			}
 		}
 
-		t.bot.Send(m.Chat, strings.Join(info, "\n"), &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+		_, err := t.bot.Send(m.Chat, strings.Join(info, "\n"), &tb.SendOptions{ParseMode: tb.ModeMarkdown})
+		return err
 	})
 }

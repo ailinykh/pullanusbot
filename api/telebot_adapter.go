@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
-	tb "gopkg.in/tucnak/telebot.v2"
+	tb "gopkg.in/telebot.v3"
 )
 
 // TelebotAdapter combines Telebot and core.IBot

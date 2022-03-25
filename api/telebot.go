@@ -11,7 +11,7 @@ import (
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 	"github.com/ailinykh/pullanusbot/v2/helpers"
-	tb "gopkg.in/tucnak/telebot.v2"
+	tb "gopkg.in/telebot.v3"
 )
 
 // Telebot is a telegram API
@@ -43,19 +43,28 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 
 	telebot := &Telebot{bot, logger, []string{}, []core.ITextHandler{}, []core.IDocumentHandler{}, []core.IImageHandler{}, []core.IVideoHandler{}}
 
-	bot.Handle(tb.OnText, func(m *tb.Message) {
+	bot.Handle(tb.OnText, func(c tb.Context) error {
+		var err error
+		var m = c.Message()
 		for _, h := range telebot.textHandlers {
-			err := h.HandleText(makeMessage(m), makeIBot(m, telebot))
-			if err != nil && err.Error() != "not implemented" {
-				logger.Errorf("%T: %s", h, err)
-				telebot.reportError(m, err)
+			err = h.HandleText(makeMessage(m), makeIBot(m, telebot))
+			if err != nil {
+				if err.Error() == "not implemented" {
+					err = nil // skip "not implemented" error
+				} else {
+					logger.Errorf("%T: %s", h, err)
+					telebot.reportError(m, err)
+				}
 			}
 		}
+		return err
 	})
 
 	var mutex sync.Mutex
 
-	bot.Handle(tb.OnDocument, func(m *tb.Message) {
+	bot.Handle(tb.OnDocument, func(c tb.Context) error {
+		var err error
+		var m = c.Message()
 		// TODO: inject `download` to get rid of MIME cheking
 		if m.Document.MIME[:5] == "video" || m.Document.MIME == "image/gif" {
 			mutex.Lock()
@@ -67,14 +76,14 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 			err := bot.Download(&m.Document.File, path)
 			if err != nil {
 				logger.Error(err)
-				return
+				return err
 			}
 
 			logger.Infof("Downloaded to %s", strings.ReplaceAll(path, os.TempDir(), "$TMPDIR/"))
 			defer os.Remove(path)
 
 			for _, h := range telebot.documentHandlers {
-				err := h.HandleDocument(&core.Document{
+				err = h.HandleDocument(&core.Document{
 					File: core.File{Name: m.Document.FileName, Path: path},
 					MIME: m.Document.MIME,
 				}, makeMessage(m), makeIBot(m, telebot))
@@ -84,10 +93,12 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 				}
 			}
 		}
+		return err
 	})
 
-	bot.Handle(tb.OnPhoto, func(m *tb.Message) {
-
+	bot.Handle(tb.OnPhoto, func(c tb.Context) error {
+		var err error
+		var m = c.Message()
 		image := &core.Image{
 			ID:      m.Photo.FileID,
 			FileURL: m.Photo.FileURL,
@@ -96,16 +107,18 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		}
 
 		for _, h := range telebot.imageHandlers {
-			err := h.HandleImage(image, makeMessage(m), makeIBot(m, telebot))
+			err = h.HandleImage(image, makeMessage(m), makeIBot(m, telebot))
 			if err != nil {
 				logger.Errorf("%T: %s", h, err)
 				telebot.reportError(m, err)
 			}
 		}
+		return err
 	})
 
-	bot.Handle(tb.OnVideo, func(m *tb.Message) {
-
+	bot.Handle(tb.OnVideo, func(c tb.Context) error {
+		var err error
+		var m = c.Message()
 		video := &core.Video{
 			ID:     m.Video.FileID,
 			Width:  m.Video.Width,
@@ -113,12 +126,13 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		}
 
 		for _, h := range telebot.videoHandlers {
-			err := h.HandleImage(video, makeMessage(m), makeIBot(m, telebot))
+			err = h.HandleImage(video, makeMessage(m), makeIBot(m, telebot))
 			if err != nil {
 				logger.Errorf("%T: %s", h, err)
 				telebot.reportError(m, err)
 			}
 		}
+		return err
 	})
 
 	return telebot
@@ -153,8 +167,9 @@ func (t *Telebot) AddHandler(handler ...interface{}) {
 	case string:
 		t.registerCommand(h)
 		if f, ok := handler[1].(func(*core.Message, core.IBot) error); ok {
-			t.bot.Handle(h, func(m *tb.Message) {
-				f(makeMessage(m), &TelebotAdapter{m, t})
+			t.bot.Handle(h, func(c tb.Context) error {
+				m := c.Message()
+				return f(makeMessage(m), &TelebotAdapter{m, t})
 			})
 		} else {
 			panic("interface must implement func(*core.Message, core.IBot) error")
@@ -165,13 +180,15 @@ func (t *Telebot) AddHandler(handler ...interface{}) {
 
 	if h, ok := handler[0].(core.IButtonHandler); ok {
 		for _, id := range h.GetButtonIds() {
-			t.bot.Handle("\f"+id, func(c *tb.Callback) {
-				err := h.ButtonPressed(c.Data, makeMessage(c.Message), makeIBot(c.Message, t))
+			t.bot.Handle("\f"+id, func(c tb.Context) error {
+				m := c.Message()
+				cb := c.Callback()
+				err := h.ButtonPressed(cb.Data, makeMessage(m), makeIBot(m, t))
 				if err != nil {
 					t.logger.Error(err)
-					t.reportError(c.Message, err)
+					t.reportError(m, err)
 				}
-				t.bot.Respond(c, &tb.CallbackResponse{CallbackID: c.ID})
+				return t.bot.Respond(cb, &tb.CallbackResponse{CallbackID: cb.ID})
 			})
 		}
 	}

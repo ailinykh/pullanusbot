@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/ailinykh/pullanusbot/v2/core"
-	tb "gopkg.in/tucnak/telebot.v2"
+	tb "gopkg.in/telebot.v3"
 )
 
 func makeTbMessage(m *core.Message) *tb.Message {
@@ -32,7 +32,7 @@ func makeTbVideo(vf *core.Video, caption string) *tb.Video {
 		video.Height = vf.Height
 		video.Caption = caption
 		video.Duration = vf.Duration
-		video.SupportsStreaming = true
+		video.Streaming = true
 		video.Thumbnail = &tb.Photo{
 			File:   tb.FromDisk(vf.Thumb.Path),
 			Width:  vf.Thumb.Width,
