@@ -16,12 +16,13 @@ func main() {
 	logger, close := createLogger()
 	defer close()
 
-	telebot := api.CreateTelebot(os.Getenv("BOT_TOKEN"), logger)
+	dbFile := path.Join(getWorkingDir(), "pullanusbot.db")
+
+	chatStorage := infrastructure.CreateChatStorage(dbFile, logger)
+	telebot := api.CreateTelebot(os.Getenv("BOT_TOKEN"), logger, chatStorage)
 	telebot.SetupInfo()
 
 	localizer := infrastructure.GameLocalizer{}
-	dbFile := path.Join(getWorkingDir(), "pullanusbot.db")
-	settingsStorage := infrastructure.CreateSettingsStorage(dbFile, logger)
 	gameStorage := infrastructure.CreateGameStorage(dbFile)
 	rand := infrastructure.CreateMathRand()
 	gameFlow := usecases.CreateGameFlow(logger, localizer, gameStorage, rand)
@@ -48,13 +49,13 @@ func main() {
 	twitterFlow := usecases.CreateTwitterFlow(logger, twitterMediaFactory, localMediaSender)
 	twitterTimeout := usecases.CreateTwitterTimeout(logger, twitterFlow)
 	twitterParser := usecases.CreateTwitterParser(logger, twitterTimeout)
-	twitterRemoveSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, twitterParser, settingsStorage)
+	twitterRemoveSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, twitterParser)
 	telebot.AddHandler(twitterRemoveSourceDecorator)
 
 	httpClient := api.CreateHttpClient()
 	convertMediaSender := helpers.CreateConvertMediaStrategy(logger, localMediaSender, fileDownloader, converter, converter)
 	linkFlow := usecases.CreateLinkFlow(logger, httpClient, converter, convertMediaSender)
-	removeLinkSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, linkFlow, settingsStorage)
+	removeLinkSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, linkFlow)
 	telebot.AddHandler(removeLinkSourceDecorator)
 
 	tiktokHttpClient := api.CreateHttpClient() // domain specific headers and cookies
@@ -78,7 +79,7 @@ func main() {
 	sendVideoStrategy := helpers.CreateSendVideoStrategy(logger)
 	sendVideoStrategySplitDecorator := helpers.CreateSendVideoStrategySplitDecorator(logger, sendVideoStrategy, converter)
 	youtubeFlow := usecases.CreateYoutubeFlow(logger, youtubeAPI, youtubeAPI, sendVideoStrategySplitDecorator)
-	removeYoutubeSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, youtubeFlow, settingsStorage)
+	removeYoutubeSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, youtubeFlow)
 	telebot.AddHandler(removeYoutubeSourceDecorator)
 
 	telebot.AddHandler("/proxy", func(m *core.Message, bot core.IBot) error {
@@ -91,11 +92,10 @@ func main() {
 
 	reelsAPI := api.CreateInstagramMediaFactory(logger, path.Join(getWorkingDir(), "cookies.json"))
 	reelsFlow := usecases.CreateReelsFlow(logger, reelsAPI, localMediaSender)
-	removeReelsSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, reelsFlow, settingsStorage)
+	removeReelsSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, reelsFlow)
 	telebot.AddHandler(removeReelsSourceDecorator)
 
 	commonLocalizer := infrastructure.CreateCommonLocalizer()
-	chatStorage := infrastructure.CreateChatStorage(dbFile, logger)
 	userStorage := infrastructure.CreateUserStorage(dbFile, logger)
 	startFlow := usecases.CreateStartFlow(logger, commonLocalizer, chatStorage, userStorage)
 	telebot.AddHandler(startFlow)

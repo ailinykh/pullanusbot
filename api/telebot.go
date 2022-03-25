@@ -18,6 +18,7 @@ import (
 type Telebot struct {
 	bot              *tb.Bot
 	logger           core.ILogger
+	coreFactory      *CoreFactory
 	commandHandlers  []string
 	textHandlers     []core.ITextHandler
 	documentHandlers []core.IDocumentHandler
@@ -26,7 +27,7 @@ type Telebot struct {
 }
 
 // CreateTelebot is a default Telebot factory
-func CreateTelebot(token string, logger core.ILogger) *Telebot {
+func CreateTelebot(token string, logger core.ILogger, chatStorage core.IChatStorage) *Telebot {
 	poller := tb.NewMiddlewarePoller(&tb.LongPoller{Timeout: 10 * time.Second}, func(upd *tb.Update) bool {
 		return true
 	})
@@ -41,13 +42,13 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		panic(err)
 	}
 
-	telebot := &Telebot{bot, logger, []string{}, []core.ITextHandler{}, []core.IDocumentHandler{}, []core.IImageHandler{}, []core.IVideoHandler{}}
+	telebot := &Telebot{bot, logger, &CoreFactory{chatStorage: chatStorage}, []string{}, []core.ITextHandler{}, []core.IDocumentHandler{}, []core.IImageHandler{}, []core.IVideoHandler{}}
 
 	bot.Handle(tb.OnText, func(c tb.Context) error {
 		var err error
 		var m = c.Message()
 		for _, h := range telebot.textHandlers {
-			err = h.HandleText(makeMessage(m), makeIBot(m, telebot))
+			err = h.HandleText(telebot.coreFactory.makeMessage(m), telebot.coreFactory.makeIBot(m, telebot))
 			if err != nil {
 				if err.Error() == "not implemented" {
 					err = nil // skip "not implemented" error
@@ -86,7 +87,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 				err = h.HandleDocument(&core.Document{
 					File: core.File{Name: m.Document.FileName, Path: path},
 					MIME: m.Document.MIME,
-				}, makeMessage(m), makeIBot(m, telebot))
+				}, telebot.coreFactory.makeMessage(m), telebot.coreFactory.makeIBot(m, telebot))
 				if err != nil {
 					logger.Errorf("%T: %s", h, err)
 					telebot.reportError(m, err)
@@ -107,7 +108,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		}
 
 		for _, h := range telebot.imageHandlers {
-			err = h.HandleImage(image, makeMessage(m), makeIBot(m, telebot))
+			err = h.HandleImage(image, telebot.coreFactory.makeMessage(m), telebot.coreFactory.makeIBot(m, telebot))
 			if err != nil {
 				logger.Errorf("%T: %s", h, err)
 				telebot.reportError(m, err)
@@ -126,7 +127,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		}
 
 		for _, h := range telebot.videoHandlers {
-			err = h.HandleImage(video, makeMessage(m), makeIBot(m, telebot))
+			err = h.HandleImage(video, telebot.coreFactory.makeMessage(m), telebot.coreFactory.makeIBot(m, telebot))
 			if err != nil {
 				logger.Errorf("%T: %s", h, err)
 				telebot.reportError(m, err)
@@ -152,7 +153,7 @@ func (t *Telebot) Download(image *core.Image) (*core.File, error) {
 	}
 
 	t.logger.Infof("image %s downloaded to %s", file.UniqueID, path)
-	return makeFile(name, path), nil
+	return t.coreFactory.makeFile(name, path), nil
 }
 
 // AddHandler register object as one of core.Handler's
@@ -169,7 +170,7 @@ func (t *Telebot) AddHandler(handler ...interface{}) {
 		if f, ok := handler[1].(func(*core.Message, core.IBot) error); ok {
 			t.bot.Handle(h, func(c tb.Context) error {
 				m := c.Message()
-				return f(makeMessage(m), &TelebotAdapter{m, t})
+				return f(t.coreFactory.makeMessage(m), &TelebotAdapter{m, t})
 			})
 		} else {
 			panic("interface must implement func(*core.Message, core.IBot) error")
@@ -183,7 +184,7 @@ func (t *Telebot) AddHandler(handler ...interface{}) {
 			t.bot.Handle("\f"+id, func(c tb.Context) error {
 				m := c.Message()
 				cb := c.Callback()
-				err := h.ButtonPressed(cb.Data, makeMessage(m), makeIBot(m, t))
+				err := h.ButtonPressed(cb.Data, t.coreFactory.makeMessage(m), t.coreFactory.makeIBot(m, t))
 				if err != nil {
 					t.logger.Error(err)
 					t.reportError(m, err)
@@ -219,31 +220,40 @@ func (t *Telebot) reportError(m *tb.Message, e error) {
 	t.bot.Send(chat, e.Error(), opts)
 }
 
-func makeMessage(m *tb.Message) *core.Message {
+type CoreFactory struct {
+	chatStorage core.IChatStorage
+}
+
+func (factory *CoreFactory) makeMessage(m *tb.Message) *core.Message {
 	text := m.Text
 	if m.Document != nil {
 		text = m.Caption
 	}
 	message := &core.Message{
 		ID:        m.ID,
-		Chat:      makeChat(m.Chat),
+		Chat:      factory.makeChat(m.Chat),
 		IsPrivate: m.Private(),
-		Sender:    makeUser(m.Sender),
+		Sender:    factory.makeUser(m.Sender),
 		Text:      text,
 	}
 
 	if m.ReplyTo != nil {
-		message.ReplyTo = makeMessage(m.ReplyTo)
+		message.ReplyTo = factory.makeMessage(m.ReplyTo)
 	}
 
 	if m.Video != nil {
-		message.Video = makeVideo(m.Video)
+		message.Video = factory.makeVideo(m.Video)
 	}
 
 	return message
 }
 
-func makeChat(c *tb.Chat) *core.Chat {
+func (factory *CoreFactory) makeChat(c *tb.Chat) *core.Chat {
+	settings := core.DefaultSettings()
+	chat, err := factory.chatStorage.GetChatByID(c.ID)
+	if err == nil {
+		settings = *chat.Settings
+	}
 	title := c.Title
 	if c.Type == tb.ChatPrivate {
 		title = c.FirstName + " " + c.LastName
@@ -252,11 +262,11 @@ func makeChat(c *tb.Chat) *core.Chat {
 		ID:       c.ID,
 		Title:    title,
 		Type:     string(c.Type),
-		Settings: nil, //TODO: obtain settings from database
+		Settings: &settings,
 	}
 }
 
-func makeUser(u *tb.User) *core.User {
+func (CoreFactory) makeUser(u *tb.User) *core.User {
 	return &core.User{
 		ID:           u.ID,
 		FirstName:    u.FirstName,
@@ -266,7 +276,7 @@ func makeUser(u *tb.User) *core.User {
 	}
 }
 
-func makeVideo(v *tb.Video) *core.Video {
+func (factory *CoreFactory) makeVideo(v *tb.Video) *core.Video {
 	return &core.Video{
 		File: core.File{
 			Name: v.FileName,
@@ -278,11 +288,11 @@ func makeVideo(v *tb.Video) *core.Video {
 		Bitrate:  0,
 		Duration: v.Duration,
 		Codec:    "",
-		Thumb:    makePhoto(v.Thumbnail),
+		Thumb:    factory.makePhoto(v.Thumbnail),
 	}
 }
 
-func makePhoto(p *tb.Photo) *core.Image {
+func (CoreFactory) makePhoto(p *tb.Photo) *core.Image {
 	return &core.Image{
 		File: core.File{
 			Name: p.FileLocal,
@@ -295,13 +305,13 @@ func makePhoto(p *tb.Photo) *core.Image {
 	}
 }
 
-func makeFile(name string, path string) *core.File {
+func (CoreFactory) makeFile(name string, path string) *core.File {
 	return &core.File{
 		Name: name,
 		Path: path,
 	}
 }
 
-func makeIBot(m *tb.Message, t *Telebot) core.IBot {
+func (CoreFactory) makeIBot(m *tb.Message, t *Telebot) core.IBot {
 	return &TelebotAdapter{m, t}
 }

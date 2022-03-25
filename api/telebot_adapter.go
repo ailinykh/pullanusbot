@@ -32,7 +32,7 @@ func (a *TelebotAdapter) SendText(text string, params ...interface{}) (*core.Mes
 	if err != nil {
 		return nil, err
 	}
-	return makeMessage(sent), err
+	return a.t.coreFactory.makeMessage(sent), err
 }
 
 // Delete is a core.IBot interface implementation
@@ -49,7 +49,7 @@ func (a *TelebotAdapter) Edit(message *core.Message, what interface{}, options .
 		if err != nil {
 			return nil, err
 		}
-		return makeMessage(m), nil
+		return a.t.coreFactory.makeMessage(m), nil
 	case string:
 		opts := &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true}
 		for _, opt := range options {
@@ -64,7 +64,7 @@ func (a *TelebotAdapter) Edit(message *core.Message, what interface{}, options .
 		if err != nil {
 			return nil, err
 		}
-		return makeMessage(m), nil
+		return a.t.coreFactory.makeMessage(m), nil
 	default:
 	}
 	return nil, fmt.Errorf("not implemented")
@@ -77,7 +77,7 @@ func (a *TelebotAdapter) SendImage(image *core.Image, caption string) (*core.Mes
 	if err != nil {
 		return nil, err
 	}
-	return makeMessage(sent), err
+	return a.t.coreFactory.makeMessage(sent), err
 }
 
 // SendAlbum is a core.IBot interface implementation
@@ -95,7 +95,7 @@ func (a *TelebotAdapter) SendAlbum(images []*core.Image) ([]*core.Message, error
 
 	var messages []*core.Message
 	for _, m := range sent {
-		messages = append(messages, makeMessage(&m))
+		messages = append(messages, a.t.coreFactory.makeMessage(&m))
 	}
 	return messages, err
 }
@@ -126,7 +126,7 @@ func (a *TelebotAdapter) SendMedia(media *core.Media) (*core.Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	return makeMessage(sent), err
+	return a.t.coreFactory.makeMessage(sent), err
 }
 
 // SendPhotoAlbum is a core.IBot interface implementation
@@ -150,7 +150,7 @@ func (a *TelebotAdapter) SendPhotoAlbum(medias []*core.Media) ([]*core.Message, 
 
 	var messages []*core.Message
 	for _, m := range sent {
-		messages = append(messages, makeMessage(&m))
+		messages = append(messages, a.t.coreFactory.makeMessage(&m))
 	}
 	return messages, err
 }
@@ -164,7 +164,7 @@ func (a *TelebotAdapter) SendVideo(vf *core.Video, caption string) (*core.Messag
 		return nil, err
 	}
 	a.t.logger.Infof("%s successfully sent", vf.Name)
-	return makeMessage(sent), err
+	return a.t.coreFactory.makeMessage(sent), err
 }
 
 // IsUserMemberOfChat is a core.IBot interface implementation

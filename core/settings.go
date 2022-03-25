@@ -9,8 +9,3 @@ type Settings struct {
 func DefaultSettings() Settings {
 	return Settings{false, []string{}, true}
 }
-
-type ISettingsStorage interface {
-	GetSettings(int64) (*Settings, error)
-	SetSettings(int64, *Settings) error
-}

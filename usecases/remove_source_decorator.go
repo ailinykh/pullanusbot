@@ -4,14 +4,13 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateRemoveSourceDecorator(l core.ILogger, decoratee core.ITextHandler, settingsStorage core.ISettingsStorage) *RemoveSourceDecorator {
-	return &RemoveSourceDecorator{l, decoratee, settingsStorage}
+func CreateRemoveSourceDecorator(l core.ILogger, decoratee core.ITextHandler) *RemoveSourceDecorator {
+	return &RemoveSourceDecorator{l, decoratee}
 }
 
 type RemoveSourceDecorator struct {
-	l               core.ILogger
-	decoratee       core.ITextHandler
-	settingsStorage core.ISettingsStorage
+	l         core.ILogger
+	decoratee core.ITextHandler
 }
 
 // HandleText is a core.ITextHandler protocol implementation
@@ -27,13 +26,7 @@ func (decorator *RemoveSourceDecorator) HandleText(message *core.Message, bot co
 		return err
 	}
 
-	settings, err := decorator.settingsStorage.GetSettings(message.Chat.ID)
-	if err != nil {
-		decorator.l.Error(err)
-		return err
-	}
-
-	if settings.RemoveSourceOnSucccess {
+	if message.Chat.Settings.RemoveSourceOnSucccess {
 		decorator.l.Infof("removing chat %d message %d", message.Chat.ID, message.ID)
 		return bot.Delete(message)
 	}
