@@ -46,15 +46,16 @@ func CreateTelebot(token string, logger core.ILogger, chatStorage core.IChatStor
 
 	bot.Handle(tb.OnText, func(c tb.Context) error {
 		var err error
-		var m = c.Message()
+		var message = telebot.coreFactory.makeMessage(c.Message())
+		var bot = telebot.coreFactory.makeIBot(c.Message(), telebot)
 		for _, h := range telebot.textHandlers {
-			err = h.HandleText(telebot.coreFactory.makeMessage(m), telebot.coreFactory.makeIBot(m, telebot))
+			err = h.HandleText(message, bot)
 			if err != nil {
 				if err.Error() == "not implemented" {
 					err = nil // skip "not implemented" error
 				} else {
 					logger.Errorf("%T: %s", h, err)
-					telebot.reportError(m, err)
+					telebot.reportError(c.Message(), err)
 				}
 			}
 		}
