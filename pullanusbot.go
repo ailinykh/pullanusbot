@@ -18,8 +18,10 @@ func main() {
 
 	dbFile := path.Join(getWorkingDir(), "pullanusbot.db")
 
-	chatStorage := infrastructure.CreateChatStorage(dbFile, logger)
-	telebot := api.CreateTelebot(os.Getenv("BOT_TOKEN"), logger, chatStorage)
+	databaseChatStorage := infrastructure.CreateChatStorage(dbFile, logger)
+	inMemoryChatStorage := infrastructure.CreateInMemoryChatStorage()
+	chatStorageDecorator := usecases.CreateChatStorageDecorator(inMemoryChatStorage, databaseChatStorage)
+	telebot := api.CreateTelebot(os.Getenv("BOT_TOKEN"), logger, chatStorageDecorator)
 	telebot.SetupInfo()
 
 	localizer := infrastructure.GameLocalizer{}
@@ -99,7 +101,7 @@ func main() {
 	databaseUserStorage := infrastructure.CreateUserStorage(dbFile, logger)
 	inMemoryUserStorage := infrastructure.CreateInMemoryUserStorage()
 	userStorageDecorator := usecases.CreateUserStorageDecorator(inMemoryUserStorage, databaseUserStorage)
-	startFlow := usecases.CreateStartFlow(logger, commonLocalizer, chatStorage, userStorageDecorator)
+	startFlow := usecases.CreateStartFlow(logger, commonLocalizer, chatStorageDecorator, userStorageDecorator)
 	telebot.AddHandler(startFlow)
 	// Start endless loop
 	telebot.Run()
