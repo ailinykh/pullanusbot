@@ -25,5 +25,5 @@ func (storage *InMemoryUserStorage) GetUserById(userID int64) (*core.User, error
 // CreateUser is a core.IUserStorage interface implementation
 func (storage *InMemoryUserStorage) CreateUser(user *core.User) error {
 	storage.cache[user.ID] = user
-	return fmt.Errorf("method not implemented")
+	return nil
 }
