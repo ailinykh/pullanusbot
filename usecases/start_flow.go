@@ -8,7 +8,7 @@ import (
 )
 
 func CreateStartFlow(l core.ILogger, loc core.ILocalizer, chatStorage core.IChatStorage, userStorage core.IUserStorage) core.ITextHandler {
-	return &StartFlow{l, loc, chatStorage, userStorage, make(map[int64]bool), sync.Mutex{}}
+	return &StartFlow{l, loc, chatStorage, userStorage, sync.Mutex{}}
 }
 
 type StartFlow struct {
@@ -16,7 +16,6 @@ type StartFlow struct {
 	loc         core.ILocalizer
 	chatStorage core.IChatStorage
 	userStorage core.IUserStorage
-	chatCache   map[int64]bool
 	lock        sync.Mutex
 }
 
@@ -69,19 +68,15 @@ func (flow *StartFlow) handlePayload(payload string, chatID int64) error {
 }
 
 func (flow *StartFlow) ensureChatExists(chat *core.Chat) error {
-	if _, ok := flow.chatCache[chat.ID]; !ok {
-		flow.chatCache[chat.ID] = true
-		_, err := flow.chatStorage.GetChatByID(chat.ID)
-		if err != nil {
-			if err.Error() == "record not found" {
-				settings := core.DefaultSettings()
-				return flow.chatStorage.CreateChat(chat.ID, chat.Title, chat.Type, &settings)
-			}
-			flow.l.Error(err)
-			return err
+	_, err := flow.chatStorage.GetChatByID(chat.ID)
+	if err != nil {
+		if err.Error() == "record not found" {
+			settings := core.DefaultSettings()
+			return flow.chatStorage.CreateChat(chat.ID, chat.Title, chat.Type, &settings)
 		}
+		flow.l.Error(err)
 	}
-	return nil
+	return err
 }
 
 func (flow *StartFlow) ensureUserExists(user *core.User) error {
@@ -92,7 +87,6 @@ func (flow *StartFlow) ensureUserExists(user *core.User) error {
 		}
 		flow.l.Error(err)
 	}
-
 	return err
 }
 
