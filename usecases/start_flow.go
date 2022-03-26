@@ -8,7 +8,7 @@ import (
 )
 
 func CreateStartFlow(l core.ILogger, loc core.ILocalizer, chatStorage core.IChatStorage, userStorage core.IUserStorage) core.ITextHandler {
-	return &StartFlow{l, loc, chatStorage, userStorage, make(map[int64]bool), make(map[int64]bool), sync.Mutex{}}
+	return &StartFlow{l, loc, chatStorage, userStorage, make(map[int64]bool), sync.Mutex{}}
 }
 
 type StartFlow struct {
@@ -16,7 +16,6 @@ type StartFlow struct {
 	loc         core.ILocalizer
 	chatStorage core.IChatStorage
 	userStorage core.IUserStorage
-	usersCache  map[int64]bool
 	chatCache   map[int64]bool
 	lock        sync.Mutex
 }
@@ -86,19 +85,15 @@ func (flow *StartFlow) ensureChatExists(chat *core.Chat) error {
 }
 
 func (flow *StartFlow) ensureUserExists(user *core.User) error {
-	if _, ok := flow.usersCache[user.ID]; !ok {
-		flow.usersCache[user.ID] = true
-		_, err := flow.userStorage.GetUserById(user.ID)
-		if err != nil {
-			if err.Error() == "record not found" {
-				return flow.userStorage.CreateUser(user)
-			}
-			flow.l.Error(err)
-			return err
+	_, err := flow.userStorage.GetUserById(user.ID)
+	if err != nil {
+		if err.Error() == "record not found" {
+			return flow.userStorage.CreateUser(user)
 		}
+		flow.l.Error(err)
 	}
 
-	return nil
+	return err
 }
 
 func (flow *StartFlow) contains(payload string, current []string) bool {
