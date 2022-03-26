@@ -7,24 +7,26 @@ func CreateUserStorageDecorator(primary core.IUserStorage, secondary core.IUserS
 }
 
 type UserStorageDecorator struct {
-	primary   core.IUserStorage
-	secondary core.IUserStorage
+	cache core.IUserStorage
+	db    core.IUserStorage
 }
 
 // GetUserById is a core.IUserStorage interface implementation
 func (decorator *UserStorageDecorator) GetUserById(userID int64) (*core.User, error) {
-	user, err := decorator.primary.GetUserById(userID)
+	user, err := decorator.cache.GetUserById(userID)
 	if err != nil {
-		return decorator.secondary.GetUserById(userID)
+		user, err := decorator.db.GetUserById(userID)
+		if err != nil {
+			return nil, err
+		}
+		_ = decorator.cache.CreateUser(user)
+		return user, err
 	}
 	return user, err
 }
 
 // CreateUser is a core.IUserStorage interface implementation
 func (decorator *UserStorageDecorator) CreateUser(user *core.User) error {
-	err := decorator.primary.CreateUser(user)
-	if err != nil {
-		return decorator.secondary.CreateUser(user)
-	}
-	return err
+	_ = decorator.cache.CreateUser(user)
+	return decorator.db.CreateUser(user)
 }
