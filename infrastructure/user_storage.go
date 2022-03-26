@@ -1,6 +1,8 @@
 package infrastructure
 
 import (
+	"time"
+
 	"github.com/ailinykh/pullanusbot/v2/core"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -31,6 +33,8 @@ type User struct {
 	LastName     string
 	Username     string
 	LanguageCode string
+	CreatedAt    time.Time `gorm:"autoUpdateTime"`
+	UpdatedAt    time.Time `gorm:"autoCreateTime"`
 }
 
 // GetUserById is a core.IUserStorage interface implementation
