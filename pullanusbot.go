@@ -24,6 +24,12 @@ func main() {
 	telebot := api.CreateTelebot(os.Getenv("BOT_TOKEN"), logger, chatStorageDecorator)
 	telebot.SetupInfo()
 
+	databaseUserStorage := infrastructure.CreateUserStorage(dbFile, logger)
+	inMemoryUserStorage := infrastructure.CreateInMemoryUserStorage()
+	userStorageDecorator := usecases.CreateUserStorageDecorator(inMemoryUserStorage, databaseUserStorage)
+	bootstrapFlow := usecases.CreateBootstrapFlow(logger, chatStorageDecorator, userStorageDecorator)
+	telebot.AddHandler(bootstrapFlow)
+
 	localizer := infrastructure.GameLocalizer{}
 	gameStorage := infrastructure.CreateGameStorage(dbFile)
 	rand := infrastructure.CreateMathRand()
@@ -98,10 +104,7 @@ func main() {
 	telebot.AddHandler(removeReelsSourceDecorator)
 
 	commonLocalizer := infrastructure.CreateCommonLocalizer()
-	databaseUserStorage := infrastructure.CreateUserStorage(dbFile, logger)
-	inMemoryUserStorage := infrastructure.CreateInMemoryUserStorage()
-	userStorageDecorator := usecases.CreateUserStorageDecorator(inMemoryUserStorage, databaseUserStorage)
-	startFlow := usecases.CreateStartFlow(logger, commonLocalizer, chatStorageDecorator, userStorageDecorator)
+	startFlow := usecases.CreateStartFlow(logger, commonLocalizer, chatStorageDecorator)
 	telebot.AddHandler(startFlow)
 	// Start endless loop
 	telebot.Run()

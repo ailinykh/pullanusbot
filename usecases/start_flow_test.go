@@ -10,46 +10,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_HandleText_CreateUserData(t *testing.T) {
+func Test_HandleText_CreateChatPayload(t *testing.T) {
 	logger := test_helpers.CreateLogger()
 	loc := test_helpers.CreateLocalizer(map[string]string{})
 	chatStorage := test_helpers.CreateChatStorage()
-	userStorage := test_helpers.CreateUserStorage()
-	startFlow := usecases.CreateStartFlow(logger, loc, chatStorage, userStorage)
+	startFlow := usecases.CreateStartFlow(logger, loc, chatStorage)
 
-	bot := test_helpers.CreateBot()
-
-	messages := []string{
-		"/start",
-		"/start payload",
-		"/start another_payload",
-	}
-	wg := sync.WaitGroup{}
-
-	for _, message := range messages {
-		wg.Add(1)
-		go func(text string) {
-			startFlow.HandleText(makeMessage(text), bot)
-			wg.Done()
-		}(message)
-	}
-
-	wg.Wait()
-
-	assert.Equal(t, 1, len(userStorage.Users))
-
-	message := makeMessage("/start")
-	user, _ := userStorage.GetUserById(message.Sender.ID)
-	assert.Equal(t, message.Sender, user)
-}
-
-func Test_HandleText_CreateChatData(t *testing.T) {
-	logger := test_helpers.CreateLogger()
-	loc := test_helpers.CreateLocalizer(map[string]string{})
-	chatStorage := test_helpers.CreateChatStorage()
-	userStorage := test_helpers.CreateUserStorage()
-	startFlow := usecases.CreateStartFlow(logger, loc, chatStorage, userStorage)
-
+	settings := core.DefaultSettings()
+	chatStorage.CreateChat(1488, "Paul Durov", "private", &settings)
 	bot := test_helpers.CreateBot()
 
 	messages := []string{

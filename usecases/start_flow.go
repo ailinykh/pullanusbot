@@ -7,15 +7,14 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateStartFlow(l core.ILogger, loc core.ILocalizer, chatStorage core.IChatStorage, userStorage core.IUserStorage) core.ITextHandler {
-	return &StartFlow{l, loc, chatStorage, userStorage, sync.Mutex{}}
+func CreateStartFlow(l core.ILogger, loc core.ILocalizer, chatStorage core.IChatStorage) core.ITextHandler {
+	return &StartFlow{l, loc, chatStorage, sync.Mutex{}}
 }
 
 type StartFlow struct {
 	l           core.ILogger
 	loc         core.ILocalizer
 	chatStorage core.IChatStorage
-	userStorage core.IUserStorage
 	lock        sync.Mutex
 }
 
@@ -24,32 +23,20 @@ func (flow *StartFlow) HandleText(message *core.Message, bot core.IBot) error {
 	flow.lock.Lock()
 	defer flow.lock.Unlock()
 
-	err := flow.ensureUserExists(message.Sender)
-	if err != nil {
-		flow.l.Error(err)
-		//Do not return?
-	}
-
-	err = flow.ensureChatExists(message.Chat)
-	if err != nil {
-		flow.l.Error(err)
-		//Do not return?
-	}
-
 	if strings.HasPrefix(message.Text, "/start") {
 		if len(message.Text) > 7 {
 			payload := message.Text[7:]
-			flow.handlePayload(payload, message.Chat.ID)
+			err := flow.handlePayload(payload, message.Chat.ID)
 			if err != nil {
 				flow.l.Error(err)
 				//Do not return?
 			}
 		}
-		_, err = bot.SendText(flow.loc.I18n("start_welcome"))
+		_, err := bot.SendText(flow.loc.I18n("start_welcome"))
 		return err
 	}
 
-	return err
+	return nil
 }
 
 func (flow *StartFlow) handlePayload(payload string, chatID int64) error {
@@ -65,29 +52,6 @@ func (flow *StartFlow) handlePayload(payload string, chatID int64) error {
 
 	chat.Settings.Payload = append(chat.Settings.Payload, payload)
 	return flow.chatStorage.UpdateSettings(chat.ID, chat.Settings)
-}
-
-func (flow *StartFlow) ensureChatExists(chat *core.Chat) error {
-	_, err := flow.chatStorage.GetChatByID(chat.ID)
-	if err != nil {
-		if err.Error() == "record not found" {
-			settings := core.DefaultSettings()
-			return flow.chatStorage.CreateChat(chat.ID, chat.Title, chat.Type, &settings)
-		}
-		flow.l.Error(err)
-	}
-	return err
-}
-
-func (flow *StartFlow) ensureUserExists(user *core.User) error {
-	_, err := flow.userStorage.GetUserById(user.ID)
-	if err != nil {
-		if err.Error() == "record not found" {
-			return flow.userStorage.CreateUser(user)
-		}
-		flow.l.Error(err)
-	}
-	return err
 }
 
 func (flow *StartFlow) contains(payload string, current []string) bool {
