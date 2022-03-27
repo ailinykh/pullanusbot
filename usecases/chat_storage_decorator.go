@@ -2,11 +2,12 @@ package usecases
 
 import "github.com/ailinykh/pullanusbot/v2/core"
 
-func CreateChatStorageDecorator(cache core.IChatStorage, db core.IChatStorage) core.IChatStorage {
-	return &ChatStorageDecorator{cache, db}
+func CreateChatStorageDecorator(l core.ILogger, cache core.IChatStorage, db core.IChatStorage) core.IChatStorage {
+	return &ChatStorageDecorator{l, cache, db}
 }
 
 type ChatStorageDecorator struct {
+	l     core.ILogger
 	cache core.IChatStorage
 	db    core.IChatStorage
 }

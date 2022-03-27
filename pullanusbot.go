@@ -20,7 +20,7 @@ func main() {
 
 	databaseChatStorage := infrastructure.CreateChatStorage(dbFile, logger)
 	inMemoryChatStorage := infrastructure.CreateInMemoryChatStorage()
-	chatStorageDecorator := usecases.CreateChatStorageDecorator(inMemoryChatStorage, databaseChatStorage)
+	chatStorageDecorator := usecases.CreateChatStorageDecorator(logger, inMemoryChatStorage, databaseChatStorage)
 	telebot := api.CreateTelebot(os.Getenv("BOT_TOKEN"), logger, chatStorageDecorator)
 	telebot.SetupInfo()
 
