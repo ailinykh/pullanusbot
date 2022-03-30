@@ -15,15 +15,16 @@ import (
 
 // CreateGameFlow is a simple GameFlow factory
 func CreateGameFlow(l core.ILogger, t core.ILocalizer, s core.IGameStorage, r core.IRand) *GameFlow {
-	return &GameFlow{l, t, s, r}
+	return &GameFlow{l, t, s, r, sync.Mutex{}}
 }
 
 // GameFlow represents faggot game logic
 type GameFlow struct {
-	l core.ILogger
-	t core.ILocalizer
-	s core.IGameStorage
-	r core.IRand
+	l     core.ILogger
+	t     core.ILocalizer
+	s     core.IGameStorage
+	r     core.IRand
+	mutex sync.Mutex
 }
 
 // Rules of the game
@@ -64,16 +65,14 @@ func (flow *GameFlow) Add(message *core.Message, bot core.IBot) error {
 	return err
 }
 
-var mutex sync.Mutex
-
 // Play game
 func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 	if message.IsPrivate {
 		_, err := bot.SendText(flow.t.I18n("faggot_not_available_for_private"))
 		return err
 	}
-	mutex.Lock()
-	defer mutex.Unlock()
+	flow.mutex.Lock()
+	defer flow.mutex.Unlock()
 
 	flow.l.Infof("chat_id: %d, game started by %v", message.Chat.ID, message.Sender)
 
