@@ -90,7 +90,10 @@ func main() {
 	removeYoutubeSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, youtubeFlow)
 	telebot.AddHandler(removeYoutubeSourceDecorator)
 
+	commandService := usecases.CreateCommandService(logger)
+
 	telebot.AddHandler("/proxy", func(m *core.Message, bot core.IBot) error {
+		_ = commandService.EnableCommands(m.Chat.ID, []core.Command{{Text: "proxy", Description: "proxy server for telegram"}}, bot)
 		_, err := bot.SendText("tg://proxy?server=proxy.ailinykh.com&port=443&secret=dd71ce3b5bf1b7015dc62a76dc244c5aec")
 		return err
 	})
