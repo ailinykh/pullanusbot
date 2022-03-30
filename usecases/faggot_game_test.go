@@ -315,7 +315,9 @@ func makeSUT(args ...interface{}) (*usecases.GameFlow, *test_helpers.FakeBot, *G
 	l := &test_helpers.FakeLogger{}
 	t := test_helpers.CreateLocalizer(dict)
 	r := &RandMock{}
-	game := usecases.CreateGameFlow(l, t, storage, r)
+	s := test_helpers.CreateChatStorage()
+	c := test_helpers.CreateCommandService(l)
+	game := usecases.CreateGameFlow(l, t, storage, r, s, c)
 	return game, bot, storage
 }
 

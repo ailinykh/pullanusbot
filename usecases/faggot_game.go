@@ -14,17 +14,19 @@ import (
 )
 
 // CreateGameFlow is a simple GameFlow factory
-func CreateGameFlow(l core.ILogger, t core.ILocalizer, s core.IGameStorage, r core.IRand) *GameFlow {
-	return &GameFlow{l, t, s, r, sync.Mutex{}}
+func CreateGameFlow(l core.ILogger, t core.ILocalizer, s core.IGameStorage, r core.IRand, chatStorage core.IChatStorage, commandService core.ICommandService) *GameFlow {
+	return &GameFlow{l, t, s, r, chatStorage, commandService, sync.Mutex{}}
 }
 
 // GameFlow represents faggot game logic
 type GameFlow struct {
-	l     core.ILogger
-	t     core.ILocalizer
-	s     core.IGameStorage
-	r     core.IRand
-	mutex sync.Mutex
+	l              core.ILogger
+	t              core.ILocalizer
+	s              core.IGameStorage
+	r              core.IRand
+	chatStorage    core.IChatStorage
+	commandService core.ICommandService
+	mutex          sync.Mutex
 }
 
 // Rules of the game

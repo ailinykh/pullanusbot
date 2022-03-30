@@ -33,7 +33,8 @@ func main() {
 	localizer := infrastructure.GameLocalizer{}
 	gameStorage := infrastructure.CreateGameStorage(dbFile)
 	rand := infrastructure.CreateMathRand()
-	gameFlow := usecases.CreateGameFlow(logger, localizer, gameStorage, rand)
+	commandService := usecases.CreateCommandService(logger)
+	gameFlow := usecases.CreateGameFlow(logger, localizer, gameStorage, rand, chatStorageDecorator, commandService)
 	telebot.AddHandler("/pidorules", gameFlow.Rules)
 	telebot.AddHandler("/pidoreg", gameFlow.Add)
 	telebot.AddHandler("/pidor", gameFlow.Play)
@@ -89,8 +90,6 @@ func main() {
 	youtubeFlow := usecases.CreateYoutubeFlow(logger, youtubeAPI, youtubeAPI, sendVideoStrategySplitDecorator)
 	removeYoutubeSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, youtubeFlow)
 	telebot.AddHandler(removeYoutubeSourceDecorator)
-
-	commandService := usecases.CreateCommandService(logger)
 
 	telebot.AddHandler("/proxy", func(m *core.Message, bot core.IBot) error {
 		_ = commandService.EnableCommands(m.Chat.ID, []core.Command{{Text: "proxy", Description: "proxy server for telegram"}}, bot)
