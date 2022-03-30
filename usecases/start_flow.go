@@ -7,19 +7,19 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateStartFlow(l core.ILogger, loc core.ILocalizer, chatStorage core.IChatStorage) core.ITextHandler {
-	return &StartFlow{l, loc, chatStorage, sync.Mutex{}}
+func CreateStartFlow(l core.ILogger, loc core.ILocalizer, chatStorage core.IChatStorage, commandService core.ICommandService) *StartFlow {
+	return &StartFlow{l, loc, chatStorage, commandService, sync.Mutex{}}
 }
 
 type StartFlow struct {
-	l           core.ILogger
-	loc         core.ILocalizer
-	chatStorage core.IChatStorage
-	lock        sync.Mutex
+	l              core.ILogger
+	loc            core.ILocalizer
+	chatStorage    core.IChatStorage
+	commandService core.ICommandService
+	lock           sync.Mutex
 }
 
-// HandleText is a core.ITextHandler protocol implementation
-func (flow *StartFlow) HandleText(message *core.Message, bot core.IBot) error {
+func (flow *StartFlow) Start(message *core.Message, bot core.IBot) error {
 	flow.lock.Lock()
 	defer flow.lock.Unlock()
 
@@ -29,14 +29,25 @@ func (flow *StartFlow) HandleText(message *core.Message, bot core.IBot) error {
 			err := flow.handlePayload(payload, message.Chat.ID)
 			if err != nil {
 				flow.l.Error(err)
-				//Do not return?
+				//return err ?
 			}
 		}
-		_, err := bot.SendText(flow.loc.I18n("start_welcome"))
+
+		err := flow.commandService.EnableCommands(message.Chat.ID, []core.Command{{Text: "help", Description: "show help message"}}, bot)
+		if err != nil {
+			flow.l.Error(err)
+			// return err ?
+		}
+		_, err = bot.SendText(flow.loc.I18n("start_welcome") + " " + flow.loc.I18n("help"))
 		return err
 	}
 
 	return nil
+}
+
+func (flow *StartFlow) Help(message *core.Message, bot core.IBot) error {
+	_, err := bot.SendText(flow.loc.I18n("help"))
+	return err
 }
 
 func (flow *StartFlow) handlePayload(payload string, chatID int64) error {

@@ -14,7 +14,8 @@ func Test_HandleText_CreateChatPayload(t *testing.T) {
 	logger := test_helpers.CreateLogger()
 	loc := test_helpers.CreateLocalizer(map[string]string{})
 	chatStorage := test_helpers.CreateChatStorage()
-	startFlow := usecases.CreateStartFlow(logger, loc, chatStorage)
+	commandService := test_helpers.CreateCommandService(logger)
+	startFlow := usecases.CreateStartFlow(logger, loc, chatStorage, commandService)
 
 	settings := core.DefaultSettings()
 	chatStorage.CreateChat(1488, "Paul Durov", "private", &settings)
@@ -30,7 +31,7 @@ func Test_HandleText_CreateChatPayload(t *testing.T) {
 	for _, message := range messages {
 		wg.Add(1)
 		go func(text string) {
-			startFlow.HandleText(makeMessage(text), bot)
+			startFlow.Start(makeMessage(text), bot)
 			wg.Done()
 		}(message)
 	}
@@ -43,6 +44,13 @@ func Test_HandleText_CreateChatPayload(t *testing.T) {
 	chat, _ := chatStorage.GetChatByID(message.Chat.ID)
 	assert.Equal(t, true, contains("payload", chat.Settings.Payload))
 	assert.Equal(t, true, contains("another_payload", chat.Settings.Payload))
+
+	expected := []string{
+		"enable commands 1488 [{help show help message}]",
+		"enable commands 1488 [{help show help message}]",
+		"enable commands 1488 [{help show help message}]",
+	}
+	assert.Equal(t, expected, commandService.ActionLog)
 }
 
 func makeMessage(text string) *core.Message {
