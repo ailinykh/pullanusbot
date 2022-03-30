@@ -70,21 +70,22 @@ func Test_Add_AppendsPlayerInGameOnlyOnce(t *testing.T) {
 }
 
 func Test_Play_RespondsWithNoPlayers(t *testing.T) {
+	message := makeGameMessage(1, "Faggot")
 	game, bot, _ := makeSUT(map[string]string{
 		"faggot_no_players": "Nobody in game. So you win, %s!",
-	})
-	message := makeGameMessage(1, "Faggot")
+	}, message)
 
-	game.Play(message, bot)
+	err := game.Play(message, bot)
 
+	assert.Nil(t, err)
 	assert.Equal(t, "Nobody in game. So you win, Faggot!", bot.SentMessages[0])
 }
 
 func Test_Play_RespondsNotEnoughPlayers(t *testing.T) {
+	message := makeGameMessage(1, "Faggot")
 	game, bot, _ := makeSUT(map[string]string{
 		"faggot_not_enough_players": "Not enough players",
-	})
-	message := makeGameMessage(1, "Faggot")
+	}, message)
 
 	game.Add(message, bot)
 	game.Play(message, bot)
@@ -93,15 +94,15 @@ func Test_Play_RespondsNotEnoughPlayers(t *testing.T) {
 }
 
 func Test_Play_RespondsWithCurrentGameResult(t *testing.T) {
+	m1 := makeGameMessage(1, "")
+	m2 := makeGameMessage(2, "")
 	game, bot, storage := makeSUT(map[string]string{
 		"faggot_game_0_0": "0",
 		"faggot_game_1_0": "1",
 		"faggot_game_2_0": "2",
 		"faggot_game_3_0": "%s",
-	})
+	}, m1, m2)
 	bot.ChatMembers[0] = []string{""}
-	m1 := makeGameMessage(1, "")
-	m2 := makeGameMessage(2, "")
 
 	game.Add(m1, bot)
 	game.Add(m2, bot)
@@ -115,16 +116,16 @@ func Test_Play_RespondsWithCurrentGameResult(t *testing.T) {
 	assert.Equal(t, phrase, bot.SentMessages[5])
 }
 func Test_Play_RespondsWinnerAlreadyKnown(t *testing.T) {
+	m1 := makeGameMessage(1, "Faggot1")
+	m2 := makeGameMessage(2, "Faggot2")
 	game, bot, storage := makeSUT(map[string]string{
 		"faggot_game_0_0":     "0",
 		"faggot_game_1_0":     "1",
 		"faggot_game_2_0":     "2",
 		"faggot_game_3_0":     "3 %s",
 		"faggot_winner_known": "Winner already known %s",
-	})
+	}, m1)
 	bot.ChatMembers[0] = []string{"Faggot1", "Faggot2"}
-	m1 := makeGameMessage(1, "Faggot1")
-	m2 := makeGameMessage(2, "Faggot2")
 
 	game.Add(m1, bot)
 	game.Add(m2, bot)
@@ -142,11 +143,12 @@ func Test_Play_RespondsWinnerAlreadyKnown(t *testing.T) {
 }
 
 func Test_Play_RespondsWinnerLeftTheChat(t *testing.T) {
-	game, bot, storage := makeSUT(map[string]string{
-		"faggot_winner_left": "winner left",
-	})
 	m1 := makeGameMessage(1, "Faggot1")
 	m2 := makeGameMessage(2, "Faggot2")
+	game, bot, storage := makeSUT(map[string]string{
+		"faggot_winner_left": "winner left",
+	}, m1)
+
 	storage.players = []*core.User{m1.Sender, m2.Sender}
 
 	game.Play(m1, bot)
@@ -297,26 +299,29 @@ func makeGameMessage(id int64, username string) *core.Message {
 		LastName:  "LastName" + fmt.Sprint(id),
 		Username:  username,
 	}
-	return &core.Message{ID: 0, Chat: &core.Chat{ID: 0}, Sender: player}
+	settings := core.DefaultSettings()
+	return &core.Message{ID: 0, Chat: &core.Chat{ID: 0, Settings: &settings}, Sender: player}
 }
 
 func makeSUT(args ...interface{}) (*usecases.GameFlow, *test_helpers.FakeBot, *GameStorageMock) {
 	dict := map[string]string{}
 	storage := &GameStorageMock{players: []*core.User{}, rounds: []*core.Round{}}
 	bot := test_helpers.CreateBot()
+	l := &test_helpers.FakeLogger{}
+	s := test_helpers.CreateChatStorage()
 
 	for _, arg := range args {
 		switch opt := arg.(type) {
 		case map[string]string:
 			dict = opt
+		case *core.Message:
+			s.Chats[opt.Chat.ID] = opt.Chat
 		}
 	}
 
-	l := &test_helpers.FakeLogger{}
 	t := test_helpers.CreateLocalizer(dict)
-	r := &RandMock{}
-	s := test_helpers.CreateChatStorage()
 	c := test_helpers.CreateCommandService(l)
+	r := &RandMock{}
 	game := usecases.CreateGameFlow(l, t, storage, r, s, c)
 	return game, bot, storage
 }
