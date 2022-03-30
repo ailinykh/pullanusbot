@@ -9,7 +9,7 @@ import (
 // https://stackoverflow.com/questions/31794141/can-i-create-shared-test-utilities
 
 func CreateBot() *FakeBot {
-	return &FakeBot{[]string{}, []string{}, []string{}, []string{}, map[int64][]string{}}
+	return &FakeBot{[]string{}, []string{}, []string{}, []string{}, make(map[int64][]core.Command), []string{}, map[int64][]string{}}
 }
 
 type FakeBot struct {
@@ -17,6 +17,8 @@ type FakeBot struct {
 	SentMessages    []string
 	SentVideos      []string
 	RemovedMessages []string
+	Commands        map[int64][]core.Command
+	ActionLog       []string
 	ChatMembers     map[int64][]string
 }
 
@@ -61,4 +63,18 @@ func (b *FakeBot) IsUserMemberOfChat(user *core.User, chatID int64) bool {
 		}
 	}
 	return false
+}
+
+func (bot *FakeBot) GetCommands(chatID int64) ([]core.Command, error) {
+	bot.ActionLog = append(bot.ActionLog, fmt.Sprint("get commands ", chatID))
+	if commands, ok := bot.Commands[chatID]; ok {
+		return commands, nil
+	}
+	return []core.Command{}, nil
+}
+
+func (bot *FakeBot) SetCommands(chatID int64, commands []core.Command) error {
+	bot.ActionLog = append(bot.ActionLog, fmt.Sprint("set commands ", chatID, commands))
+	bot.Commands[chatID] = commands
+	return nil
 }

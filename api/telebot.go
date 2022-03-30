@@ -306,6 +306,18 @@ func (CoreFactory) makePhoto(p *tb.Photo) *core.Image {
 	}
 }
 
+func (CoreFactory) makeCommands(commands []tb.Command) []core.Command {
+	comands := []core.Command{}
+	for _, command := range commands {
+		c := core.Command{
+			Text:        command.Text,
+			Description: command.Description,
+		}
+		comands = append(comands, c)
+	}
+	return comands
+}
+
 func (CoreFactory) makeFile(name string, path string) *core.File {
 	return &core.File{
 		Name: name,

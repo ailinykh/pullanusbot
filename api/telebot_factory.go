@@ -72,3 +72,15 @@ func makeInlineKeyboard(k core.Keyboard) [][]tb.InlineButton {
 	}
 	return keyboard
 }
+
+func makeTbCommands(commands []core.Command) []tb.Command {
+	comands := []tb.Command{}
+	for _, command := range commands {
+		c := tb.Command{
+			Text:        command.Text,
+			Description: command.Description,
+		}
+		comands = append(comands, c)
+	}
+	return comands
+}

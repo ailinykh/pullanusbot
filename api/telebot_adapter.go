@@ -178,3 +178,25 @@ func (a *TelebotAdapter) IsUserMemberOfChat(user *core.User, chatID int64) bool 
 		member.Role != tb.Left &&
 		member.Role != tb.Kicked
 }
+
+// GetCommands is a core.IBot interface implementation
+func (a *TelebotAdapter) GetCommands(chatID int64) ([]core.Command, error) {
+	scope := tb.CommandScope{
+		Type:   tb.CommandScopeChat,
+		ChatID: chatID,
+	}
+	commands, err := a.t.bot.Commands(scope)
+	if err != nil {
+		return nil, err
+	}
+	return a.t.coreFactory.makeCommands(commands), nil
+}
+
+// SetCommands is a core.IBot interface implementation
+func (a *TelebotAdapter) SetCommands(chatID int64, commands []core.Command) error {
+	scope := tb.CommandScope{
+		Type:   tb.CommandScopeChat,
+		ChatID: chatID,
+	}
+	return a.t.bot.SetCommands(makeTbCommands(commands), scope)
+}
