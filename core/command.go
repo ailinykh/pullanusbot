@@ -10,6 +10,6 @@ func DefaultCommands() []Command {
 }
 
 type ICommandService interface {
-	EnableCommands(int64, []Command) error
-	DisableCommands(int64, []Command) error
+	EnableCommands(int64, []Command, IBot) error
+	DisableCommands(int64, []Command, IBot) error
 }
