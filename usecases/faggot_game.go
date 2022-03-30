@@ -76,6 +76,28 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 	flow.mutex.Lock()
 	defer flow.mutex.Unlock()
 
+	if !message.Chat.Settings.FaggotGameCommandsEnabled {
+		settings := message.Chat.Settings
+		settings.FaggotGameCommandsEnabled = true
+		err := flow.chatStorage.UpdateSettings(message.Chat.ID, settings)
+		if err != nil {
+			return err
+		}
+
+		commands := []core.Command{
+			{Text: "pidor", Description: "play the game, see /pidorules first"},
+			{Text: "pidorules", Description: "POTD game rules"},
+			{Text: "pidoreg", Description: "register for POTD game"},
+			{Text: "pidorstats", Description: "POTD game stats for this year"},
+			{Text: "pidorall", Description: "POTD game stats for all time"},
+			{Text: "pidorme", Description: "POTD personal stats"},
+		}
+		err = flow.commandService.EnableCommands(message.Chat.ID, commands, bot)
+		if err != nil {
+			return err
+		}
+	}
+
 	flow.l.Infof("chat_id: %d, game started by %v", message.Chat.ID, message.Sender)
 
 	players, _ := flow.s.GetPlayers(message.Chat.ID)
