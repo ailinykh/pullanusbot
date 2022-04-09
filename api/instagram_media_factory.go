@@ -28,5 +28,11 @@ func (factory *InstagramMediaFactory) CreateMedia(url string) ([]*core.Media, er
 	}
 
 	item := reel.Items[0]
-	return []*core.Media{{ResourceURL: item.VideoVersions[0].URL, URL: "https://www.instagram.com/reel/" + item.Code + "/", Title: item.User.FullName, Caption: item.Caption.Text}}, nil
+	caption := item.Caption.Text
+
+	if info := item.ClipsMetadata.MusicInfo; info != nil {
+		caption = fmt.Sprintf("\n🎶 <a href='%s'>%s - %s</a>\n\n%s", info.MusicAssetInfo.ProgressiveDownloadURL, info.MusicAssetInfo.DisplayArtist, info.MusicAssetInfo.Title, caption)
+	}
+
+	return []*core.Media{{ResourceURL: item.VideoVersions[0].URL, URL: "https://www.instagram.com/reel/" + item.Code + "/", Title: item.User.FullName, Caption: caption}}, nil
 }
