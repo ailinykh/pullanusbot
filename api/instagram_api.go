@@ -48,15 +48,16 @@ func (api *InstagramAPI) GetReel(url string) (*IgReel, error) {
 
 	// os.WriteFile("instagram.html", body, 0644)
 
-	r := regexp.MustCompile(`window.__additionalDataLoaded\('[\w\/-]+',(.*?)\);</script>`)
+	r := regexp.MustCompile(`window.__additionalDataLoaded\('\/reel\/([\w-]+)\/',(.*?)\);</script>`)
 	match := r.FindSubmatch(body)
-	if len(match) < 1 {
-		api.l.Error(match)
+	if len(match) < 2 {
 		return nil, fmt.Errorf("unexpected html")
 	}
 
+	// os.WriteFile("instagram"+string(match[1])+".json", match[2], 0644)
+
 	var reel IgReel
-	err = json.Unmarshal([]byte(match[1]), &reel)
+	err = json.Unmarshal([]byte(match[2]), &reel)
 	if err != nil {
 		api.l.Error(err)
 		return nil, err
