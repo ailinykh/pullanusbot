@@ -79,7 +79,8 @@ type IgReelItem struct {
 	Code          string
 	User          IgReelUser
 	Caption       IgReelCaption
-	VideoVersions []IgReelVideo `json:"video_versions"`
+	VideoVersions []IgReelVideo       `json:"video_versions"`
+	ClipsMetadata IgReelClipsMetadata `json:"clips_metadata"`
 }
 
 type IgReelVideo struct {
@@ -90,4 +91,23 @@ type IgReelVideo struct {
 
 type IgReelCaption struct {
 	Text string
+}
+
+type IgReelClipsMetadata struct {
+	MusicInfo         *IgReelMusicInfo         `json:"music_info"`
+	OriginalSoundInfo *IgReelOriginalSoundInfo `json:"original_sound_info"`
+}
+
+type IgReelMusicInfo struct {
+	MusicAssetInfo IgReelMusicAssetInfo `json:"music_asset_info"`
+}
+
+type IgReelMusicAssetInfo struct {
+	DisplayArtist          string `json:"display_artist"`
+	Title                  string
+	ProgressiveDownloadURL string `json:"progressive_download_url"`
+}
+
+type IgReelOriginalSoundInfo struct {
+	ProgressiveDownloadURL string `json:"progressive_download_url"`
 }
