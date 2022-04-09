@@ -54,7 +54,7 @@ func (api *InstagramAPI) GetReel(url string) (*IgReel, error) {
 		return nil, fmt.Errorf("unexpected html")
 	}
 
-	// os.WriteFile("instagram"+string(match[1])+".json", match[2], 0644)
+	// os.WriteFile("instagram-"+string(match[1])+".json", match[2], 0644)
 
 	var reel IgReel
 	err = json.Unmarshal([]byte(match[2]), &reel)
