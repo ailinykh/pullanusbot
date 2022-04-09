@@ -46,7 +46,9 @@ func (api *InstagramAPI) GetReel(url string) (*IgReel, error) {
 		return nil, err
 	}
 
-	r := regexp.MustCompile(`window.__additionalDataLoaded\('[\w\/]+',(.*?)\);</script>`)
+	// os.WriteFile("instagram.html", body, 0644)
+
+	r := regexp.MustCompile(`window.__additionalDataLoaded\('[\w\/-]+',(.*?)\);</script>`)
 	match := r.FindSubmatch(body)
 	if len(match) < 1 {
 		api.l.Error(match)
