@@ -14,7 +14,9 @@ type IDoNotCare struct{}
 
 // HandleText is a core.ITextHandler protocol implementation
 func (IDoNotCare) HandleText(message *core.Message, bot core.IBot) error {
-	if strings.Contains(strings.ToLower(message.Text), "мне всё равно") {
+	if strings.Contains(strings.ToLower(message.Text), "мне всё равно") ||
+		strings.Contains(strings.ToLower(message.Text), "мне все равно") ||
+		strings.Contains(strings.ToLower(message.Text), "да мне похуй") {
 		_, err := bot.SendText("https://coub.com/view/1ov5oi", false)
 		return err
 	}
