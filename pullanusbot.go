@@ -101,7 +101,7 @@ func main() {
 	telebot.AddHandler(iDoNotCare)
 
 	reelsAPI := api.CreateInstagramMediaFactory(logger, path.Join(getWorkingDir(), "cookies.json"))
-	reelsFlow := usecases.CreateReelsFlow(logger, reelsAPI, localMediaSender)
+	reelsFlow := usecases.CreateReelsFlow(logger, reelsAPI, localMediaSender, sendVideoStrategySplitDecorator)
 	removeReelsSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, reelsFlow)
 	telebot.AddHandler(removeReelsSourceDecorator)
 

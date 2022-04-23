@@ -7,14 +7,15 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateReelsFlow(l core.ILogger, mediaFactory core.IMediaFactory, sendMediaStrategy core.ISendMediaStrategy) core.ITextHandler {
-	return &ReelsFlow{l, mediaFactory, sendMediaStrategy}
+func CreateReelsFlow(l core.ILogger, mediaFactory core.IMediaFactory, sendMedia core.ISendMediaStrategy, sendVideo core.ISendVideoStrategy) core.ITextHandler {
+	return &ReelsFlow{l, mediaFactory, sendMedia, sendVideo}
 }
 
 type ReelsFlow struct {
-	l                 core.ILogger
-	mediaFactory      core.IMediaFactory
-	sendMediaStrategy core.ISendMediaStrategy
+	l            core.ILogger
+	mediaFactory core.IMediaFactory
+	sendMedia    core.ISendMediaStrategy
+	sendVideo    core.ISendVideoStrategy
 }
 
 // HandleText is a core.ITextHandler protocol implementation
@@ -22,11 +23,15 @@ func (flow *ReelsFlow) HandleText(message *core.Message, bot core.IBot) error {
 	r := regexp.MustCompile(`https://www.instagram.com/reel/\S+`)
 	match := r.FindAllStringSubmatch(message.Text, -1)
 
-	if len(match) < 1 {
-		return fmt.Errorf("not implemented")
+	if len(match) > 0 {
+		return flow.handleReel(match[0][0], message, bot)
 	}
 
-	media, err := flow.mediaFactory.CreateMedia(match[0][0])
+	return fmt.Errorf("not implemented")
+}
+
+func (flow *ReelsFlow) handleReel(url string, message *core.Message, bot core.IBot) error {
+	media, err := flow.mediaFactory.CreateMedia(url)
 	if err != nil {
 		flow.l.Error(err)
 		return err
@@ -38,8 +43,8 @@ func (flow *ReelsFlow) HandleText(message *core.Message, bot core.IBot) error {
 
 	m := &core.Media{
 		ResourceURL: media[0].ResourceURL,
-		Caption:     fmt.Sprintf("<a href='%s'>📷</a> <b>%s</b> <i>(by %s)</i>\n%s", match[0][0], media[0].Title, message.Sender.DisplayName(), media[0].Caption),
+		Caption:     fmt.Sprintf("<a href='%s'>📷</a> <b>%s</b> <i>(by %s)</i>\n%s", url, media[0].Title, message.Sender.DisplayName(), media[0].Caption),
 	}
 
-	return flow.sendMediaStrategy.SendMedia([]*core.Media{m}, bot)
+	return flow.sendMedia.SendMedia([]*core.Media{m}, bot)
 }
