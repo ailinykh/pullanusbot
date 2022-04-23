@@ -7,11 +7,11 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateReelsFlow(l core.ILogger, mediaFactory core.IMediaFactory, sendMedia core.ISendMediaStrategy, sendVideo core.ISendVideoStrategy) core.ITextHandler {
-	return &ReelsFlow{l, mediaFactory, sendMedia, sendVideo}
+func CreateInstagramFlow(l core.ILogger, mediaFactory core.IMediaFactory, sendMedia core.ISendMediaStrategy, sendVideo core.ISendVideoStrategy) core.ITextHandler {
+	return &InstagramFlow{l, mediaFactory, sendMedia, sendVideo}
 }
 
-type ReelsFlow struct {
+type InstagramFlow struct {
 	l            core.ILogger
 	mediaFactory core.IMediaFactory
 	sendMedia    core.ISendMediaStrategy
@@ -19,7 +19,7 @@ type ReelsFlow struct {
 }
 
 // HandleText is a core.ITextHandler protocol implementation
-func (flow *ReelsFlow) HandleText(message *core.Message, bot core.IBot) error {
+func (flow *InstagramFlow) HandleText(message *core.Message, bot core.IBot) error {
 	r := regexp.MustCompile(`https://www.instagram.com/reel/\S+`)
 	match := r.FindAllStringSubmatch(message.Text, -1)
 
@@ -30,7 +30,7 @@ func (flow *ReelsFlow) HandleText(message *core.Message, bot core.IBot) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (flow *ReelsFlow) handleReel(url string, message *core.Message, bot core.IBot) error {
+func (flow *InstagramFlow) handleReel(url string, message *core.Message, bot core.IBot) error {
 	media, err := flow.mediaFactory.CreateMedia(url)
 	if err != nil {
 		flow.l.Error(err)

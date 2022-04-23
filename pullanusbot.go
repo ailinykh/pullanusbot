@@ -100,10 +100,10 @@ func main() {
 	iDoNotCare := usecases.CreateIDoNotCare()
 	telebot.AddHandler(iDoNotCare)
 
-	reelsAPI := api.CreateInstagramMediaFactory(logger, path.Join(getWorkingDir(), "cookies.json"))
-	reelsFlow := usecases.CreateReelsFlow(logger, reelsAPI, localMediaSender, sendVideoStrategySplitDecorator)
-	removeReelsSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, reelsFlow)
-	telebot.AddHandler(removeReelsSourceDecorator)
+	instaAPI := api.CreateInstagramMediaFactory(logger, path.Join(getWorkingDir(), "cookies.json"))
+	instaFlow := usecases.CreateInstagramFlow(logger, instaAPI, localMediaSender, sendVideoStrategySplitDecorator)
+	removeInstaSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, instaFlow)
+	telebot.AddHandler(removeInstaSourceDecorator)
 
 	commonLocalizer := infrastructure.CreateCommonLocalizer()
 	startFlow := usecases.CreateStartFlow(logger, commonLocalizer, chatStorageDecorator, commandService)
