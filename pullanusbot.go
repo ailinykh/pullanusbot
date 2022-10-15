@@ -69,9 +69,11 @@ func main() {
 
 	tiktokHttpClient := api.CreateHttpClient() // domain specific headers and cookies
 	tiktokJsonApi := api.CreateTikTokJsonAPI(logger, tiktokHttpClient, rand)
-	tiktokHtmlApi := api.CreateTikTokHTMLAPI(logger, tiktokHttpClient, rand)
-	tiktokApiDecorator := api.CreateTikTokAPIDecorator(tiktokJsonApi, tiktokHtmlApi)
-	tiktokMediaFactory := api.CreateTikTokMediaFactory(logger, tiktokApiDecorator)
+	tiktokHtmlV1Api := api.CreateTikTokHTMLV1API(logger, tiktokHttpClient, rand)
+	tiktokHtmlV2Api := api.CreateTikTokHTMLV2API(logger, tiktokHttpClient, rand)
+	tiktokApiHtmlDecorator := api.CreateTikTokAPIDecorator(tiktokHtmlV2Api, tiktokHtmlV1Api)
+	tiktokApiJsonDecorator := api.CreateTikTokAPIDecorator(tiktokApiHtmlDecorator, tiktokJsonApi)
+	tiktokMediaFactory := api.CreateTikTokMediaFactory(logger, tiktokApiJsonDecorator)
 	tiktokFlow := usecases.CreateTikTokFlow(logger, tiktokHttpClient, tiktokMediaFactory, localMediaSender)
 	telebot.AddHandler(tiktokFlow)
 

@@ -9,17 +9,17 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateTikTokHTMLAPI(l core.ILogger, hc core.IHttpClient, r core.IRand) ITikTokAPI {
-	return &TikTokHTMLAPI{l, hc, r}
+func CreateTikTokHTMLV1API(l core.ILogger, hc core.IHttpClient, r core.IRand) ITikTokAPI {
+	return &TikTokHTMLV1API{l, hc, r}
 }
 
-type TikTokHTMLAPI struct {
+type TikTokHTMLV1API struct {
 	l  core.ILogger
 	hc core.IHttpClient
 	r  core.IRand
 }
 
-func (api *TikTokHTMLAPI) GetItem(username string, videoId string) (*TikTokV1ItemStruct, error) {
+func (api *TikTokHTMLV1API) GetItem(username string, videoId string) (*TikTokItem, error) {
 	url := "https://www.tiktok.com/" + username + "/video/" + videoId
 	api.l.Infof("processing %s", url)
 	api.hc.SetHeader("Cookie", "tt_webid_v2=69"+api.randomDigits(17)+"; Domain=tiktok.com; Path=/; Secure; hostOnly=false; hostOnly=false; aAge=4ms; cAge=4ms")
@@ -50,10 +50,32 @@ func (api *TikTokHTMLAPI) GetItem(username string, videoId string) (*TikTokV1Ite
 		return nil, fmt.Errorf("%d not equal to zero", resp.Props.PageProps.StatusCode)
 	}
 
-	return &resp.Props.PageProps.ItemInfo.ItemStruct, nil
+	item := resp.Props.PageProps.ItemInfo.ItemStruct
+
+	stickers := []string{}
+	for _, s := range item.StickersOnItem {
+		for _, t := range s.StickerText {
+			stickers = append(stickers, t)
+		}
+	}
+
+	i := TikTokItem{
+		Author: TikTokAuthor{
+			Nickname: item.Author.Nickname,
+			UniqueId: item.Author.UniqueId,
+		},
+		Desc: item.Desc,
+		Music: TikTokMusic{
+			Title: item.Music.Title,
+		},
+		Stickers: stickers,
+		VideoURL: item.Video.DownloadAddr,
+	}
+
+	return &i, nil
 }
 
-func (api *TikTokHTMLAPI) randomDigits(count int) string {
+func (api *TikTokHTMLV1API) randomDigits(count int) string {
 	rv := ""
 	for i := 1; i < count; i++ {
 		rv = rv + strconv.Itoa(api.r.GetRand(10))

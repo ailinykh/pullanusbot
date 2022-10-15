@@ -17,7 +17,7 @@ type TikTokJsonAPI struct {
 	r  core.IRand
 }
 
-func (api *TikTokJsonAPI) GetItem(username string, videoId string) (*TikTokV1ItemStruct, error) {
+func (api *TikTokJsonAPI) GetItem(username string, videoId string) (*TikTokItem, error) {
 	url := "https://www.tiktok.com/node/share/video/" + username + "/" + videoId
 	api.l.Infof("processing %s", url)
 	api.hc.SetHeader("Cookie", "tt_webid_v2=69"+api.randomDigits(17)+"; Domain=tiktok.com; Path=/; Secure; hostOnly=false; hostOnly=false; aAge=4ms; cAge=4ms")
@@ -32,7 +32,26 @@ func (api *TikTokJsonAPI) GetItem(username string, videoId string) (*TikTokV1Ite
 		return nil, err
 	}
 
-	return &resp.ItemInfo.ItemStruct, nil
+	stickers := []string{}
+	for _, s := range resp.ItemInfo.ItemStruct.StickersOnItem {
+		for _, t := range s.StickerText {
+			stickers = append(stickers, t)
+		}
+	}
+
+	item := TikTokItem{
+		Author: TikTokAuthor{
+			Nickname: resp.ItemInfo.ItemStruct.Author.Nickname,
+			UniqueId: resp.ItemInfo.ItemStruct.Author.UniqueId,
+		},
+		Desc: resp.ItemInfo.ItemStruct.Desc,
+		Music: TikTokMusic{
+			Title: resp.ItemInfo.ItemStruct.Music.Title,
+		},
+		Stickers: stickers,
+		VideoURL: resp.ItemInfo.ItemStruct.Video.DownloadAddr,
+	}
+	return &item, nil
 }
 
 func (api *TikTokJsonAPI) randomDigits(count int) string {

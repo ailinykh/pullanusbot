@@ -7,10 +7,6 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-type ITikTokAPI interface {
-	GetItem(string, string) (*TikTokV1ItemStruct, error)
-}
-
 func CreateTikTokMediaFactory(l core.ILogger, api ITikTokAPI) core.IMediaFactory {
 	return &TikTokMediaFactory{l, api}
 }
@@ -37,15 +33,13 @@ func (factory *TikTokMediaFactory) CreateMedia(url string) ([]*core.Media, error
 	}
 
 	description := fmt.Sprintf("%s (@%s) has created a short video on TikTok with music %s.", item.Author.Nickname, item.Author.UniqueId, item.Music.Title)
-	for _, s := range item.StickersOnItem {
-		for _, t := range s.StickerText {
-			description = description + " | " + t
-		}
+	for _, s := range item.Stickers {
+		description = description + " | " + s
 	}
 
 	media := &core.Media{
 		URL:         url,
-		ResourceURL: item.Video.DownloadAddr,
+		ResourceURL: item.VideoURL,
 		Title:       title,
 		Description: description,
 	}
