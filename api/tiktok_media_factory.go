@@ -8,7 +8,7 @@ import (
 )
 
 type ITikTokAPI interface {
-	GetItem(string, string) (*TikTokItemStruct, error)
+	GetItem(string, string) (*TikTokV1ItemStruct, error)
 }
 
 func CreateTikTokMediaFactory(l core.ILogger, api ITikTokAPI) core.IMediaFactory {

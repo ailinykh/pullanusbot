@@ -9,7 +9,7 @@ type TikTokAPIDecorator struct {
 	secondary ITikTokAPI
 }
 
-func (api *TikTokAPIDecorator) GetItem(username string, videoId string) (*TikTokItemStruct, error) {
+func (api *TikTokAPIDecorator) GetItem(username string, videoId string) (*TikTokV1ItemStruct, error) {
 	item, err := api.primary.GetItem(username, videoId)
 	if err != nil {
 		return api.secondary.GetItem(username, videoId)

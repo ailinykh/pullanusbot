@@ -19,7 +19,7 @@ type TikTokHTMLAPI struct {
 	r  core.IRand
 }
 
-func (api *TikTokHTMLAPI) GetItem(username string, videoId string) (*TikTokItemStruct, error) {
+func (api *TikTokHTMLAPI) GetItem(username string, videoId string) (*TikTokV1ItemStruct, error) {
 	url := "https://www.tiktok.com/" + username + "/video/" + videoId
 	api.l.Infof("processing %s", url)
 	api.hc.SetHeader("Cookie", "tt_webid_v2=69"+api.randomDigits(17)+"; Domain=tiktok.com; Path=/; Secure; hostOnly=false; hostOnly=false; aAge=4ms; cAge=4ms")
@@ -36,7 +36,7 @@ func (api *TikTokHTMLAPI) GetItem(username string, videoId string) (*TikTokItemS
 		return nil, fmt.Errorf("unexpected html")
 	}
 
-	var resp TikTokHTMLResponse
+	var resp TikTokV1HTMLResponse
 	err = json.Unmarshal([]byte(match[1]), &resp)
 	if err != nil {
 		return nil, err

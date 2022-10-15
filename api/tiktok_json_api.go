@@ -17,7 +17,7 @@ type TikTokJsonAPI struct {
 	r  core.IRand
 }
 
-func (api *TikTokJsonAPI) GetItem(username string, videoId string) (*TikTokItemStruct, error) {
+func (api *TikTokJsonAPI) GetItem(username string, videoId string) (*TikTokV1ItemStruct, error) {
 	url := "https://www.tiktok.com/node/share/video/" + username + "/" + videoId
 	api.l.Infof("processing %s", url)
 	api.hc.SetHeader("Cookie", "tt_webid_v2=69"+api.randomDigits(17)+"; Domain=tiktok.com; Path=/; Secure; hostOnly=false; hostOnly=false; aAge=4ms; cAge=4ms")
@@ -26,7 +26,7 @@ func (api *TikTokJsonAPI) GetItem(username string, videoId string) (*TikTokItemS
 		return nil, err
 	}
 
-	var resp TikTokJSONResponse
+	var resp TikTokV1JSONResponse
 	err = json.Unmarshal([]byte(jsonString), &resp)
 	if err != nil {
 		return nil, err
