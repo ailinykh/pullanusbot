@@ -17,5 +17,5 @@ type IImageHandler interface {
 
 // IVideoHandler responds to videos
 type IVideoHandler interface {
-	HandleImage(*Video, *Message, IBot) error
+	HandleVideo(*Video, *Message, IBot) error
 }

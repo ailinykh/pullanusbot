@@ -128,7 +128,7 @@ func CreateTelebot(token string, logger core.ILogger, chatStorage core.IChatStor
 		}
 
 		for _, h := range telebot.videoHandlers {
-			err = h.HandleImage(video, telebot.coreFactory.makeMessage(m), telebot.coreFactory.makeIBot(m, telebot))
+			err = h.HandleVideo(video, telebot.coreFactory.makeMessage(m), telebot.coreFactory.makeIBot(m, telebot))
 			if err != nil {
 				logger.Errorf("%T: %s", h, err)
 				telebot.reportError(m, err)
@@ -166,6 +166,8 @@ func (t *Telebot) AddHandler(handler ...interface{}) {
 		t.textHandlers = append(t.textHandlers, h)
 	case core.IImageHandler:
 		t.imageHandlers = append(t.imageHandlers, h)
+	case core.IVideoHandler:
+		t.videoHandlers = append(t.videoHandlers, h)
 	case string:
 		t.registerCommand(h)
 		if f, ok := handler[1].(func(*core.Message, core.IBot) error); ok {
