@@ -8,7 +8,7 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateUploadMediaStrategy(l core.ILogger, sms core.ISendMediaStrategy, fd core.IFileDownloader, vf core.IVideoFactory) *UploadMediaStrategy {
+func CreateUploadMediaStrategy(l core.ILogger, sms core.ISendMediaStrategy, fd core.IFileDownloader, vf core.IVideoFactory) core.ISendMediaStrategy {
 	return &UploadMediaStrategy{l, sms, fd, vf}
 }
 
