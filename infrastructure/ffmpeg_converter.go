@@ -89,6 +89,7 @@ func (c *FfmpegConverter) Split(video *core.Video, limit int) ([]*core.Video, er
 		out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 		if err != nil {
 			c.l.Error(err)
+			os.Remove(path)
 			return nil, fmt.Errorf(string(out))
 		}
 
