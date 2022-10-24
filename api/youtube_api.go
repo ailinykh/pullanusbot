@@ -124,7 +124,6 @@ func (y *YoutubeAPI) getThumb(video *Video, vf *Format) (*core.Image, error) {
 	thumb := video.thumb()
 	filename := fmt.Sprintf("youtube-%s-%s.jpg", video.ID, vf.FormatID)
 	thumbPath := path.Join(os.TempDir(), filename)
-	y.l.Infof("downloading thumb %s", thumb.URL)
 	file, err := y.fd.Download(thumb.URL, thumbPath)
 	if err != nil {
 		return nil, err
@@ -140,7 +139,6 @@ func (y *YoutubeAPI) getThumbV2(video *Video, vf *Format) (*core.Image, error) {
 	filename := fmt.Sprintf("youtube-%s-%s-maxres.jpg", video.ID, vf.FormatID)
 	originalThumbPath := path.Join(os.TempDir(), filename+"-original")
 	thumbPath := path.Join(os.TempDir(), filename)
-	y.l.Infof("downloading thumb %s", video.Thumbnail)
 	file, err := y.fd.Download(video.Thumbnail, originalThumbPath)
 	if err != nil {
 		y.l.Error(err)

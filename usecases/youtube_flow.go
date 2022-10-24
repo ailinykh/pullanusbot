@@ -60,7 +60,6 @@ func (flow *YoutubeFlow) process(id string, message *core.Message, bot core.IBot
 	}
 
 	title := media[0].Title
-	flow.l.Infof("downloading %s", id)
 	file, err := flow.videoFactory.CreateVideo(id)
 	if err != nil {
 		return err

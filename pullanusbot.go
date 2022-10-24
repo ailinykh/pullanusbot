@@ -46,7 +46,7 @@ func main() {
 	videoFlow := usecases.CreateVideoFlow(logger, converter, converter)
 	telebot.AddHandler(videoFlow)
 
-	fileDownloader := infrastructure.CreateFileDownloader()
+	fileDownloader := infrastructure.CreateFileDownloader(logger)
 	remoteMediaSender := helpers.CreateSendMediaStrategy(logger)
 	localMediaSender := helpers.CreateUploadMediaStrategy(logger, remoteMediaSender, fileDownloader, converter)
 

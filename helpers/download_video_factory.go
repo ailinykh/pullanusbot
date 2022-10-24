@@ -31,7 +31,6 @@ func (factory *DownloadVideoFactory) CreateVideo(url string) (*core.Video, error
 	}
 
 	videoPath := path.Join(os.TempDir(), filename)
-	factory.l.Infof("downloading %s %s", videoPath, url)
 	file, err := factory.fileDownloader.Download(url, videoPath)
 	if err != nil {
 		factory.l.Error(err)
