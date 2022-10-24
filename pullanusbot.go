@@ -48,7 +48,7 @@ func main() {
 
 	fileDownloader := infrastructure.CreateFileDownloader(logger)
 	remoteMediaSender := helpers.CreateSendMediaStrategy(logger)
-	localMediaSender := helpers.CreateUploadMediaStrategy(logger, remoteMediaSender, fileDownloader, converter)
+	localMediaSender := helpers.CreateUploadMediaStrategyDecorator(logger, remoteMediaSender, fileDownloader, converter)
 
 	rabbit, close := infrastructure.CreateRabbitFactory(logger, os.Getenv("AMQP_URL"))
 	defer close()
