@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -33,6 +34,10 @@ func (ums *UploadMediaStrategy) SendMedia(media []*core.Media, bot core.IBot) er
 }
 
 func (ums *UploadMediaStrategy) fallbackToUploading(media *core.Media, bot core.IBot) error {
+	if media.Size/1024/1024 > 50 {
+		return fmt.Errorf("file size limit exceeded")
+	}
+
 	ums.l.Info("send by uploading")
 	file, err := ums.downloadMedia(media)
 	if err != nil {
