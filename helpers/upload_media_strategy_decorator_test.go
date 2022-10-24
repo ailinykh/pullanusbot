@@ -11,7 +11,7 @@ import (
 )
 
 func Test_UploadMedia_DoesNotFailOnEmptyMedia(t *testing.T) {
-	strategy, _, bot := makeUploadMediaStrategyDecoratorSUT()
+	strategy, _, bot := makeUploadMediaDecoratorSUT()
 	media := []*core.Media{}
 
 	strategy.SendMedia(media, bot)
@@ -20,7 +20,7 @@ func Test_UploadMedia_DoesNotFailOnEmptyMedia(t *testing.T) {
 }
 
 func Test_UploadMedia_DoesNotFallbackOnGenericError(t *testing.T) {
-	strategy, proxy, bot := makeUploadMediaStrategyDecoratorSUT()
+	strategy, proxy, bot := makeUploadMediaDecoratorSUT()
 	media := []*core.Media{}
 	proxy.Err = fmt.Errorf("an error")
 
@@ -30,7 +30,7 @@ func Test_UploadMedia_DoesNotFallbackOnGenericError(t *testing.T) {
 }
 
 func Test_UploadMedia_FallbackOnSpecificError(t *testing.T) {
-	strategy, proxy, bot := makeUploadMediaStrategyDecoratorSUT()
+	strategy, proxy, bot := makeUploadMediaDecoratorSUT()
 	media := []*core.Media{{ResourceURL: "https://a-url.com"}}
 	proxy.Err = fmt.Errorf("failed to get HTTP URL content")
 
@@ -40,12 +40,12 @@ func Test_UploadMedia_FallbackOnSpecificError(t *testing.T) {
 }
 
 // Helpers
-func makeUploadMediaStrategyDecoratorSUT() (core.ISendMediaStrategy, *test_helpers.FakeSendMediaStrategy, *test_helpers.FakeBot) {
+func makeUploadMediaDecoratorSUT() (core.ISendMediaStrategy, *test_helpers.FakeSendMediaStrategy, *test_helpers.FakeBot) {
 	logger := test_helpers.CreateLogger()
 	send_media_strategy := test_helpers.CreateSendMediaStrategy()
 	file_downloader := test_helpers.CreateFileDownloader()
 	video_factory := test_helpers.CreateVideoFactory()
-	strategy := helpers.CreateUploadMediaStrategyDecorator(logger, send_media_strategy, file_downloader, video_factory)
+	strategy := helpers.CreateUploadMediaDecorator(logger, send_media_strategy, file_downloader, video_factory)
 	bot := test_helpers.CreateBot()
 	return strategy, send_media_strategy, bot
 }

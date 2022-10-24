@@ -9,11 +9,11 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateUploadMediaStrategyDecorator(l core.ILogger, decoratee core.ISendMediaStrategy, fileDownloader core.IFileDownloader, videoFactory core.IVideoFactory) core.ISendMediaStrategy {
-	return &UploadMediaStrategyDecorator{l, decoratee, fileDownloader, videoFactory}
+func CreateUploadMediaDecorator(l core.ILogger, decoratee core.ISendMediaStrategy, fileDownloader core.IFileDownloader, videoFactory core.IVideoFactory) core.ISendMediaStrategy {
+	return &UploadMediaDecorator{l, decoratee, fileDownloader, videoFactory}
 }
 
-type UploadMediaStrategyDecorator struct {
+type UploadMediaDecorator struct {
 	l              core.ILogger
 	decoratee      core.ISendMediaStrategy
 	fileDownloader core.IFileDownloader
@@ -21,7 +21,7 @@ type UploadMediaStrategyDecorator struct {
 }
 
 // SendMedia is a core.ISendMediaStrategy interface implementation
-func (decorator *UploadMediaStrategyDecorator) SendMedia(media []*core.Media, bot core.IBot) error {
+func (decorator *UploadMediaDecorator) SendMedia(media []*core.Media, bot core.IBot) error {
 	err := decorator.decoratee.SendMedia(media, bot)
 	if err != nil {
 		decorator.l.Error(err)
@@ -33,7 +33,7 @@ func (decorator *UploadMediaStrategyDecorator) SendMedia(media []*core.Media, bo
 	return err
 }
 
-func (decorator *UploadMediaStrategyDecorator) fallbackToUploading(media *core.Media, bot core.IBot) error {
+func (decorator *UploadMediaDecorator) fallbackToUploading(media *core.Media, bot core.IBot) error {
 	if media.Size/1024/1024 > 50 {
 		return fmt.Errorf("file size limit exceeded")
 	}
@@ -64,7 +64,7 @@ func (decorator *UploadMediaStrategyDecorator) fallbackToUploading(media *core.M
 	return err
 }
 
-func (decorator *UploadMediaStrategyDecorator) downloadMedia(media *core.Media) (*core.File, error) {
+func (decorator *UploadMediaDecorator) downloadMedia(media *core.Media) (*core.File, error) {
 	//TODO: duplicated code
 	filename := path.Base(media.ResourceURL)
 	if strings.Contains(filename, "?") {
