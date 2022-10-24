@@ -45,7 +45,8 @@ func makeUploadMediaDecoratorSUT() (core.ISendMediaStrategy, *test_helpers.FakeS
 	send_media_strategy := test_helpers.CreateSendMediaStrategy()
 	file_downloader := test_helpers.CreateFileDownloader()
 	video_factory := test_helpers.CreateVideoFactory()
-	strategy := helpers.CreateUploadMediaDecorator(logger, send_media_strategy, file_downloader, video_factory)
+	send_video := test_helpers.CreateSendVideoStrategy()
+	strategy := helpers.CreateUploadMediaDecorator(logger, send_media_strategy, file_downloader, video_factory, send_video)
 	bot := test_helpers.CreateBot()
 	return strategy, send_media_strategy, bot
 }

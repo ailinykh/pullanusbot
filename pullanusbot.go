@@ -48,7 +48,9 @@ func main() {
 
 	fileDownloader := infrastructure.CreateFileDownloader(logger)
 	remoteMediaSender := helpers.CreateSendMediaStrategy(logger)
-	localMediaSender := helpers.CreateUploadMediaDecorator(logger, remoteMediaSender, fileDownloader, converter)
+	sendVideoStrategy := helpers.CreateSendVideoStrategy(logger)
+	sendVideoStrategySplitDecorator := helpers.CreateSendVideoStrategySplitDecorator(logger, sendVideoStrategy, converter)
+	localMediaSender := helpers.CreateUploadMediaDecorator(logger, remoteMediaSender, fileDownloader, converter, sendVideoStrategySplitDecorator)
 
 	rabbit, close := infrastructure.CreateRabbitFactory(logger, os.Getenv("AMQP_URL"))
 	defer close()
@@ -87,8 +89,6 @@ func main() {
 	telebot.AddHandler("/loh666", publisherFlow.HandleRequest)
 
 	youtubeAPI := api.CreateYoutubeAPI(logger, fileDownloader)
-	sendVideoStrategy := helpers.CreateSendVideoStrategy(logger)
-	sendVideoStrategySplitDecorator := helpers.CreateSendVideoStrategySplitDecorator(logger, sendVideoStrategy, converter)
 	youtubeFlow := usecases.CreateYoutubeFlow(logger, youtubeAPI, youtubeAPI, sendVideoStrategySplitDecorator)
 	removeYoutubeSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, youtubeFlow)
 	telebot.AddHandler(removeYoutubeSourceDecorator)

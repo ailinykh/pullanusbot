@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -9,8 +8,8 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateUploadMediaDecorator(l core.ILogger, decoratee core.ISendMediaStrategy, fileDownloader core.IFileDownloader, videoFactory core.IVideoFactory) core.ISendMediaStrategy {
-	return &UploadMediaDecorator{l, decoratee, fileDownloader, videoFactory}
+func CreateUploadMediaDecorator(l core.ILogger, decoratee core.ISendMediaStrategy, fileDownloader core.IFileDownloader, videoFactory core.IVideoFactory, sendVideo core.ISendVideoStrategy) core.ISendMediaStrategy {
+	return &UploadMediaDecorator{l, decoratee, fileDownloader, videoFactory, sendVideo}
 }
 
 type UploadMediaDecorator struct {
@@ -18,13 +17,13 @@ type UploadMediaDecorator struct {
 	decoratee      core.ISendMediaStrategy
 	fileDownloader core.IFileDownloader
 	videoFactory   core.IVideoFactory
+	sendVideo      core.ISendVideoStrategy
 }
 
 // SendMedia is a core.ISendMediaStrategy interface implementation
 func (decorator *UploadMediaDecorator) SendMedia(media []*core.Media, bot core.IBot) error {
 	err := decorator.decoratee.SendMedia(media, bot)
 	if err != nil {
-		decorator.l.Error(err)
 		if strings.Contains(err.Error(), "failed to get HTTP URL content") || strings.Contains(err.Error(), "wrong file identifier/HTTP URL specified") {
 			return decorator.fallbackToUploading(media[0], bot)
 		}
@@ -34,10 +33,6 @@ func (decorator *UploadMediaDecorator) SendMedia(media []*core.Media, bot core.I
 }
 
 func (decorator *UploadMediaDecorator) fallbackToUploading(media *core.Media, bot core.IBot) error {
-	if media.Size/1024/1024 > 50 {
-		return fmt.Errorf("file size limit exceeded")
-	}
-
 	decorator.l.Info("send by uploading")
 	file, err := decorator.downloadMedia(media)
 	if err != nil {
@@ -58,8 +53,7 @@ func (decorator *UploadMediaDecorator) fallbackToUploading(media *core.Media, bo
 			decorator.l.Errorf("can't create video file for %s, %v", file.Path, err)
 			return err
 		}
-		_, err = bot.SendVideo(vf, media.Caption)
-		return err
+		return decorator.sendVideo.SendVideo(vf, media.Caption, bot)
 	}
 	return err
 }
