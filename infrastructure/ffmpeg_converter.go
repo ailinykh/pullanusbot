@@ -71,11 +71,17 @@ func (c *FfmpegConverter) CreateMedia(url string) ([]*core.Media, error) {
 		return nil, err
 	}
 
-	if ffprobe.Format.FormatName == "image2" {
-		return []*core.Media{{ResourceURL: url, URL: url, Codec: stream.CodecName, Type: core.TPhoto}}, nil
+	size, err := strconv.Atoi(ffprobe.Format.Size)
+	if err != nil {
+		c.l.Warning(err)
+		size = 0
 	}
 
-	return []*core.Media{{ResourceURL: url, URL: url, Codec: stream.CodecName, Type: core.TVideo}}, nil
+	if ffprobe.Format.FormatName == "image2" {
+		return []*core.Media{{ResourceURL: url, URL: url, Codec: stream.CodecName, Size: size, Type: core.TPhoto}}, nil
+	}
+
+	return []*core.Media{{ResourceURL: url, URL: url, Codec: stream.CodecName, Size: size, Type: core.TVideo}}, nil
 }
 
 // CreateVideo is a core.IVideoSplitter interface implementation

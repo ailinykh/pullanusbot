@@ -24,6 +24,7 @@ type Media struct {
 	Caption     string
 	Duration    int    // video only
 	Codec       string // video only
+	Size        int
 	Type        MediaType
 }
 
