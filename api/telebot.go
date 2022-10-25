@@ -42,7 +42,16 @@ func CreateTelebot(token string, logger core.ILogger, chatStorage core.IChatStor
 		panic(err)
 	}
 
-	telebot := &Telebot{bot, logger, &CoreFactory{chatStorage: chatStorage}, []string{}, []core.ITextHandler{}, []core.IDocumentHandler{}, []core.IImageHandler{}, []core.IVideoHandler{}}
+	telebot := &Telebot{
+		bot,
+		logger,
+		&CoreFactory{chatStorage: chatStorage},
+		[]string{},
+		[]core.ITextHandler{},
+		[]core.IDocumentHandler{},
+		[]core.IImageHandler{},
+		[]core.IVideoHandler{},
+	}
 
 	bot.Handle(tb.OnText, func(c tb.Context) error {
 		var err error
