@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
@@ -157,6 +158,20 @@ func (a *TelebotAdapter) SendPhotoAlbum(medias []*core.Media) ([]*core.Message, 
 
 // SendVideo is a core.IBot interface implementation
 func (a *TelebotAdapter) SendVideo(vf *core.Video, caption string) (*core.Message, error) {
+	if vf.Size > 50*1024*1024 && a.t.multipart != nil {
+		body, err := a.t.multipart.SendVideo(vf, caption, a.m.Chat.ID)
+		if err != nil {
+			return nil, err
+		}
+		var resp struct {
+			Result *tb.Message
+		}
+		err = json.Unmarshal(body, &resp)
+		if err != nil {
+			return nil, err
+		}
+		return a.t.coreFactory.makeMessage(resp.Result), err
+	}
 	a.t.logger.Infof("uploading video %s (%.2f MB)", vf.Name, float64(vf.Size)/2014/2014)
 	video := makeTbVideo(vf, caption)
 	a.t.bot.Notify(a.m.Chat, tb.UploadingVideo)

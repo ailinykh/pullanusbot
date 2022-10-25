@@ -19,6 +19,7 @@ type Telebot struct {
 	bot              *tb.Bot
 	logger           core.ILogger
 	coreFactory      *CoreFactory
+	multipart        *helpers.SendMultipartVideo
 	commandHandlers  []string
 	textHandlers     []core.ITextHandler
 	documentHandlers []core.IDocumentHandler
@@ -42,10 +43,18 @@ func CreateTelebot(token string, logger core.ILogger, chatStorage core.IChatStor
 		panic(err)
 	}
 
+	var multipart *helpers.SendMultipartVideo
+	apiURL := os.Getenv("BOT_API_URL")
+	if len(apiURL) > 0 {
+		apiURL = fmt.Sprintf("%s/bot%s/sendVideo", apiURL, token)
+		multipart = helpers.CreateSendMultipartVideo(logger, apiURL)
+	}
+
 	telebot := &Telebot{
 		bot,
 		logger,
 		&CoreFactory{chatStorage: chatStorage},
+		multipart,
 		[]string{},
 		[]core.ITextHandler{},
 		[]core.IDocumentHandler{},
