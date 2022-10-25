@@ -13,8 +13,8 @@ import (
 )
 
 func main() {
-	logger, close := createLogger()
-	defer close()
+	logger := createLogger()
+	defer logger.Close()
 
 	dbFile := path.Join(getWorkingDir(), "pullanusbot.db")
 
@@ -118,19 +118,14 @@ func main() {
 	telebot.Run()
 }
 
-func createLogger() (core.ILogger, func()) {
+func createLogger() core.ILogger {
 	logFilePath := path.Join(getWorkingDir(), "pullanusbot.log")
 	lf, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
 	if err != nil {
 		panic(err)
 	}
 
-	l := logger.Init("pullanusbot", true, false, lf)
-	close := func() {
-		lf.Close()
-		l.Close()
-	}
-	return l, close
+	return logger.Init("pullanusbot", true, false, lf)
 }
 
 func getWorkingDir() string {
