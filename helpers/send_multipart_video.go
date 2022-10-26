@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
@@ -42,6 +43,7 @@ func (strategy *SendMultipartVideo) SendVideo(video *core.Video, caption string,
 
 	writer.Close()
 
+	start := time.Now()
 	strategy.l.Infof("uploading %s (%.2f MB)", video.Name, float64(video.Size)/1024/1024)
 	r, _ := http.NewRequest("POST", strategy.url, body)
 	r.Header.Add("Content-Type", writer.FormDataContentType())
@@ -51,7 +53,7 @@ func (strategy *SendMultipartVideo) SendVideo(video *core.Video, caption string,
 		return nil, err
 	}
 	defer res.Body.Close()
-	strategy.l.Infof("%s successfully sent", video.Name)
+	strategy.l.Infof("successfully sent %s (%.2f MB) %s", video.Name, float64(video.Size)/1024/1024, time.Now().Sub(start))
 	return ioutil.ReadAll(res.Body)
 }
 
