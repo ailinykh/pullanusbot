@@ -23,10 +23,10 @@ type YoutubeFlow struct {
 
 // HandleText is a core.ITextHandler protocol implementation
 func (flow *YoutubeFlow) HandleText(message *core.Message, bot core.IBot) error {
-	r := regexp.MustCompile(`youtu\.?be(\.com)?\/(watch\?v=)?([\w\-_]+)`)
+	r := regexp.MustCompile(`youtu\.?be(\.com)?(\/shorts)?\/(watch\?v=)?([\w\-_]+)`)
 	match := r.FindStringSubmatch(message.Text)
-	if len(match) == 4 {
-		err := flow.process(match[3], message, bot)
+	if len(match) == 5 {
+		err := flow.process(match[4], message, bot)
 		if err != nil {
 			return err
 		}
