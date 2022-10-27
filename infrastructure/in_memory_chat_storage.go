@@ -23,22 +23,11 @@ func (storage *InMemoryChatStorage) GetChatByID(chatID int64) (*core.Chat, error
 }
 
 // CreateChat is a core.IChatStorage interface implementation
-func (storage *InMemoryChatStorage) CreateChat(chatID int64, title string, type_ string, settings *core.Settings) error {
+func (storage *InMemoryChatStorage) CreateChat(chatID int64, title string, type_ string) error {
 	storage.cache[chatID] = &core.Chat{
-		ID:       chatID,
-		Title:    title,
-		Type:     type_,
-		Settings: settings,
+		ID:    chatID,
+		Title: title,
+		Type:  type_,
 	}
-	return nil
-}
-
-// UpdateSettings is a core.IChatStorage interface implementation
-func (storage *InMemoryChatStorage) UpdateSettings(chatID int64, settings *core.Settings) error {
-	chat, err := storage.GetChatByID(chatID)
-	if err != nil {
-		return err
-	}
-	chat.Settings = settings
 	return nil
 }

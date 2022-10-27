@@ -1,7 +1,6 @@
 package infrastructure
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
@@ -33,7 +32,6 @@ type Chat struct {
 	ID        int64 `gorm:"primaryKey"`
 	Title     string
 	Type      string
-	Settings  []byte
 	CreatedAt time.Time `gorm:"autoUpdateTime"`
 	UpdatedAt time.Time `gorm:"autoCreateTime"`
 }
@@ -48,27 +46,13 @@ func (s *ChatStorage) GetChatByID(chatID int64) (*core.Chat, error) {
 		return nil, err
 	}
 
-	var settings core.Settings
-	err = json.Unmarshal(chat.Settings, &settings)
-
-	if err != nil {
-		s.l.Error(err)
-		return nil, err
-	}
-
-	return &core.Chat{ID: chat.ID, Title: chat.Title, Type: chat.Type, Settings: &settings}, nil
+	return &core.Chat{ID: chat.ID, Title: chat.Title, Type: chat.Type}, nil
 }
 
 // CreateChat is a core.IChatStorage interface implementation
-func (s *ChatStorage) CreateChat(chatID int64, title string, type_ string, settings *core.Settings) error {
-	data, err := json.Marshal(&settings)
-	if err != nil {
-		s.l.Error(err)
-		return err
-	}
-
-	chat := Chat{ID: chatID, Title: title, Type: type_, Settings: data}
-	err = s.conn.Create(&chat).Error
+func (s *ChatStorage) CreateChat(chatID int64, title string, type_ string) error {
+	chat := Chat{ID: chatID, Title: title, Type: type_}
+	err := s.conn.Create(&chat).Error
 	if err != nil {
 		s.l.Error(err)
 		return err
@@ -76,26 +60,4 @@ func (s *ChatStorage) CreateChat(chatID int64, title string, type_ string, setti
 
 	s.l.Infof("chat created: {%d %s %s}", chat.ID, chat.Title, chat.Type)
 	return nil
-}
-
-// UpdateSettings is a core.IChatStorage interface implementation
-func (s *ChatStorage) UpdateSettings(chatID int64, settings *core.Settings) error {
-	chat, err := s.GetChatByID(chatID)
-	if err != nil {
-		return err
-	}
-
-	data, err := json.Marshal(&settings)
-	if err != nil {
-		s.l.Error(err)
-		return err
-	}
-
-	c := Chat{
-		ID:       chat.ID,
-		Title:    chat.Title,
-		Type:     chat.Type,
-		Settings: data,
-	}
-	return s.conn.Save(&c).Error
 }

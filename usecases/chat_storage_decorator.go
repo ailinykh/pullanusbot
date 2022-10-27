@@ -20,20 +20,14 @@ func (decorator *ChatStorageDecorator) GetChatByID(chatID int64) (*core.Chat, er
 		if err != nil {
 			return nil, err
 		}
-		_ = decorator.cache.CreateChat(chat.ID, chat.Title, chat.Type, chat.Settings)
+		_ = decorator.cache.CreateChat(chat.ID, chat.Title, chat.Type)
 		return chat, nil
 	}
 	return chat, nil
 }
 
 // CreateChat is a core.IChatStorage interface implementation
-func (decorator *ChatStorageDecorator) CreateChat(chatID int64, title string, type_ string, settings *core.Settings) error {
-	_ = decorator.cache.CreateChat(chatID, title, type_, settings)
-	return decorator.db.CreateChat(chatID, title, type_, settings)
-}
-
-// UpdateSettings is a core.IChatStorage interface implementation
-func (decorator *ChatStorageDecorator) UpdateSettings(chatID int64, settings *core.Settings) error {
-	_ = decorator.cache.UpdateSettings(chatID, settings)
-	return decorator.db.UpdateSettings(chatID, settings)
+func (decorator *ChatStorageDecorator) CreateChat(chatID int64, title string, type_ string) error {
+	_ = decorator.cache.CreateChat(chatID, title, type_)
+	return decorator.db.CreateChat(chatID, title, type_)
 }

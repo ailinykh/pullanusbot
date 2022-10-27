@@ -41,8 +41,7 @@ func (flow *BootstrapFlow) ensureChatExists(chat *core.Chat) error {
 	_, err := flow.chatStorage.GetChatByID(chat.ID)
 	if err != nil {
 		if err.Error() == "record not found" {
-			settings := core.DefaultSettings()
-			return flow.chatStorage.CreateChat(chat.ID, chat.Title, chat.Type, &settings)
+			return flow.chatStorage.CreateChat(chat.ID, chat.Title, chat.Type)
 		}
 		flow.l.Error(err)
 	}

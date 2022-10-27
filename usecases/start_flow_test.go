@@ -57,8 +57,7 @@ func Test_HandleText_CreateChatPayload(t *testing.T) {
 }
 
 func makeMessage(text string) *core.Message {
-	settings := core.DefaultSettings()
-	chat := core.Chat{ID: 1488, Title: "Paul Durov", Type: "private", Settings: &settings}
+	chat := core.Chat{ID: 1488, Title: "Paul Durov", Type: "private"}
 	sender := core.User{ID: 1, FirstName: "Paul", LastName: "Durov"}
 	return &core.Message{Text: text, Chat: &chat, Sender: &sender}
 }

@@ -28,7 +28,7 @@ type Telebot struct {
 }
 
 // CreateTelebot is a default Telebot factory
-func CreateTelebot(token string, logger core.ILogger, chatStorage core.IChatStorage) *Telebot {
+func CreateTelebot(token string, logger core.ILogger) *Telebot {
 	poller := tb.NewMiddlewarePoller(&tb.LongPoller{Timeout: 10 * time.Second}, func(upd *tb.Update) bool {
 		return true
 	})
@@ -53,7 +53,7 @@ func CreateTelebot(token string, logger core.ILogger, chatStorage core.IChatStor
 	telebot := &Telebot{
 		bot,
 		logger,
-		&CoreFactory{chatStorage: chatStorage},
+		&CoreFactory{},
 		multipart,
 		[]string{},
 		[]core.ITextHandler{},
@@ -242,7 +242,6 @@ func (t *Telebot) reportError(m *tb.Message, e error) {
 }
 
 type CoreFactory struct {
-	chatStorage core.IChatStorage
 }
 
 func (factory *CoreFactory) makeMessage(m *tb.Message) *core.Message {
@@ -270,20 +269,14 @@ func (factory *CoreFactory) makeMessage(m *tb.Message) *core.Message {
 }
 
 func (factory *CoreFactory) makeChat(c *tb.Chat) *core.Chat {
-	settings := core.DefaultSettings()
-	chat, err := factory.chatStorage.GetChatByID(c.ID)
-	if err == nil {
-		settings = *chat.Settings
-	}
 	title := c.Title
 	if c.Type == tb.ChatPrivate {
 		title = c.FirstName + " " + c.LastName
 	}
 	return &core.Chat{
-		ID:       c.ID,
-		Title:    title,
-		Type:     string(c.Type),
-		Settings: &settings,
+		ID:    c.ID,
+		Title: title,
+		Type:  string(c.Type),
 	}
 }
 
