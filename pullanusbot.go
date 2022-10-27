@@ -112,7 +112,7 @@ func main() {
 	telebot.AddHandler(removeInstaSourceDecorator)
 
 	commonLocalizer := infrastructure.CreateCommonLocalizer()
-	startFlow := usecases.CreateStartFlow(logger, commonLocalizer, chatStorageDecorator, commandService)
+	startFlow := usecases.CreateStartFlow(logger, commonLocalizer, settingsProvider, commandService)
 	telebot.AddHandler("/start", startFlow.Start)
 	telebot.AddHandler("/help", startFlow.Help)
 	// Start endless loop

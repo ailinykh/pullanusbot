@@ -6,7 +6,7 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateSettingsProvider() core.ISettingsProvider {
+func CreateSettingsProvider() *FakeSettingsProvider {
 	return &FakeSettingsProvider{make(map[int64]map[string][]byte), nil}
 }
 

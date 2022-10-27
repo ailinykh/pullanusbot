@@ -1,6 +1,7 @@
 package usecases_test
 
 import (
+	"encoding/json"
 	"sync"
 	"testing"
 
@@ -13,12 +14,10 @@ import (
 func Test_HandleText_CreateChatPayload(t *testing.T) {
 	logger := test_helpers.CreateLogger()
 	loc := test_helpers.CreateLocalizer(map[string]string{})
-	chatStorage := test_helpers.CreateChatStorage()
+	settingsProvider := test_helpers.CreateSettingsProvider()
 	commandService := test_helpers.CreateCommandService(logger)
-	startFlow := usecases.CreateStartFlow(logger, loc, chatStorage, commandService)
+	startFlow := usecases.CreateStartFlow(logger, loc, settingsProvider, commandService)
 
-	settings := core.DefaultSettings()
-	chatStorage.CreateChat(1488, "Paul Durov", "private", &settings)
 	bot := test_helpers.CreateBot()
 
 	messages := []string{
@@ -38,12 +37,16 @@ func Test_HandleText_CreateChatPayload(t *testing.T) {
 
 	wg.Wait()
 
-	assert.Equal(t, 1, len(chatStorage.Chats))
+	assert.Equal(t, 1, len(settingsProvider.Data))
 
 	message := makeMessage("/start")
-	chat, _ := chatStorage.GetChatByID(message.Chat.ID)
-	assert.Equal(t, true, contains("payload", chat.Settings.Payload))
-	assert.Equal(t, true, contains("another_payload", chat.Settings.Payload))
+	data, _ := settingsProvider.GetData(message.Chat.ID, "payload")
+	var settingsV1 struct {
+		Payload []string
+	}
+	_ = json.Unmarshal(data, &settingsV1)
+	assert.Equal(t, true, contains("payload", settingsV1.Payload))
+	assert.Equal(t, true, contains("another_payload", settingsV1.Payload))
 
 	expected := []string{
 		"enable commands 1488 [{help show help message}]",

@@ -1,20 +1,21 @@
 package usecases
 
 import (
+	"encoding/json"
 	"strings"
 	"sync"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateStartFlow(l core.ILogger, loc core.ILocalizer, chatStorage core.IChatStorage, commandService core.ICommandService) *StartFlow {
-	return &StartFlow{l, loc, chatStorage, commandService, sync.Mutex{}}
+func CreateStartFlow(l core.ILogger, loc core.ILocalizer, settings core.ISettingsProvider, commandService core.ICommandService) *StartFlow {
+	return &StartFlow{l, loc, settings, commandService, sync.Mutex{}}
 }
 
 type StartFlow struct {
 	l              core.ILogger
 	loc            core.ILocalizer
-	chatStorage    core.IChatStorage
+	settings       core.ISettingsProvider
 	commandService core.ICommandService
 	lock           sync.Mutex
 }
@@ -51,18 +52,34 @@ func (flow *StartFlow) Help(message *core.Message, bot core.IBot) error {
 }
 
 func (flow *StartFlow) handlePayload(payload string, chatID int64) error {
-	chat, err := flow.chatStorage.GetChatByID(chatID)
+	data, err := flow.settings.GetData(chatID, "payload")
+
+	if err != nil {
+		flow.l.Error(err)
+	}
+
+	var settingsV1 struct {
+		Payload []string
+	}
+
+	err = json.Unmarshal(data, &settingsV1)
+	if err != nil {
+		flow.l.Error(err)
+		// TODO: perform a migration
+	}
+
+	if flow.contains(payload, settingsV1.Payload) {
+		return nil
+	}
+
+	settingsV1.Payload = append(settingsV1.Payload, payload)
+	data, err = json.Marshal(settingsV1)
 	if err != nil {
 		flow.l.Error(err)
 		return err
 	}
 
-	if flow.contains(payload, chat.Settings.Payload) {
-		return nil
-	}
-
-	chat.Settings.Payload = append(chat.Settings.Payload, payload)
-	return flow.chatStorage.UpdateSettings(chat.ID, chat.Settings)
+	return flow.settings.SetData(chatID, "payload", data)
 }
 
 func (flow *StartFlow) contains(payload string, current []string) bool {
