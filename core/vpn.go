@@ -2,13 +2,13 @@ package core
 
 type VpnKey struct {
 	ID     string
-	ChatID int64
+	ChatID ChatID
 	Title  string
 	Key    string
 }
 
 type IVpnAPI interface {
-	GetKeys(int64) ([]*VpnKey, error)
-	CreateKey(int64, string) (*VpnKey, error)
+	GetKeys(ChatID) ([]*VpnKey, error)
+	CreateKey(ChatID, string) (*VpnKey, error)
 	DeleteKey(*VpnKey) error
 }

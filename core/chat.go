@@ -1,7 +1,9 @@
 package core
 
+type ChatID = int64
+
 type Chat struct {
-	ID       int64
+	ID       ChatID
 	Title    string
 	Type     string
 	Settings *Settings
