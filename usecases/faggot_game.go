@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"os"
@@ -14,8 +15,8 @@ import (
 )
 
 // CreateGameFlow is a simple GameFlow factory
-func CreateGameFlow(l core.ILogger, t core.ILocalizer, s core.IGameStorage, r core.IRand, chatStorage core.IChatStorage, commandService core.ICommandService) *GameFlow {
-	return &GameFlow{l, t, s, r, chatStorage, commandService, sync.Mutex{}}
+func CreateGameFlow(l core.ILogger, t core.ILocalizer, s core.IGameStorage, r core.IRand, settings core.ISettingsProvider, commandService core.ICommandService) *GameFlow {
+	return &GameFlow{l, t, s, r, settings, commandService, sync.Mutex{}}
 }
 
 // GameFlow represents faggot game logic
@@ -24,7 +25,7 @@ type GameFlow struct {
 	t              core.ILocalizer
 	s              core.IGameStorage
 	r              core.IRand
-	chatStorage    core.IChatStorage
+	settings       core.ISettingsProvider
 	commandService core.ICommandService
 	mutex          sync.Mutex
 }
@@ -76,27 +77,7 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 	flow.mutex.Lock()
 	defer flow.mutex.Unlock()
 
-	if !message.Chat.Settings.FaggotGameCommandsEnabled {
-		settings := message.Chat.Settings
-		settings.FaggotGameCommandsEnabled = true
-		err := flow.chatStorage.UpdateSettings(message.Chat.ID, settings)
-		if err != nil {
-			return err
-		}
-
-		commands := []core.Command{
-			{Text: "pidor", Description: "play the game, see /pidorules first"},
-			{Text: "pidorules", Description: "POTD game rules"},
-			{Text: "pidoreg", Description: "register for POTD game"},
-			{Text: "pidorstats", Description: "POTD game stats for this year"},
-			{Text: "pidorall", Description: "POTD game stats for all time"},
-			{Text: "pidorme", Description: "POTD personal stats"},
-		}
-		err = flow.commandService.EnableCommands(message.Chat.ID, commands, bot)
-		if err != nil {
-			return err
-		}
-	}
+	flow.checkSettings(message.Chat.ID, bot)
 
 	flow.l.Infof("chat_id: %d, game started by %v", message.Chat.ID, message.Sender)
 
@@ -280,4 +261,50 @@ func (flow *GameFlow) getStat(message *core.Message) ([]Stat, error) {
 	})
 
 	return entries, nil
+}
+
+func (flow *GameFlow) checkSettings(chatID core.ChatID, bot core.IBot) error {
+	data, err := flow.settings.GetData(chatID, "faggot_game")
+
+	if err != nil {
+		flow.l.Error(err)
+	}
+
+	var settingsV1 struct {
+		Enabled bool
+	}
+
+	err = json.Unmarshal(data, &settingsV1)
+	if err != nil {
+		flow.l.Error(err)
+		// TODO: perform a migration
+	}
+
+	if settingsV1.Enabled {
+		return nil
+	}
+
+	settingsV1.Enabled = true
+	data, err = json.Marshal(settingsV1)
+	if err != nil {
+		flow.l.Error(err)
+		return err
+	}
+
+	err = flow.settings.SetData(chatID, "faggot_game", data)
+	if err != nil {
+		flow.l.Error(err)
+		return err
+	}
+
+	commands := []core.Command{
+		{Text: "pidor", Description: "play the game, see /pidorules first"},
+		{Text: "pidorules", Description: "POTD game rules"},
+		{Text: "pidoreg", Description: "register for POTD game"},
+		{Text: "pidorstats", Description: "POTD game stats for this year"},
+		{Text: "pidorall", Description: "POTD game stats for all time"},
+		{Text: "pidorme", Description: "POTD personal stats"},
+	}
+
+	return flow.commandService.EnableCommands(chatID, commands, bot)
 }

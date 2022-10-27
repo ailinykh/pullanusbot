@@ -308,14 +308,14 @@ func makeSUT(args ...interface{}) (*usecases.GameFlow, *test_helpers.FakeBot, *G
 	storage := &GameStorageMock{players: []*core.User{}, rounds: []*core.Round{}}
 	bot := test_helpers.CreateBot()
 	l := &test_helpers.FakeLogger{}
-	s := test_helpers.CreateChatStorage()
+	s := test_helpers.CreateSettingsProvider()
 
 	for _, arg := range args {
 		switch opt := arg.(type) {
 		case map[string]string:
 			dict = opt
 		case *core.Message:
-			s.Chats[opt.Chat.ID] = opt.Chat
+			s.SetData(opt.Chat.ID, "key", []byte{})
 		}
 	}
 

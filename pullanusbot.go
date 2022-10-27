@@ -18,6 +18,7 @@ func main() {
 
 	dbFile := path.Join(getWorkingDir(), "pullanusbot.db")
 
+	settingsProvider := infrastructure.CreateSettingsStorage(dbFile)
 	databaseChatStorage := infrastructure.CreateChatStorage(dbFile, logger)
 	inMemoryChatStorage := infrastructure.CreateInMemoryChatStorage()
 	chatStorageDecorator := usecases.CreateChatStorageDecorator(logger, inMemoryChatStorage, databaseChatStorage)
@@ -34,7 +35,7 @@ func main() {
 	gameStorage := infrastructure.CreateGameStorage(dbFile)
 	rand := infrastructure.CreateMathRand()
 	commandService := usecases.CreateCommandService(logger)
-	gameFlow := usecases.CreateGameFlow(logger, localizer, gameStorage, rand, chatStorageDecorator, commandService)
+	gameFlow := usecases.CreateGameFlow(logger, localizer, gameStorage, rand, settingsProvider, commandService)
 	telebot.AddHandler("/pidorules", gameFlow.Rules)
 	telebot.AddHandler("/pidoreg", gameFlow.Add)
 	telebot.AddHandler("/pidor", gameFlow.Play)
