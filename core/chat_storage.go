@@ -1,6 +1,6 @@
 package core
 
 type IChatStorage interface {
-	GetChatByID(int64) (*Chat, error)
-	CreateChat(int64, string, string) error
+	GetChatByID(ChatID) (*Chat, error)
+	CreateChat(ChatID, string, string) error
 }
