@@ -1,6 +1,6 @@
 package core
 
 type ISettingsProvider interface {
-	GetData(ChatID, string) ([]byte, error)
-	SetData(ChatID, string, []byte) error
+	GetData(ChatID, SettingKey) ([]byte, error)
+	SetData(ChatID, SettingKey, []byte) error
 }

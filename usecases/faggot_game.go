@@ -264,7 +264,7 @@ func (flow *GameFlow) getStat(message *core.Message) ([]Stat, error) {
 }
 
 func (flow *GameFlow) checkSettings(chatID core.ChatID, bot core.IBot) error {
-	data, err := flow.settings.GetData(chatID, "faggot_game")
+	data, err := flow.settings.GetData(chatID, core.SFaggotGameEnabled)
 
 	if err != nil {
 		flow.l.Error(err)
@@ -291,7 +291,7 @@ func (flow *GameFlow) checkSettings(chatID core.ChatID, bot core.IBot) error {
 		return err
 	}
 
-	err = flow.settings.SetData(chatID, "faggot_game", data)
+	err = flow.settings.SetData(chatID, core.SFaggotGameEnabled, data)
 	if err != nil {
 		flow.l.Error(err)
 		return err

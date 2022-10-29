@@ -6,14 +6,14 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateRemoveSourceDecorator(l core.ILogger, decoratee core.ITextHandler, settingsKey string, settingsProvider core.ISettingsProvider) *RemoveSourceDecorator {
+func CreateRemoveSourceDecorator(l core.ILogger, decoratee core.ITextHandler, settingsKey core.SettingKey, settingsProvider core.ISettingsProvider) *RemoveSourceDecorator {
 	return &RemoveSourceDecorator{l, decoratee, settingsKey, settingsProvider}
 }
 
 type RemoveSourceDecorator struct {
 	l                core.ILogger
 	decoratee        core.ITextHandler
-	settingsKey      string
+	settingsKey      core.SettingKey
 	settingsProvider core.ISettingsProvider
 }
 

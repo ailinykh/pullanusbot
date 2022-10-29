@@ -37,7 +37,7 @@ type SettingsStorage struct {
 }
 
 // GetData is a core.ISettingsProvider interface implementation
-func (storage *SettingsStorage) GetData(chatID core.ChatID, key string) ([]byte, error) {
+func (storage *SettingsStorage) GetData(chatID core.ChatID, key core.SettingKey) ([]byte, error) {
 	var sessings Settings
 	err := storage.conn.First(&sessings, chatID, key).Error
 	if err != nil {
@@ -47,10 +47,10 @@ func (storage *SettingsStorage) GetData(chatID core.ChatID, key string) ([]byte,
 }
 
 // SetData is a core.ISettingsProvider interface implementation
-func (storage *SettingsStorage) SetData(chatID core.ChatID, key string, data []byte) error {
+func (storage *SettingsStorage) SetData(chatID core.ChatID, key core.SettingKey, data []byte) error {
 	settings := Settings{
 		ChatID: chatID,
-		Key:    key,
+		Key:    string(key),
 		Data:   data,
 	}
 	return storage.conn.Save(&settings).Error

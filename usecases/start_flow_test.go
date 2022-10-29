@@ -40,7 +40,7 @@ func Test_HandleText_CreateChatPayload(t *testing.T) {
 	assert.Equal(t, 1, len(settingsProvider.Data))
 
 	message := makeMessage("/start")
-	data, _ := settingsProvider.GetData(message.Chat.ID, "payload")
+	data, _ := settingsProvider.GetData(message.Chat.ID, core.SPayloadList)
 	var settingsV1 struct {
 		Payload []string
 	}

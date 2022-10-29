@@ -52,7 +52,7 @@ func (flow *StartFlow) Help(message *core.Message, bot core.IBot) error {
 }
 
 func (flow *StartFlow) handlePayload(payload string, chatID int64) error {
-	data, err := flow.settings.GetData(chatID, "payload")
+	data, err := flow.settings.GetData(chatID, core.SPayloadList)
 
 	if err != nil {
 		flow.l.Error(err)
@@ -79,7 +79,7 @@ func (flow *StartFlow) handlePayload(payload string, chatID int64) error {
 		return err
 	}
 
-	return flow.settings.SetData(chatID, "payload", data)
+	return flow.settings.SetData(chatID, core.SPayloadList, data)
 }
 
 func (flow *StartFlow) contains(payload string, current []string) bool {
