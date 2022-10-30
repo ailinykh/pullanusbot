@@ -19,6 +19,7 @@ func main() {
 	dbFile := path.Join(getWorkingDir(), "pullanusbot.db")
 
 	settingsProvider := infrastructure.CreateSettingsStorage(dbFile)
+	boolSettingProvider := helpers.CreateBoolSettingProvider(settingsProvider)
 	databaseChatStorage := infrastructure.CreateChatStorage(dbFile, logger)
 	inMemoryChatStorage := infrastructure.CreateInMemoryChatStorage()
 	chatStorageDecorator := usecases.CreateChatStorageDecorator(logger, inMemoryChatStorage, databaseChatStorage)
@@ -61,13 +62,13 @@ func main() {
 	twitterFlow := usecases.CreateTwitterFlow(logger, twitterMediaFactory, localMediaSender)
 	twitterTimeout := usecases.CreateTwitterTimeout(logger, twitterFlow)
 	twitterParser := usecases.CreateTwitterParser(logger, twitterTimeout)
-	twitterRemoveSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, twitterParser, core.STwitterFlowRemoveSource, settingsProvider)
+	twitterRemoveSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, twitterParser, core.STwitterFlowRemoveSource, boolSettingProvider)
 	telebot.AddHandler(twitterRemoveSourceDecorator)
 
 	httpClient := api.CreateHttpClient()
 	convertMediaSender := helpers.CreateConvertMediaStrategy(logger, localMediaSender, fileDownloader, converter, converter)
 	linkFlow := usecases.CreateLinkFlow(logger, httpClient, converter, convertMediaSender)
-	removeLinkSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, linkFlow, core.SLinkFlowRemoveSource, settingsProvider)
+	removeLinkSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, linkFlow, core.SLinkFlowRemoveSource, boolSettingProvider)
 	telebot.AddHandler(removeLinkSourceDecorator)
 
 	tiktokHttpClient := api.CreateHttpClient() // domain specific headers and cookies
@@ -91,7 +92,7 @@ func main() {
 
 	youtubeAPI := api.CreateYoutubeAPI(logger, fileDownloader)
 	youtubeFlow := usecases.CreateYoutubeFlow(logger, youtubeAPI, youtubeAPI, sendVideoStrategySplitDecorator)
-	removeYoutubeSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, youtubeFlow, core.SYoutubeFlowRemoveSource, settingsProvider)
+	removeYoutubeSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, youtubeFlow, core.SYoutubeFlowRemoveSource, boolSettingProvider)
 	telebot.AddHandler(removeYoutubeSourceDecorator)
 
 	telebot.AddHandler("/proxy", func(m *core.Message, bot core.IBot) error {
@@ -108,7 +109,7 @@ func main() {
 	instaAPI := api.CreateInstagramAPI(logger, jar)
 	downloadVideoFactory := helpers.CreateDownloadVideoFactory(logger, fileDownloader, converter)
 	instaFlow := usecases.CreateInstagramFlow(logger, instaAPI, downloadVideoFactory, localMediaSender, sendVideoStrategySplitDecorator)
-	removeInstaSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, instaFlow, core.SInstagramFlowRemoveSource, settingsProvider)
+	removeInstaSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, instaFlow, core.SInstagramFlowRemoveSource, boolSettingProvider)
 	telebot.AddHandler(removeInstaSourceDecorator)
 
 	commonLocalizer := infrastructure.CreateCommonLocalizer()

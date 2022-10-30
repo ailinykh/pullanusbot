@@ -1,20 +1,18 @@
 package usecases
 
 import (
-	"encoding/json"
-
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateRemoveSourceDecorator(l core.ILogger, decoratee core.ITextHandler, settingsKey core.SettingKey, settingsProvider core.ISettingsProvider) *RemoveSourceDecorator {
-	return &RemoveSourceDecorator{l, decoratee, settingsKey, settingsProvider}
+func CreateRemoveSourceDecorator(l core.ILogger, decoratee core.ITextHandler, settingsKey core.SettingKey, settingProvider core.IBoolSettingProvider) *RemoveSourceDecorator {
+	return &RemoveSourceDecorator{l, decoratee, settingsKey, settingProvider}
 }
 
 type RemoveSourceDecorator struct {
-	l                core.ILogger
-	decoratee        core.ITextHandler
-	settingsKey      core.SettingKey
-	settingsProvider core.ISettingsProvider
+	l               core.ILogger
+	decoratee       core.ITextHandler
+	settingsKey     core.SettingKey
+	settingProvider core.IBoolSettingProvider
 }
 
 // HandleText is a core.ITextHandler protocol implementation
@@ -30,20 +28,9 @@ func (decorator *RemoveSourceDecorator) HandleText(message *core.Message, bot co
 		return err
 	}
 
-	data, _ := decorator.settingsProvider.GetData(message.Chat.ID, decorator.settingsKey)
+	enabled := decorator.settingProvider.GetBool(message.Chat.ID, decorator.settingsKey)
 
-	var settingsV1 struct {
-		Enabled bool
-	}
-
-	err = json.Unmarshal(data, &settingsV1)
-	if err != nil {
-		decorator.l.Error(err)
-		// TODO: perform a migration
-		return nil
-	}
-
-	if settingsV1.Enabled {
+	if enabled {
 		decorator.l.Infof("removing chat %d message %d", message.Chat.ID, message.ID)
 		return bot.Delete(message)
 	}
