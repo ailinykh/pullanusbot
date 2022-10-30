@@ -205,7 +205,12 @@ func (t *Telebot) AddHandler(handler ...interface{}) {
 			t.bot.Handle("\f"+id, func(c tb.Context) error {
 				m := c.Message()
 				cb := c.Callback()
-				err := h.ButtonPressed(cb.Data, t.coreFactory.makeMessage(m), t.coreFactory.makeIBot(m, t))
+				err := h.ButtonPressed(
+					cb.Data,
+					t.coreFactory.makeMessage(m),
+					t.coreFactory.makeUser(c.Sender()),
+					t.coreFactory.makeIBot(m, t),
+				)
 				if err != nil {
 					t.logger.Error(err)
 					t.reportError(m, err)

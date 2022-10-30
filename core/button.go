@@ -4,7 +4,7 @@ type Keyboard = [][]*Button
 
 type IButtonHandler interface {
 	GetButtonIds() []string
-	ButtonPressed(string, *Message, IBot) error
+	ButtonPressed(string, *Message, *User, IBot) error
 }
 
 type Button struct {

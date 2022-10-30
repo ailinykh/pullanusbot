@@ -45,7 +45,7 @@ func (flow *OutlineVpnFlow) GetButtonIds() []string {
 }
 
 // ButtonPressed is a core.IButtonHandler protocol implementation
-func (flow *OutlineVpnFlow) ButtonPressed(id string, message *core.Message, bot core.IBot) error {
+func (flow *OutlineVpnFlow) ButtonPressed(id string, message *core.Message, _ *core.User, bot core.IBot) error {
 	if callback, ok := flow.callbacks[id]; ok {
 		return callback(message, bot)
 	}
