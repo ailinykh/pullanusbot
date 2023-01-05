@@ -8,7 +8,6 @@ import (
 )
 
 func CreateTikTokFlow(l core.ILogger, httpClient core.IHttpClient, mediaFactory core.IMediaFactory, sendMediaStrategy core.ISendMediaStrategy) *TikTokFlow {
-	httpClient.SetHeader("Referrer", "https://www.tiktok.com/")
 	return &TikTokFlow{l, httpClient, mediaFactory, sendMediaStrategy}
 }
 

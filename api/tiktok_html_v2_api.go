@@ -42,6 +42,10 @@ func (api *TikTokHTMLV2API) GetItem(username string, videoId string) (*TikTokIte
 		return nil, err
 	}
 
+	if resp.VideoPage.StatusCode != 0 {
+		return nil, fmt.Errorf("unextected status code %d", resp.VideoPage.StatusCode)
+	}
+	// os.WriteFile("tiktok-"+strings.Split(url, "/")[5]+".json", []byte(match[1]), 0644)
 	item := resp.ItemModule[videoId]
 
 	stickers := []string{}
