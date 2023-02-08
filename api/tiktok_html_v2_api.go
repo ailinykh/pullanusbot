@@ -25,6 +25,7 @@ func (api *TikTokHTMLV2API) GetItem(username string, videoId string) (*TikTokIte
 	api.hc.SetHeader("Cookie", "tt_webid_v2=69"+api.randomDigits(17)+"; Domain=tiktok.com; Path=/; Secure; hostOnly=false; hostOnly=false; aAge=4ms; cAge=4ms")
 	htmlString, err := api.hc.GetContent(url)
 	if err != nil {
+		api.l.Error(err)
 		return nil, err
 	}
 
@@ -39,11 +40,12 @@ func (api *TikTokHTMLV2API) GetItem(username string, videoId string) (*TikTokIte
 	var resp TikTokV2HTMLNResponse
 	err = json.Unmarshal([]byte(match[1]), &resp)
 	if err != nil {
+		api.l.Error(err)
 		return nil, err
 	}
 
 	if resp.VideoPage.StatusCode != 0 {
-		return nil, fmt.Errorf("unextected status code %d", resp.VideoPage.StatusCode)
+		return nil, fmt.Errorf("tiktok: unexpected video page status code %d", resp.VideoPage.StatusCode)
 	}
 	// os.WriteFile("tiktok-"+strings.Split(url, "/")[5]+".json", []byte(match[1]), 0644)
 	item := resp.ItemModule[videoId]
