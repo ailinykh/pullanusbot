@@ -41,6 +41,8 @@ func (api *InstagramAPI) GetReel(urlString string) (*IgReel, error) {
 		return nil, err
 	}
 
+	// os.WriteFile("instagram-reel.html", body, 0644)
+
 	data, err := api.parseData(body)
 	if err != nil {
 		api.l.Error(err)
