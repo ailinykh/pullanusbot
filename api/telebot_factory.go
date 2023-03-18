@@ -65,7 +65,7 @@ func makeInlineKeyboard(k core.Keyboard) [][]tb.InlineButton {
 	for _, buttons := range k {
 		btns := []tb.InlineButton{}
 		for _, b := range buttons {
-			btn := tb.InlineButton{Unique: b.ID, Text: b.Text, Data: b.ID}
+			btn := tb.InlineButton{Unique: b.ID, Text: b.Text, Data: b.Payload}
 			btns = append(btns, btn)
 		}
 		keyboard = append(keyboard, btns)

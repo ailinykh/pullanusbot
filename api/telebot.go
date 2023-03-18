@@ -144,7 +144,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 			Width:  m.Video.Width,
 			Height: m.Video.Height,
 		}
-
+		logger.Info(video)
 		for _, h := range telebot.videoHandlers {
 			err = h.HandleVideo(video, telebot.coreFactory.makeMessage(m), telebot.coreFactory.makeIBot(m, telebot))
 			if err != nil {
@@ -205,8 +205,13 @@ func (t *Telebot) AddHandler(handler ...interface{}) {
 			t.bot.Handle("\f"+id, func(c tb.Context) error {
 				m := c.Message()
 				cb := c.Callback()
+				button := core.Button{
+					ID:      cb.Unique,
+					Text:    c.Text(),
+					Payload: c.Data(),
+				}
 				err := h.ButtonPressed(
-					cb.Data,
+					&button,
 					t.coreFactory.makeMessage(m),
 					t.coreFactory.makeUser(c.Sender()),
 					t.coreFactory.makeIBot(m, t),
@@ -214,6 +219,11 @@ func (t *Telebot) AddHandler(handler ...interface{}) {
 				if err != nil {
 					t.logger.Error(err)
 					t.reportError(m, err)
+					resp := tb.CallbackResponse{
+						CallbackID: cb.ID,
+						Text:       err.Error(),
+					}
+					return t.bot.Respond(cb, &resp)
 				}
 				return t.bot.Respond(cb, &tb.CallbackResponse{CallbackID: cb.ID})
 			})
