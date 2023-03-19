@@ -144,7 +144,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 			Width:  m.Video.Width,
 			Height: m.Video.Height,
 		}
-		logger.Info(video)
+		logger.Info(m, video)
 		for _, h := range telebot.videoHandlers {
 			err = h.HandleVideo(video, telebot.coreFactory.makeMessage(m), telebot.coreFactory.makeIBot(m, telebot))
 			if err != nil {
