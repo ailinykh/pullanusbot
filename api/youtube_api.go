@@ -59,7 +59,7 @@ func (y *YoutubeAPI) CreateVideo(id string) (*core.Video, error) {
 	name := fmt.Sprintf("youtube-%s-%s-%s.mp4", id, vf.FormatID, af.FormatID)
 	videoPath := path.Join(os.TempDir(), name)
 
-	cmd := fmt.Sprintf("youtube-dl -f %s+%s https://youtu.be/%s -o %s", vf.FormatID, af.FormatID, id, videoPath)
+	cmd := fmt.Sprintf("yt-dlp -f %s+%s https://youtu.be/%s -o %s", vf.FormatID, af.FormatID, id, videoPath)
 	y.l.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
@@ -84,7 +84,7 @@ func (y *YoutubeAPI) CreateVideo(id string) (*core.Video, error) {
 }
 
 func (y *YoutubeAPI) getInfo(id string) (*Video, error) {
-	cmd := fmt.Sprintf(`youtube-dl -j https://youtu.be/%s`, id) // id might start with dash, ex: -bdUoHZCf24
+	cmd := fmt.Sprintf(`yt-dlp -j https://youtu.be/%s`, id) // id might start with dash, ex: -bdUoHZCf24
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		y.l.Error(err)
