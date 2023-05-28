@@ -15,9 +15,7 @@ import (
 func CreateTwitterAPI(l core.ILogger, t core.ITask) *TwitterAPI {
 	return &TwitterAPI{l, t, []string{
 		"AAAAAAAAAAAAAAAAAAAAAPYXBAAAAAAACLXUNDekMxqa8h%2F40K4moUkGsoc%3DTYfbDKbT3jJPCEVnMYqilB28NHfOPqkca3qaAxGfsyKCs0wRbw",
-		"AAAAAAAAAAAAAAAAAAAAAPAh2AAAAAAAoInuXrJ%2BcqfgfR5PlJGnQsOniNY%3Dn9galDg4iUr7KyRAU47JGDbQz2q7sdwXRTkonzBX2uLxXRgNv0",
-		"AAAAAAAAAAAAAAAAAAAAAA4JLwEAAAAAXIyoETwtg%2BiTlR1VTNxGXnphfu4%3D6iSv0IXHo4NWGndWWLC8Bk3XuPkLMyATMxM0h6CfomnfRbGpgK",
-		"AAAAAAAAAAAAAAAAAAAAAAnuQQEAAAAAkV36hXt9HP5m5Qake9ffdXZMNTI%3DaF9mA4ZreVb938IeW8vfpTpT8HxDYOi0WYi5i4B8Cce9UVpwi6",
+		"AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
 	}}
 }
 
@@ -40,9 +38,10 @@ func (api *TwitterAPI) getTweetByID(tweetID string) (*Tweet, error) {
 	return tweet, err
 }
 
-func (TwitterAPI) getTweetByIdAndToken(tweetID string, token string) (*Tweet, error) {
+func (api *TwitterAPI) getTweetByIdAndToken(tweetID string, token string) (*Tweet, error) {
 	client := http.DefaultClient
-	req, _ := http.NewRequest("GET", fmt.Sprintf("https://api.twitter.com/1.1/statuses/show.json?id=%s&tweet_mode=extended", tweetID), nil)
+	url := fmt.Sprintf("https://api.twitter.com/1.1/statuses/show.json?id=%s&tweet_mode=extended", tweetID)
+	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Add("Authorization", "Bearer "+token)
 	res, err := client.Do(req)
 	if err != nil {
@@ -64,6 +63,7 @@ func (TwitterAPI) getTweetByIdAndToken(tweetID string, token string) (*Tweet, er
 		if tweet.Errors[0].Code == 88 { // "Rate limit exceeded 88"
 			return nil, fmt.Errorf("%s %s", tweet.Errors[0].Message, res.Header["X-Rate-Limit-Reset"][0])
 		}
+		api.l.Errorf("%s %s", tweet.Errors, token)
 		return nil, fmt.Errorf(tweet.Errors[0].Message)
 	}
 
