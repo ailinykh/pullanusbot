@@ -39,7 +39,9 @@ type SettingsStorage struct {
 // GetData is a core.ISettingsProvider interface implementation
 func (storage *SettingsStorage) GetData(chatID core.ChatID, key core.SettingKey) ([]byte, error) {
 	var sessings Settings
-	err := storage.conn.First(&sessings, chatID, key).Error
+	sessings.ChatID = chatID
+	sessings.Key = string(key)
+	err := storage.conn.First(&sessings).Error
 	if err != nil {
 		return nil, err
 	}

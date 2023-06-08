@@ -71,6 +71,10 @@ func main() {
 	removeLinkSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, linkFlow, core.SLinkFlowRemoveSource, boolSettingProvider)
 	telebot.AddHandler(removeLinkSourceDecorator)
 
+	settingsLocalizer := infrastructure.CreateSettingsLocalizer()
+	settingsFlow := usecases.CreateSettingsFlow(logger, settingsLocalizer, boolSettingProvider)
+	telebot.AddHandler(settingsFlow)
+
 	tiktokHttpClient := api.CreateHttpClient() // domain specific headers and cookies
 	tiktokJsonApi := api.CreateTikTokJsonAPI(logger, tiktokHttpClient, rand)
 	tiktokHtmlV1Api := api.CreateTikTokHTMLV1API(logger, tiktokHttpClient, rand)

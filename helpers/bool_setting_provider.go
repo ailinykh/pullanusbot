@@ -15,13 +15,17 @@ type BoolSettingProvider struct {
 }
 
 func (provider *BoolSettingProvider) GetBool(chatID core.ChatID, key core.SettingKey) bool {
-	data, _ := provider.settingsProvider.GetData(chatID, key)
+	data, err := provider.settingsProvider.GetData(chatID, key)
+
+	if err != nil {
+		return false
+	}
 
 	var settings struct {
 		Enabled bool
 	}
 
-	err := json.Unmarshal(data, &settings)
+	err = json.Unmarshal(data, &settings)
 	if err != nil {
 		return false
 	}
