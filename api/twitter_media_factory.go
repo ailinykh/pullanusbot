@@ -19,6 +19,7 @@ type TwitterMediaFactory struct {
 func (tmf *TwitterMediaFactory) CreateMedia(tweetID string) ([]*core.Media, error) {
 	tweet, err := tmf.api.getTweetByID(tweetID)
 	if err != nil {
+		tmf.l.Error(err)
 		return nil, err
 	}
 
@@ -41,9 +42,19 @@ func (tmf *TwitterMediaFactory) CreateMedia(tweetID string) ([]*core.Media, erro
 	case 1:
 		if media[0].Type == "video" || media[0].Type == "animated_gif" {
 			//TODO: Codec ??
-			return []*core.Media{{ResourceURL: media[0].VideoInfo.best().URL, URL: url, Title: tweet.User.Name, Description: tweet.FullText, Type: core.TVideo}}, nil
+			return []*core.Media{{
+				ResourceURL: media[0].VideoInfo.best().URL,
+				URL:         url, Title: tweet.User.Name,
+				Description: tweet.FullText,
+				Type:        core.TVideo,
+			}}, nil
 		} else if media[0].Type == "photo" {
-			return []*core.Media{{ResourceURL: media[0].MediaURL, URL: url, Title: tweet.User.Name, Description: tweet.FullText, Type: core.TPhoto}}, nil
+			return []*core.Media{{
+				ResourceURL: media[0].MediaUrlHttps,
+				URL:         url, Title: tweet.User.Name,
+				Description: tweet.FullText,
+				Type:        core.TPhoto,
+			}}, nil
 		} else {
 			return nil, fmt.Errorf("unexpected type: %s", media[0].Type)
 		}
@@ -51,7 +62,13 @@ func (tmf *TwitterMediaFactory) CreateMedia(tweetID string) ([]*core.Media, erro
 		// t.sendAlbum(media, tweet, m)
 		medias := []*core.Media{}
 		for _, m := range media {
-			medias = append(medias, &core.Media{ResourceURL: m.MediaURL, URL: url, Title: tweet.User.Name, Description: tweet.FullText, Type: core.TPhoto})
+			medias = append(medias, &core.Media{
+				ResourceURL: m.MediaUrlHttps,
+				URL:         url,
+				Title:       tweet.User.Name,
+				Description: tweet.FullText,
+				Type:        core.TPhoto,
+			})
 		}
 		return medias, nil
 	}
