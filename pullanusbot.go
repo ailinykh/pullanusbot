@@ -72,12 +72,8 @@ func main() {
 	telebot.AddHandler(removeLinkSourceDecorator)
 
 	tiktokHttpClient := api.CreateHttpClient() // domain specific headers and cookies
-	tiktokJsonApi := api.CreateTikTokJsonAPI(logger, tiktokHttpClient, rand)
-	tiktokHtmlV1Api := api.CreateTikTokHTMLV1API(logger, tiktokHttpClient, rand)
-	tiktokHtmlV2Api := api.CreateTikTokHTMLV2API(logger, tiktokHttpClient, rand)
-	tiktokApiHtmlDecorator := api.CreateTikTokAPIDecorator(tiktokHtmlV2Api, tiktokHtmlV1Api)
-	tiktokApiJsonDecorator := api.CreateTikTokAPIDecorator(tiktokApiHtmlDecorator, tiktokJsonApi)
-	tiktokMediaFactory := api.CreateTikTokMediaFactory(logger, tiktokApiJsonDecorator)
+	ytdlpApi := api.CreateYtDlpApi(logger)
+	tiktokMediaFactory := api.CreateTikTokMediaFactory(logger, ytdlpApi)
 	tiktokFlow := usecases.CreateTikTokFlow(logger, tiktokHttpClient, tiktokMediaFactory, localMediaSender)
 	telebot.AddHandler(tiktokFlow)
 
