@@ -76,15 +76,15 @@ func (flow *OutlineVpnFlow) help(message *core.Message, bot core.IBot) error {
 		return err
 	}
 
-	_, err = bot.SendText(flow.loc.I18n("vpn_welcome"), flow.getKeyboard(keys))
+	_, err = bot.SendText(flow.loc.I18n(message.Sender.LanguageCode, "vpn_welcome"), flow.getKeyboard(message, keys))
 	return err
 }
 
 func (flow *OutlineVpnFlow) create(message *core.Message, bot core.IBot) error {
 	flow.state[message.Chat.ID] = OutlineVpnState{"create", message.ID}
-	keyboard := core.Keyboard{[]*core.Button{{ID: "vpn_back", Text: flow.loc.I18n("vpn_button_back")}}}
+	keyboard := core.Keyboard{[]*core.Button{{ID: "vpn_back", Text: flow.loc.I18n(message.Sender.LanguageCode, "vpn_button_back")}}}
 
-	_, err := bot.Edit(message, flow.loc.I18n("vpn_enter_create_key_name"), keyboard)
+	_, err := bot.Edit(message, flow.loc.I18n(message.Sender.LanguageCode, "vpn_enter_create_key_name"), keyboard)
 	return err
 }
 
@@ -95,17 +95,17 @@ func (flow *OutlineVpnFlow) manage(message *core.Message, bot core.IBot) error {
 		return err
 	}
 
-	text := []string{flow.loc.I18n("vpn_key_list_top")}
+	text := []string{flow.loc.I18n(message.Sender.LanguageCode, "vpn_key_list_top")}
 
 	for idx, key := range keys {
-		text = append(text, flow.loc.I18n("vpn_key_list_item", idx+1, key.Title, key.Key))
+		text = append(text, flow.loc.I18n(message.Sender.LanguageCode, "vpn_key_list_item", idx+1, key.Title, key.Key))
 	}
 
-	text = append(text, flow.loc.I18n("vpn_key_list_bottom", len(keys)))
+	text = append(text, flow.loc.I18n(message.Sender.LanguageCode, "vpn_key_list_bottom", len(keys)))
 
 	keyboard := core.Keyboard{
-		[]*core.Button{{ID: "vpn_delete_key", Text: flow.loc.I18n("vpn_button_remove_key")}},
-		[]*core.Button{{ID: "vpn_back", Text: flow.loc.I18n("vpn_button_back")}},
+		[]*core.Button{{ID: "vpn_delete_key", Text: flow.loc.I18n(message.Sender.LanguageCode, "vpn_button_remove_key")}},
+		[]*core.Button{{ID: "vpn_back", Text: flow.loc.I18n(message.Sender.LanguageCode, "vpn_button_back")}},
 	}
 	_, err = bot.Edit(message, strings.Join(text, "\n"), keyboard)
 	return err
@@ -120,7 +120,7 @@ func (flow *OutlineVpnFlow) back(message *core.Message, bot core.IBot) error {
 
 	delete(flow.state, message.Chat.ID)
 
-	_, err = bot.Edit(message, flow.loc.I18n("vpn_welcome"), flow.getKeyboard(keys))
+	_, err = bot.Edit(message, flow.loc.I18n(message.Sender.LanguageCode, "vpn_welcome"), flow.getKeyboard(message, keys))
 	return err
 }
 
@@ -133,14 +133,14 @@ func (flow *OutlineVpnFlow) delete(message *core.Message, bot core.IBot) error {
 
 	flow.state[message.Chat.ID] = OutlineVpnState{"delete", message.ID}
 
-	text := []string{flow.loc.I18n("vpn_enter_delete_key_name_top")}
+	text := []string{flow.loc.I18n(message.Sender.LanguageCode, "vpn_enter_delete_key_name_top")}
 
 	for _, key := range keys {
-		text = append(text, flow.loc.I18n("vpn_enter_delete_key_name_item", key.Title))
+		text = append(text, flow.loc.I18n(message.Sender.LanguageCode, "vpn_enter_delete_key_name_item", key.Title))
 	}
 
 	keyboard := core.Keyboard{[]*core.Button{
-		{ID: "vpn_cancel", Text: flow.loc.I18n("vpn_button_cancel")},
+		{ID: "vpn_cancel", Text: flow.loc.I18n(message.Sender.LanguageCode, "vpn_button_cancel")},
 	}}
 	_, err = bot.Edit(message, strings.Join(text, "\n"), keyboard)
 	return err
@@ -150,15 +150,15 @@ func (flow *OutlineVpnFlow) cancel(message *core.Message, bot core.IBot) error {
 	return flow.back(message, bot)
 }
 
-func (flow *OutlineVpnFlow) getKeyboard(keys []*core.VpnKey) core.Keyboard {
+func (flow *OutlineVpnFlow) getKeyboard(message *core.Message, keys []*core.VpnKey) core.Keyboard {
 	keyboard := core.Keyboard{}
 
 	if len(keys) < 10 {
-		keyboard = append(keyboard, []*core.Button{{ID: "vpn_create_key", Text: flow.loc.I18n("vpn_button_create_key")}})
+		keyboard = append(keyboard, []*core.Button{{ID: "vpn_create_key", Text: flow.loc.I18n(message.Sender.LanguageCode, "vpn_button_create_key")}})
 	}
 
 	if len(keys) > 0 {
-		keyboard = append(keyboard, []*core.Button{{ID: "vpn_manage_key", Text: flow.loc.I18n("vpn_button_manage_key")}})
+		keyboard = append(keyboard, []*core.Button{{ID: "vpn_manage_key", Text: flow.loc.I18n(message.Sender.LanguageCode, "vpn_button_manage_key")}})
 	}
 
 	return keyboard
@@ -167,7 +167,7 @@ func (flow *OutlineVpnFlow) getKeyboard(keys []*core.VpnKey) core.Keyboard {
 func (flow *OutlineVpnFlow) handleAction(state OutlineVpnState, message *core.Message, bot core.IBot) error {
 	if state.action == "create" {
 		if len(message.Text) > 64 {
-			_, err := bot.SendText(flow.loc.I18n("vpn_enter_create_key_name_too_long"))
+			_, err := bot.SendText(flow.loc.I18n(message.Sender.LanguageCode, "vpn_enter_create_key_name_too_long"))
 			return err
 		}
 		key, err := flow.api.CreateKey(message.Chat.ID, message.Text)
@@ -180,8 +180,8 @@ func (flow *OutlineVpnFlow) handleAction(state OutlineVpnState, message *core.Me
 
 		_ = bot.Delete(&core.Message{ID: state.source, Chat: message.Chat})
 
-		keyboard := core.Keyboard{[]*core.Button{{ID: "vpn_manage_key", Text: flow.loc.I18n("vpn_button_manage_key")}}}
-		_, err = bot.SendText(flow.loc.I18n("vpn_key_created", key.Key), keyboard)
+		keyboard := core.Keyboard{[]*core.Button{{ID: "vpn_manage_key", Text: flow.loc.I18n(message.Sender.LanguageCode, "vpn_button_manage_key")}}}
+		_, err = bot.SendText(flow.loc.I18n(message.Sender.LanguageCode, "vpn_key_created", key.Key), keyboard)
 		return err
 	}
 
@@ -197,7 +197,7 @@ func (flow *OutlineVpnFlow) handleAction(state OutlineVpnState, message *core.Me
 		_ = bot.Delete(&core.Message{ID: state.source, Chat: message.Chat})
 
 		keyboard := core.Keyboard{
-			[]*core.Button{{ID: "vpn_back", Text: flow.loc.I18n("vpn_button_back")}},
+			[]*core.Button{{ID: "vpn_back", Text: flow.loc.I18n(message.Sender.LanguageCode, "vpn_button_back")}},
 		}
 
 		for _, k := range keys {
@@ -206,11 +206,11 @@ func (flow *OutlineVpnFlow) handleAction(state OutlineVpnState, message *core.Me
 				if err != nil {
 					return err
 				}
-				_, err = bot.SendText(flow.loc.I18n("vpn_key_deleted", k.Title), keyboard)
+				_, err = bot.SendText(flow.loc.I18n(message.Sender.LanguageCode, "vpn_key_deleted", k.Title), keyboard)
 				return err
 			}
 		}
-		_, err = bot.SendText(flow.loc.I18n("vpn_key_not_found"), keyboard)
+		_, err = bot.SendText(flow.loc.I18n(message.Sender.LanguageCode, "vpn_key_not_found"), keyboard)
 		return err
 	}
 

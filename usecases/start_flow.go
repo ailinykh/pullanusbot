@@ -39,7 +39,7 @@ func (flow *StartFlow) Start(message *core.Message, bot core.IBot) error {
 			flow.l.Error(err)
 			// return err ?
 		}
-		_, err = bot.SendText(flow.loc.I18n("start_welcome") + " " + flow.loc.I18n("help"))
+		_, err = bot.SendText(flow.loc.I18n(message.Sender.LanguageCode, "start_welcome") + " " + flow.loc.I18n(message.Sender.LanguageCode, "help"))
 		return err
 	}
 
@@ -47,7 +47,7 @@ func (flow *StartFlow) Start(message *core.Message, bot core.IBot) error {
 }
 
 func (flow *StartFlow) Help(message *core.Message, bot core.IBot) error {
-	_, err := bot.SendText(flow.loc.I18n("help"))
+	_, err := bot.SendText(flow.loc.I18n(message.Sender.LanguageCode, "help"))
 	return err
 }
 

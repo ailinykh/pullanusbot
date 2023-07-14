@@ -34,7 +34,10 @@ type VpnLocalizer struct {
 }
 
 // I18n is a core.ILocalizer implementation
-func (l *VpnLocalizer) I18n(key string, args ...interface{}) string {
+func (l *VpnLocalizer) I18n(lang, key string, args ...interface{}) string {
+	if val, ok := l.langs[lang][key]; ok {
+		return fmt.Sprintf(val, args...)
+	}
 
 	if val, ok := l.langs["ru"][key]; ok {
 		return fmt.Sprintf(val, args...)
@@ -46,7 +49,7 @@ func (l *VpnLocalizer) I18n(key string, args ...interface{}) string {
 
 // AllKeys is a core.ILocalizer implementation
 func (l *VpnLocalizer) AllKeys() []string {
-	keys := make([]string, 0, len(ru))
+	keys := make([]string, 0, len(l.langs["ru"]))
 	for k := range l.langs["ru"] {
 		keys = append(keys, k)
 	}

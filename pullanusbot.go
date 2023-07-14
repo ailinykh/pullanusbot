@@ -32,7 +32,7 @@ func main() {
 	bootstrapFlow := usecases.CreateBootstrapFlow(logger, chatStorageDecorator, userStorageDecorator)
 	telebot.AddHandler(bootstrapFlow)
 
-	localizer := infrastructure.GameLocalizer{}
+	localizer := infrastructure.CreateGameLocalizer()
 	gameStorage := infrastructure.CreateGameStorage(dbFile)
 	rand := infrastructure.CreateMathRand()
 	commandService := usecases.CreateCommandService(logger)

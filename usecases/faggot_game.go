@@ -33,17 +33,17 @@ type GameFlow struct {
 // Rules of the game
 func (flow *GameFlow) Rules(message *core.Message, bot core.IBot) error {
 	if message.IsPrivate {
-		_, err := bot.SendText(flow.t.I18n("faggot_not_available_for_private"))
+		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_not_available_for_private"))
 		return err
 	}
-	_, err := bot.SendText(flow.t.I18n("faggot_rules"))
+	_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_rules"))
 	return err
 }
 
 // Add a new player to game
 func (flow *GameFlow) Add(message *core.Message, bot core.IBot) error {
 	if message.IsPrivate {
-		_, err := bot.SendText(flow.t.I18n("faggot_not_available_for_private"))
+		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_not_available_for_private"))
 		return err
 	}
 	players, _ := flow.s.GetPlayers(message.Chat.ID)
@@ -51,10 +51,10 @@ func (flow *GameFlow) Add(message *core.Message, bot core.IBot) error {
 		if p.ID == message.Sender.ID {
 			if p.FirstName != message.Sender.FirstName || p.LastName != message.Sender.LastName || p.Username != message.Sender.Username {
 				_ = flow.s.UpdatePlayer(message.Chat.ID, message.Sender)
-				_, err := bot.SendText(flow.t.I18n("faggot_info_updated"))
+				_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_info_updated"))
 				return err
 			}
-			_, err := bot.SendText(flow.t.I18n("faggot_already_in_game"))
+			_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_already_in_game"))
 			return err
 		}
 	}
@@ -64,14 +64,14 @@ func (flow *GameFlow) Add(message *core.Message, bot core.IBot) error {
 		return err
 	}
 
-	_, err = bot.SendText(flow.t.I18n("faggot_added_to_game"))
+	_, err = bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_added_to_game"))
 	return err
 }
 
 // Play game
 func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 	if message.IsPrivate {
-		_, err := bot.SendText(flow.t.I18n("faggot_not_available_for_private"))
+		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_not_available_for_private"))
 		return err
 	}
 	flow.mutex.Lock()
@@ -84,10 +84,10 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 	players, _ := flow.s.GetPlayers(message.Chat.ID)
 	switch len(players) {
 	case 0:
-		_, err := bot.SendText(flow.t.I18n("faggot_no_players", message.Sender.DisplayName()))
+		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_no_players", message.Sender.DisplayName()))
 		return err
 	case 1:
-		_, err := bot.SendText(flow.t.I18n("faggot_not_enough_players"))
+		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_not_enough_players"))
 		return err
 	}
 
@@ -97,7 +97,7 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 
 	for _, r := range games {
 		if r.Day == day {
-			_, err := bot.SendText(flow.t.I18n("faggot_winner_known", r.Winner.DisplayName()))
+			_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_winner_known", r.Winner.DisplayName()))
 			return err
 		}
 	}
@@ -105,7 +105,7 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 	winner := players[rand.Intn(len(players))]
 
 	if !bot.IsUserMemberOfChat(winner, message.Chat.ID) {
-		_, err := bot.SendText(flow.t.I18n("faggot_winner_left"))
+		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_winner_left"))
 		return err
 	}
 
@@ -133,14 +133,14 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 			}
 		}
 		template := templates[rand.Intn(len(templates))]
-		phrase := flow.t.I18n(template)
+		phrase := flow.t.I18n(message.Sender.LanguageCode, template)
 
 		if i == 3 {
 			// TODO: implementation detail leaked
 			if len(winner.Username) == 0 {
-				phrase = flow.t.I18n(template, fmt.Sprintf(`<a href="tg://user?id=%d">%s %s</a>`, winner.ID, winner.FirstName, winner.LastName))
+				phrase = flow.t.I18n(message.Sender.LanguageCode, template, fmt.Sprintf(`<a href="tg://user?id=%d">%s %s</a>`, winner.ID, winner.FirstName, winner.LastName))
 			} else {
-				phrase = flow.t.I18n(template, "@"+winner.Username)
+				phrase = flow.t.I18n(message.Sender.LanguageCode, template, "@"+winner.Username)
 			}
 		}
 
@@ -161,17 +161,17 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 // All statistics for all time
 func (flow *GameFlow) All(message *core.Message, bot core.IBot) error {
 	if message.IsPrivate {
-		_, err := bot.SendText(flow.t.I18n("faggot_not_available_for_private"))
+		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_not_available_for_private"))
 		return err
 	}
 
 	entries, _ := flow.getStat(message)
-	messages := []string{flow.t.I18n("faggot_all_top"), ""}
+	messages := []string{flow.t.I18n(message.Sender.LanguageCode, "faggot_all_top"), ""}
 	for i, e := range entries {
-		message := flow.t.I18n("faggot_all_entry", i+1, e.Player.DisplayName(), e.Score)
+		message := flow.t.I18n(message.Sender.LanguageCode, "faggot_all_entry", i+1, e.Player.DisplayName(), e.Score)
 		messages = append(messages, message)
 	}
-	messages = append(messages, "", flow.t.I18n("faggot_all_bottom", len(entries)))
+	messages = append(messages, "", flow.t.I18n(message.Sender.LanguageCode, "faggot_all_bottom", len(entries)))
 	_, err := bot.SendText(strings.Join(messages, "\n"))
 	return err
 }
@@ -179,7 +179,7 @@ func (flow *GameFlow) All(message *core.Message, bot core.IBot) error {
 // Stats returns current year statistics
 func (flow *GameFlow) Stats(message *core.Message, bot core.IBot) error {
 	if message.IsPrivate {
-		_, err := bot.SendText(flow.t.I18n("faggot_not_available_for_private"))
+		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_not_available_for_private"))
 		return err
 	}
 
@@ -207,16 +207,16 @@ func (flow *GameFlow) Stats(message *core.Message, bot core.IBot) error {
 		return entries[i].Score > entries[j].Score
 	})
 
-	messages := []string{flow.t.I18n("faggot_stats_top"), ""}
+	messages := []string{flow.t.I18n(message.Sender.LanguageCode, "faggot_stats_top"), ""}
 	max := len(entries)
 	if max > 10 {
 		max = 10 // Top 10 only
 	}
 	for i, e := range entries[:max] {
-		message := flow.t.I18n("faggot_stats_entry", i+1, e.Player.DisplayName(), e.Score)
+		message := flow.t.I18n(message.Sender.LanguageCode, "faggot_stats_entry", i+1, e.Player.DisplayName(), e.Score)
 		messages = append(messages, message)
 	}
-	messages = append(messages, "", flow.t.I18n("faggot_stats_bottom", len(players)))
+	messages = append(messages, "", flow.t.I18n(message.Sender.LanguageCode, "faggot_stats_bottom", len(players)))
 	_, err := bot.SendText(strings.Join(messages, "\n"))
 	return err
 }
@@ -224,7 +224,7 @@ func (flow *GameFlow) Stats(message *core.Message, bot core.IBot) error {
 // Me returns your personal statistics
 func (flow *GameFlow) Me(message *core.Message, bot core.IBot) error {
 	if message.IsPrivate {
-		_, err := bot.SendText(flow.t.I18n("faggot_not_available_for_private"))
+		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_not_available_for_private"))
 		return err
 	}
 
@@ -235,7 +235,7 @@ func (flow *GameFlow) Me(message *core.Message, bot core.IBot) error {
 			score = e.Score
 		}
 	}
-	_, err := bot.SendText(flow.t.I18n("faggot_me", message.Sender.DisplayName(), score))
+	_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_me", message.Sender.DisplayName(), score))
 	return err
 }
 

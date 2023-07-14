@@ -10,7 +10,7 @@ type FakeLocalizer struct {
 	data map[string]string
 }
 
-func (l *FakeLocalizer) I18n(key string, args ...interface{}) string {
+func (l *FakeLocalizer) I18n(lang, key string, args ...interface{}) string {
 	if val, ok := l.data[key]; ok {
 		return fmt.Sprintf(val, args...)
 	}
