@@ -86,7 +86,7 @@ func (y *YoutubeAPI) CreateVideo(id string) (*core.Video, error) {
 }
 
 func (y *YoutubeAPI) getInfo(id string) (*Video, error) {
-	cmd := fmt.Sprintf(`yt-dlp -j https://youtu.be/%s`, id) // id might start with dash, ex: -bdUoHZCf24
+	cmd := fmt.Sprintf(`yt-dlp --quiet --no-warnings --dump-json https://youtu.be/%s`, id) // id might start with dash, ex: -bdUoHZCf24
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		y.l.Error(err)
