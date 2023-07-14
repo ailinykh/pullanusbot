@@ -97,6 +97,7 @@ func (y *YoutubeAPI) getInfo(id string) (*Video, error) {
 	err = json.Unmarshal(out, &video)
 	if err != nil {
 		y.l.Error(err)
+		y.l.Error(string(out))
 		return nil, err
 	}
 	return &video, nil
