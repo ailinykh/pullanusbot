@@ -248,12 +248,20 @@ func (t *Telebot) registerCommand(command string) {
 func (t *Telebot) reportError(m *tb.Message, e error) {
 	chatID, err := strconv.ParseInt(os.Getenv("ADMIN_CHAT_ID"), 10, 64)
 	if err != nil {
+		t.logger.Errorf("ADMIN_CHAT_ID parsing failed %s", os.Getenv("ADMIN_CHAT_ID"))
 		return
 	}
 	chat := &tb.Chat{ID: chatID}
 	opts := &tb.SendOptions{DisableWebPagePreview: true}
-	t.bot.Forward(chat, m, opts)
-	t.bot.Send(chat, e.Error(), opts)
+	_, err = t.bot.Forward(chat, m, opts)
+	if err != nil {
+		t.logger.Error(err)
+	}
+
+	_, err = t.bot.Send(chat, e.Error(), opts)
+	if err != nil {
+		t.logger.Error(err)
+	}
 }
 
 type CoreFactory struct {

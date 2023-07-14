@@ -24,11 +24,13 @@ type YoutubeAPI struct {
 func (y *YoutubeAPI) CreateMedia(url string) ([]*core.Media, error) {
 	video, err := y.getInfo(url)
 	if err != nil {
+		y.l.Error(err)
 		return nil, err
 	}
 
 	vf, _, err := y.getFormats(video)
 	if err != nil {
+		y.l.Error(err)
 		return nil, err
 	}
 
@@ -94,6 +96,7 @@ func (y *YoutubeAPI) getInfo(id string) (*Video, error) {
 	var video Video
 	err = json.Unmarshal(out, &video)
 	if err != nil {
+		y.l.Error(err)
 		return nil, err
 	}
 	return &video, nil
@@ -102,6 +105,7 @@ func (y *YoutubeAPI) getInfo(id string) (*Video, error) {
 func (y *YoutubeAPI) getFormats(video *Video) (*Format, *Format, error) {
 	af, err := video.audioFormat()
 	if err != nil {
+		y.l.Error(err)
 		return nil, nil, err
 	}
 
@@ -112,6 +116,7 @@ func (y *YoutubeAPI) getFormats(video *Video) (*Format, *Format, error) {
 			y.l.Info(f)
 		}
 		if len(formats) == 0 {
+			y.l.Error(err)
 			return nil, nil, err
 		}
 		vf = formats[len(formats)-1]
@@ -126,6 +131,7 @@ func (y *YoutubeAPI) getThumb(video *Video, vf *Format) (*core.Image, error) {
 	thumbPath := path.Join(os.TempDir(), filename)
 	file, err := y.fd.Download(thumb.URL, thumbPath)
 	if err != nil {
+		y.l.Error(err)
 		return nil, err
 	}
 	return &core.Image{
