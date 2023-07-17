@@ -27,7 +27,7 @@ It's even support links to twitter videos
 Setup environment
 
 ```shell
-brew install go ffmpeg youtube-dl
+brew install go ffmpeg yt-dlp
 ```
 clone repo
 
