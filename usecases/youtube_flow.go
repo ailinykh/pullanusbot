@@ -35,12 +35,11 @@ func (flow *YoutubeFlow) HandleText(message *core.Message, bot core.IBot) error 
 		}
 	}
 
-	// TODO: in case of `nil` the original message will be deleted
-	if strings.Contains(message.Text, " ") {
-		return fmt.Errorf("not implemented")
+	if len(links) > 0 && !strings.Contains(message.Text, " ") {
+		return nil
 	}
-
-	return nil
+	// TODO: in case of `nil` the original message will be deleted
+	return fmt.Errorf("not implemented")
 }
 
 func (flow *YoutubeFlow) process(id string, match string, message *core.Message, bot core.IBot) error {
@@ -69,7 +68,7 @@ func (flow *YoutubeFlow) process(id string, match string, message *core.Message,
 	}
 	defer file.Dispose()
 
-	caption := fmt.Sprintf("<a href=\"https://youtu.be/%s\">🎞</a> <b>%s</b> <i>(by %s)</i>\n\n%s", id, media[0].Title, message.Sender.DisplayName(), media[0].Description)
+	caption := fmt.Sprintf("<a href=\"%s\">🎞</a> <b>%s</b> <i>(by %s)</i>\n\n%s", id, media[0].Title, message.Sender.DisplayName(), media[0].Description)
 	if len(caption) > 1024 {
 		caption = caption[:1024]
 	}
