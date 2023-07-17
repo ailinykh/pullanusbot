@@ -23,49 +23,56 @@ type YoutubeFlow struct {
 
 // HandleText is a core.ITextHandler protocol implementation
 func (flow *YoutubeFlow) HandleText(message *core.Message, bot core.IBot) error {
-	r := regexp.MustCompile(`youtu\.?be(\.com)?(\/shorts)?\/(watch\?v=)?([\w\-_]+)`)
-	match := r.FindStringSubmatch(message.Text)
-	if len(match) == 5 {
-		err := flow.process(match[4], message, bot)
+	r := regexp.MustCompile(`youtu\.?be(\.com)?(\/shorts)?(\/live)?\/(watch\?v=)?([\w\-_]+)`)
+
+	links := r.FindAllStringSubmatch(message.Text, -1)
+	// TODO: any limits?
+	for i, l := range links {
+		err := flow.process(l[5], fmt.Sprintf("%s [%d/%d]", l[0], i+1, len(links)), message, bot)
 		if err != nil {
+			flow.l.Error(err)
 			return err
 		}
-
-		if !strings.Contains(message.Text, " ") {
-			return nil
-		}
-	} else if strings.Contains(message.Text, "youtu") {
-		for i, m := range match {
-			flow.l.Info(i, " ", m)
-		}
-		return fmt.Errorf("possibble regexp mismatch: %s", message.Text)
 	}
-	return fmt.Errorf("not implemented")
+
+	// TODO: in case of `nil` the original message will be deleted
+	if strings.Contains(message.Text, " ") {
+		return fmt.Errorf("not implemented")
+	}
+
+	return nil
 }
 
-func (flow *YoutubeFlow) process(id string, message *core.Message, bot core.IBot) error {
+func (flow *YoutubeFlow) process(id string, match string, message *core.Message, bot core.IBot) error {
 	flow.mutex.Lock()
 	defer flow.mutex.Unlock()
 
-	flow.l.Infof("processing %s", id)
+	flow.l.Infof("processing %s from %s", id, match)
+	id = "https://youtu.be/" + id // -e9_M7-0quU
 	media, err := flow.mediaFactory.CreateMedia(id)
 	if err != nil {
 		flow.l.Error(err)
 		return err
 	}
 
-	if !message.IsPrivate && media[0].Duration > 900 {
-		flow.l.Infof("skip video in group chat due to duration %d", media[0].Duration)
-		return fmt.Errorf("skip video in group chat due to duration")
+	flow.l.Infof("video: %s %.2f MB %d sec, audio: %s %.2f MB", media[0].Codec, float64(media[0].Size)/1024/1024, media[0].Duration, media[1].Codec, float64(media[1].Size)/1024/1024)
+
+	totlalSize := media[0].Size + media[1].Size
+	if !message.IsPrivate && totlalSize > 50_000_000 {
+		flow.l.Infof("skip video in group chat due to size limit exceeded %d", totlalSize)
+		return nil // TODO: should return error?
 	}
 
-	title := media[0].Title
 	file, err := flow.videoFactory.CreateVideo(id)
 	if err != nil {
 		return err
 	}
 	defer file.Dispose()
 
-	caption := fmt.Sprintf(`<a href="https://youtu.be/%s">🎞</a> <b>%s</b> <i>(by %s)</i>`, id, title, message.Sender.DisplayName())
+	caption := fmt.Sprintf("<a href=\"https://youtu.be/%s\">🎞</a> <b>%s</b> <i>(by %s)</i>\n\n%s", id, media[0].Title, message.Sender.DisplayName(), media[0].Description)
+	if len(caption) > 1024 {
+		caption = caption[:1024]
+	}
+	caption = strings.ToValidUTF8(caption, "")
 	return flow.sendStrategy.SendVideo(file, caption, bot)
 }

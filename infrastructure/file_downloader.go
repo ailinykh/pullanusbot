@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
@@ -22,7 +23,7 @@ type FileDownloader struct {
 // Download is a core.IFileDownloader interface implementation
 func (downloader *FileDownloader) Download(url core.URL, filepath string) (*core.File, error) {
 	name := path.Base(filepath)
-	downloader.l.Infof("downloading %s %s", url, filepath)
+	downloader.l.Infof("downloading %s %s", url, strings.ReplaceAll(filepath, os.TempDir(), "$TMPDIR/"))
 	// Get the data
 	client := http.DefaultClient
 	req, _ := http.NewRequest("GET", url, nil)

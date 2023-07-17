@@ -89,8 +89,8 @@ func (c *FfmpegConverter) Split(video *core.Video, limit int) ([]*core.Video, er
 	duration, n := 0, 0
 	var videos = []*core.Video{}
 	for duration < video.Duration {
-		path := fmt.Sprintf("%s-%d.mp4", video.File.Path, n)
-		cmd := fmt.Sprintf(`ffmpeg -v error -y -i %s -ss %d -fs %d %s`, video.File.Path, duration, limit, path)
+		path := fmt.Sprintf("%s[%02d].mp4", video.File.Path, n)
+		cmd := fmt.Sprintf(`ffmpeg -v error -y -i %s -ss %d -fs %dM -map_metadata 0 -c copy %s`, video.File.Path, duration, limit, path)
 		c.l.Info(strings.ReplaceAll(cmd, os.TempDir(), "$TMPDIR/"))
 		out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 		if err != nil {
@@ -104,9 +104,9 @@ func (c *FfmpegConverter) Split(video *core.Video, limit int) ([]*core.Video, er
 			c.l.Error(err)
 			os.Remove(path)
 			if err.Error() == "file is too short" {
-				// the last piece might be shorter than a second
-				// example: https://youtu.be/1MLRCczBKn8
-				duration += 1
+				// the last piece might be shorter than a second - https://youtu.be/1MLRCczBKn8
+				// of have a black screen - https://youtu.be/TQ2szA18aEc
+				duration += 10
 				continue
 			} else {
 				return nil, err
@@ -136,8 +136,8 @@ func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
 		return nil, err
 	}
 
-	if duration < 2 {
-		c.l.Errorf("expected duration at least 2 seconds, got %f", duration)
+	if duration < 10 {
+		c.l.Errorf("expected duration at least 10 seconds, got %f", duration)
 		return nil, fmt.Errorf("file is too short")
 	}
 

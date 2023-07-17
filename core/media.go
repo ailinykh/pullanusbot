@@ -13,6 +13,8 @@ const (
 	TPhoto
 	// Text media type
 	TText
+	// Audio media type
+	TAudio
 )
 
 // Media ...

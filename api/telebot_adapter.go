@@ -172,7 +172,7 @@ func (a *TelebotAdapter) SendVideo(vf *core.Video, caption string) (*core.Messag
 		}
 		return a.t.coreFactory.makeMessage(resp.Result), err
 	}
-	a.t.logger.Infof("uploading video %s (%.2f MB)", vf.Name, float64(vf.Size)/2014/2014)
+	a.t.logger.Infof("uploading video %s (%.2f MB)", vf.Name, float64(vf.Size)/1024/1024)
 	video := makeTbVideo(vf, caption)
 	a.t.bot.Notify(a.m.Chat, tb.UploadingVideo)
 	sent, err := video.Send(a.t.bot, a.m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})

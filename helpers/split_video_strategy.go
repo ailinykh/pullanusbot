@@ -22,7 +22,8 @@ func (strategy *SendVideoStrategySplitDecorator) SendVideo(video *core.Video, ca
 	err := strategy.decoratee.SendVideo(video, caption, bot)
 	if err != nil && err.Error() == "telegram: Request Entity Too Large (400)" {
 		strategy.l.Info("Fallback to splitting")
-		files, err := strategy.splitter.Split(video, 50000000)
+		// https://lists.ffmpeg.org/pipermail/ffmpeg-user/2014-January/019556.html
+		files, err := strategy.splitter.Split(video, 49)
 		if err != nil {
 			return err
 		}

@@ -86,8 +86,8 @@ func main() {
 	telebot.AddHandler(publisherFlow)
 	telebot.AddHandler("/loh666", publisherFlow.HandleRequest)
 
-	youtubeAPI := api.CreateYoutubeAPI(logger, fileDownloader)
-	youtubeFlow := usecases.CreateYoutubeFlow(logger, youtubeAPI, youtubeAPI, sendVideoStrategySplitDecorator)
+	youtubeMediaFactory := api.CreateYoutubeMediaFactory(logger, ytdlpApi, fileDownloader)
+	youtubeFlow := usecases.CreateYoutubeFlow(logger, youtubeMediaFactory, youtubeMediaFactory, sendVideoStrategySplitDecorator)
 	removeYoutubeSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, youtubeFlow, core.SYoutubeFlowRemoveSource, boolSettingProvider)
 	telebot.AddHandler(removeYoutubeSourceDecorator)
 

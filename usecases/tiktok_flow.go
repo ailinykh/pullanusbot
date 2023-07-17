@@ -25,6 +25,7 @@ func (flow *TikTokFlow) HandleText(message *core.Message, bot core.IBot) error {
 	for _, l := range links {
 		err := flow.handleURL(l, message, bot)
 		if err != nil {
+			flow.l.Error(err)
 			return err
 		}
 	}

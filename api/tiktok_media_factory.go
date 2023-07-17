@@ -6,13 +6,13 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateTikTokMediaFactory(l core.ILogger, api *YtDlpApi) core.IMediaFactory {
+func CreateTikTokMediaFactory(l core.ILogger, api YoutubeApi) core.IMediaFactory {
 	return &TikTokMediaFactory{l, api}
 }
 
 type TikTokMediaFactory struct {
 	l   core.ILogger
-	api *YtDlpApi
+	api YoutubeApi
 }
 
 func (factory *TikTokMediaFactory) CreateMedia(url string) ([]*core.Media, error) {
