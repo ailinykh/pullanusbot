@@ -54,6 +54,7 @@ type YtDlpResponse struct {
 }
 
 type YtDlpFormat struct {
+	Container  string `json:"container"`
 	Ext        string `json:"ext"`
 	FormatId   string `json:"format_id"`
 	Format     string `json:"format"`
@@ -67,10 +68,18 @@ type YtDlpFormat struct {
 }
 
 func (v YtDlpResponse) audioFormat() (*YtDlpFormat, error) {
+	var original *YtDlpFormat
 	for _, f := range v.Formats {
 		if f.FormatId == "140" {
 			return f, nil
 		}
+		if f.Container == "m4a_dash" && strings.Contains(f.Format, "original (default), medium") {
+			original = f
+		}
+	}
+
+	if original != nil {
+		return original, nil
 	}
 
 	return nil, fmt.Errorf("140 not found for %s", v.Id)

@@ -85,7 +85,7 @@ func (y *YoutubeMediaFactory) CreateVideo(id string) (*core.Video, error) {
 		return nil, err
 	}
 
-	name := fmt.Sprintf("youtube[%s][%s][%s].mp4", resp.Id, video.FormatNote, audio.FormatNote)
+	name := fmt.Sprintf("youtube[%s][%s][%s].mp4", resp.Id, video.FormatNote, audio.FormatId)
 	videoPath := path.Join(os.TempDir(), name)
 
 	cmd := fmt.Sprintf("yt-dlp -f %s+%s https://youtu.be/%s -o %s", video.FormatId, audio.FormatId, resp.Id, videoPath)
