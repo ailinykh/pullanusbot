@@ -28,6 +28,15 @@ func Test_HandleText_FoundTweetLink(t *testing.T) {
 	assert.Equal(t, []string{"123456"}, handler.tweets)
 }
 
+func Test_HandleText_FoundTweetLinkX(t *testing.T) {
+	parser, handler, bot := makeTwitterSUT()
+	m := makeTweetMessage("a message with https://x.com/status/username/123456")
+
+	parser.HandleText(m, bot)
+
+	assert.Equal(t, []string{"123456"}, handler.tweets)
+}
+
 func Test_HandleText_FoundMultipleTweetLinks(t *testing.T) {
 	parser, handler, bot := makeTwitterSUT()
 	m := makeTweetMessage("a message with https://twitter.com/username/status/123456 and https://twitter.com/username/status/789010 and some text")
