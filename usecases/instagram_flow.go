@@ -3,6 +3,7 @@ package usecases
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/ailinykh/pullanusbot/v2/api"
 	"github.com/ailinykh/pullanusbot/v2/core"
@@ -72,6 +73,15 @@ func (flow *InstagramFlow) handleReel(url string, message *core.Message, bot cor
 		caption = fmt.Sprintf("\n🎶 <a href='%s'>%s - %s</a>\n\n%s", info.MusicAssetInfo.ProgressiveDownloadURL, info.MusicAssetInfo.DisplayArtist, info.MusicAssetInfo.Title, caption)
 	}
 	caption = fmt.Sprintf("<a href='%s'>📷</a> <b>%s</b> <i>(by %s)</i>\n%s", url, item.User.FullName, message.Sender.DisplayName(), caption)
+	if len(caption) > 1024 {
+		// strip by last space or line break if caption size limit exceeded
+		index := strings.LastIndex(caption[:1024], " ")
+		lineBreak := strings.LastIndex(caption[:1024], "\n")
+		if lineBreak > index {
+			index = lineBreak
+		}
+		caption = caption[:index]
+	}
 
 	if item.VideoDuration < 360 { // apparently 6 min file takes less than 50 MB
 		return flow.sendAsMedia(item, caption, message, bot)
