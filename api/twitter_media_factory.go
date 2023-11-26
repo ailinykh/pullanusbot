@@ -1,8 +1,6 @@
 package api
 
 import (
-	"fmt"
-
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
@@ -39,36 +37,30 @@ func (tmf *TwitterMediaFactory) CreateMedia(tweetID string) ([]*core.Media, erro
 			return []*core.Media{{URL: url, Title: tweet.User.Name, Description: tweet.FullText, Type: core.TText}}, nil
 		}
 		return []*core.Media{{ResourceURL: screenshot.URL, URL: url, Title: tweet.User.Name, Description: "", Type: core.TPhoto}}, nil
-	case 1:
-		if media[0].Type == "video" || media[0].Type == "animated_gif" {
-			//TODO: Codec ??
-			return []*core.Media{{
-				ResourceURL: media[0].VideoInfo.best().URL,
-				URL:         url, Title: tweet.User.Name,
-				Description: tweet.FullText,
-				Type:        core.TVideo,
-			}}, nil
-		} else if media[0].Type == "photo" {
-			return []*core.Media{{
-				ResourceURL: media[0].MediaUrlHttps,
-				URL:         url, Title: tweet.User.Name,
-				Description: tweet.FullText,
-				Type:        core.TPhoto,
-			}}, nil
-		} else {
-			return nil, fmt.Errorf("unexpected type: %s", media[0].Type)
-		}
 	default:
-		// t.sendAlbum(media, tweet, m)
 		medias := []*core.Media{}
 		for _, m := range media {
-			medias = append(medias, &core.Media{
-				ResourceURL: m.MediaUrlHttps,
-				URL:         url,
-				Title:       tweet.User.Name,
-				Description: tweet.FullText,
-				Type:        core.TPhoto,
-			})
+			tmf.l.Infof("Type: %s", m.Type)
+			switch m.Type {
+			case "video", "animated_gif":
+				//TODO: Codec ??
+				medias = append(medias, &core.Media{
+					ResourceURL: m.VideoInfo.best().URL,
+					URL:         url, Title: tweet.User.Name,
+					Description: tweet.FullText,
+					Duration:    int(m.VideoInfo.Duration / 1000),
+					Type:        core.TVideo,
+				})
+			case "photo":
+				medias = append(medias, &core.Media{
+					ResourceURL: m.MediaUrlHttps,
+					URL:         url, Title: tweet.User.Name,
+					Description: tweet.FullText,
+					Type:        core.TPhoto,
+				})
+			default:
+				tmf.l.Errorf("unexpected type: %s", m.Type)
+			}
 		}
 		return medias, nil
 	}

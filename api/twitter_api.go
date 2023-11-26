@@ -3,9 +3,10 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"time"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
@@ -39,16 +40,16 @@ func (api *TwitterAPI) getTweetByID(tweetID string) (*Tweet, error) {
 	}
 
 	if err.Error() == "Bad guest token" {
-		resp, err := api.getGuestToken()
+		guestToken, err := api.getGuestToken("https://twitter.com/username/status/" + tweetID)
 		if err != nil {
 			return nil, err
 		}
 
-		api.l.Infof("guest token received %s", resp.GuestToken)
+		api.l.Infof("guest token received: %s", guestToken)
 
 		api.credentials = TwitterApiCredentials{
 			bearer_token: api.credentials.bearer_token,
-			guest_token:  resp.GuestToken,
+			guest_token:  guestToken,
 		}
 
 		return api.getTweetFromGraphQL(tweetID)
@@ -57,60 +58,58 @@ func (api *TwitterAPI) getTweetByID(tweetID string) (*Tweet, error) {
 	return tweet, err
 }
 
-func (api *TwitterAPI) getGuestToken() (*GuestTokenResponse, error) {
+func (api *TwitterAPI) getGuestToken(url string) (string, error) {
 	api.l.Info("updating guest token")
 
-	req, _ := http.NewRequest("POST", "https://api.twitter.com/1.1/guest/activate.json", nil)
-	req.Header.Add("Authorization", "Bearer "+api.credentials.bearer_token)
-
-	res, err := http.DefaultClient.Do(req)
+	res, err := http.Get(url)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer res.Body.Close()
 
-	var response GuestTokenResponse
-	body, _ := ioutil.ReadAll(res.Body)
-
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		return nil, err
+	body, _ := io.ReadAll(res.Body)
+	r := regexp.MustCompile(`gt=(\d+);`)
+	match := r.FindStringSubmatch(string(body))
+	if len(match) < 2 {
+		return "", fmt.Errorf("failed to parse guest_token from %s", url)
 	}
-
-	return &response, nil
+	return match[1], nil
 }
 
 func (api *TwitterAPI) getTweetFromGraphQL(tweetID string) (*Tweet, error) {
-	data, _ := json.Marshal(GraphQLVariables{tweetID, false, false, false})
+	data, _ := json.Marshal(GraphQLVariables{false, tweetID, false, false})
 	variables := url.QueryEscape(string(data))
 
-	data, _ = json.Marshal(GraphQLFeatures{
-		CreatorSubscriptionsTweetPreviewApiEnabled:                     true,
-		FreedomOfSpeechNotReachFetceEnabled:                            true,
-		GraphqlIsTranslatableRwebTweetIsTranslatableEnabled:            true,
-		LongformNotetweetsConsumptionEnabled:                           true,
-		LongformNotetweetsInlineMediaEnabled:                           true,
-		LongformNotetweetsRichTextReadEnabled:                          true,
-		ResponsiveWebGraphqlSkipUserProfileImageExtensionsEnabled:      false,
-		ResponsiveWebEditTweetApiEnabled:                               true,
-		ResponsiveWebEnhanceCardsEnabled:                               false,
-		ResponsiveWebMediaDownloadVideoEnabled:                         true,
-		ResponsiveWebGraphqlTimelineNavigationEnabled:                  true,
-		ResponsiveWebGraphqlExcludeDirectiveEnabled:                    true,
-		ResponsiveWebTwitterArticleTweetConsumptionEnabled:             false,
-		StandardizedNudgesMisinfo:                                      true,
-		TweetAwardsWebTippingEnabled:                                   false,
-		TweetWithVisibilityResultsPreferGqlLimitedActionsPolicyEnabled: true,
-		TweetypieUnmentionOptimizationEnabled:                          true,
-		VerifiedPhoneLabelEnabled:                                      false,
-		ViewCountsEverywhereApiEnabled:                                 true,
-	})
-	features := url.QueryEscape(string(data))
-
-	data, _ = json.Marshal(GraphQLFieldToggles{false})
-	field_toggles := url.QueryEscape(string(data))
-
-	url := fmt.Sprintf("https://twitter.com/i/api/graphql/2ICDjqPd81tulZcYrtpTuQ/TweetResultByRestId?variables=%s&features=%s&fieldToggles=%s", variables, features, field_toggles)
+	features := map[string]bool{
+		"c9s_tweet_anatomy_moderator_badge_enabled":                               true,
+		"creator_subscriptions_tweet_preview_api_enabled":                         true,
+		"freedom_of_speech_not_reach_fetch_enabled":                               true,
+		"graphql_is_translatable_rweb_tweet_is_translatable_enabled":              true,
+		"longform_notetweets_consumption_enabled":                                 true,
+		"longform_notetweets_inline_media_enabled":                                true,
+		"longform_notetweets_rich_text_read_enabled":                              true,
+		"responsive_web_edit_tweet_api_enabled":                                   true,
+		"responsive_web_enhance_cards_enabled":                                    false,
+		"responsive_web_graphql_exclude_directive_enabled":                        true,
+		"responsive_web_graphql_skip_user_profile_image_extensions_enabled":       false,
+		"responsive_web_graphql_timeline_navigation_enabled":                      true,
+		"responsive_web_home_pinned_timelines_enabled":                            true,
+		"responsive_web_media_download_video_enabled":                             false,
+		"responsive_web_twitter_article_tweet_consumption_enabled":                false,
+		"standardized_nudges_misinfo":                                             true,
+		"tweet_awards_web_tipping_enabled":                                        false,
+		"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": true,
+		"tweetypie_unmention_optimization_enabled":                                true,
+		"verified_phone_label_enabled":                                            false,
+		"view_counts_everywhere_api_enabled":                                      true,
+	}
+	data, err := json.Marshal(features)
+	if err != nil {
+		api.l.Error(err)
+		return nil, err
+	}
+	featuresString := url.QueryEscape(string(data))
+	url := fmt.Sprintf("https://api.twitter.com/graphql/5GOHgZe-8U2j5sVHQzEm9A/TweetResultByRestId?variables=%s&features=%s", variables, featuresString)
 
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Add("authorization", "Bearer "+api.credentials.bearer_token)
@@ -123,7 +122,7 @@ func (api *TwitterAPI) getTweetFromGraphQL(tweetID string) (*Tweet, error) {
 	defer res.Body.Close()
 
 	var response GraphQLResponse
-	body, _ := ioutil.ReadAll(res.Body)
+	body, _ := io.ReadAll(res.Body)
 
 	// os.WriteFile("tweet-"+tweetID+".json", body, 0644)
 
@@ -159,7 +158,7 @@ func (api *TwitterAPI) getTweetByIdAndToken(tweetID string, creds TwitterApiCred
 	defer res.Body.Close()
 
 	var tweet Tweet
-	body, _ := ioutil.ReadAll(res.Body)
+	body, _ := io.ReadAll(res.Body)
 
 	err = json.Unmarshal(body, &tweet)
 	if err != nil {
