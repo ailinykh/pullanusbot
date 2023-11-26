@@ -21,7 +21,7 @@ func (sms *SendMediaStrategy) SendMedia(media []*core.Media, bot core.IBot) erro
 		_, err := bot.SendMedia(media[0])
 		return err
 	default:
-		_, err := bot.SendPhotoAlbum(media)
+		_, err := bot.SendMediaAlbum(media)
 		return err
 	}
 	return nil

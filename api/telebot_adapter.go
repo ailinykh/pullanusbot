@@ -130,18 +130,28 @@ func (a *TelebotAdapter) SendMedia(media *core.Media) (*core.Message, error) {
 	return a.t.coreFactory.makeMessage(sent), err
 }
 
-// SendPhotoAlbum is a core.IBot interface implementation
-func (a *TelebotAdapter) SendPhotoAlbum(medias []*core.Media) ([]*core.Message, error) {
-	var photo *tb.Photo
+// SendMediaAlbum is a core.IBot interface implementation
+func (a *TelebotAdapter) SendMediaAlbum(medias []*core.Media) ([]*core.Message, error) {
 	var album = tb.Album{}
 	opts := &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true}
 
 	for i, m := range medias {
-		photo = &tb.Photo{File: tb.FromURL(m.ResourceURL)}
-		if i == len(medias)-1 {
-			photo.Caption = m.Caption
+		switch m.Type {
+		case core.TVideo:
+			video := &tb.Video{File: tb.FromURL(m.ResourceURL)}
+			if i == len(medias)-1 {
+				video.Caption = m.Caption
+			}
+			album = append(album, video)
+		case core.TPhoto:
+			photo := &tb.Photo{File: tb.FromURL(m.ResourceURL)}
+			if i == len(medias)-1 {
+				photo.Caption = m.Caption
+			}
+			album = append(album, photo)
+		case core.TText, core.TAudio:
+			a.t.logger.Errorf("%+v not supported", m.Type)
 		}
-		album = append(album, photo)
 	}
 
 	sent, err := a.t.bot.SendAlbum(a.m.Chat, album, opts)

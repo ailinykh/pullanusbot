@@ -8,7 +8,7 @@ type IBot interface {
 	SendImage(*Image, string) (*Message, error)
 	SendAlbum([]*Image) ([]*Message, error)
 	SendMedia(*Media) (*Message, error)
-	SendPhotoAlbum([]*Media) ([]*Message, error)
+	SendMediaAlbum([]*Media) ([]*Message, error)
 	SendVideo(*Video, string) (*Message, error)
 	IsUserMemberOfChat(*User, ChatID) bool
 	GetCommands(ChatID) ([]Command, error)

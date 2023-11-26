@@ -30,7 +30,7 @@ func (b *FakeBot) SendMedia(media *core.Media) (*core.Message, error) {
 	return nil, nil
 }
 
-func (b *FakeBot) SendPhotoAlbum(media []*core.Media) ([]*core.Message, error) {
+func (b *FakeBot) SendMediaAlbum(media []*core.Media) ([]*core.Message, error) {
 	for _, m := range media {
 		b.SentMedias = append(b.SentMedias, m.ResourceURL)
 	}
