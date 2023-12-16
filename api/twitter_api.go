@@ -61,7 +61,11 @@ func (api *TwitterAPI) getTweetByID(tweetID string) (*Tweet, error) {
 func (api *TwitterAPI) getGuestToken(url string) (string, error) {
 	api.l.Info("updating guest token")
 
-	res, err := http.Get(url)
+	client := http.DefaultClient
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36")
+	res, err := client.Do(req)
+
 	if err != nil {
 		return "", err
 	}
