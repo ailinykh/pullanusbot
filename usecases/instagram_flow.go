@@ -9,16 +9,14 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
 
-func CreateInstagramFlow(l core.ILogger, api api.InstAPI, createVideo core.IVideoFactory, sendMedia core.ISendMediaStrategy, sendVideo core.ISendVideoStrategy) core.ITextHandler {
-	return &InstagramFlow{l, api, createVideo, sendMedia, sendVideo}
+func CreateInstagramFlow(l core.ILogger, api api.YoutubeApi, sendMedia core.ISendMediaStrategy) core.ITextHandler {
+	return &InstagramFlow{l, api, sendMedia}
 }
 
 type InstagramFlow struct {
-	l           core.ILogger
-	api         api.InstAPI
-	createVideo core.IVideoFactory
-	sendMedia   core.ISendMediaStrategy
-	sendVideo   core.ISendVideoStrategy
+	l         core.ILogger
+	api       api.YoutubeApi
+	sendMedia core.ISendMediaStrategy
 }
 
 // HandleText is a core.ITextHandler protocol implementation
@@ -56,23 +54,13 @@ func (flow *InstagramFlow) HandleText(message *core.Message, bot core.IBot) erro
 
 func (flow *InstagramFlow) handleReel(url string, message *core.Message, bot core.IBot) error {
 	flow.l.Infof("processing %s", url)
-	reel, err := flow.api.GetReel(url)
+	resp, err := flow.api.Get(url)
 	if err != nil {
 		flow.l.Error(err)
 		return err
 	}
 
-	if len(reel.Items) < 1 {
-		return fmt.Errorf("insufficient reel items")
-	}
-
-	item := reel.Items[0]
-
-	caption := item.Caption.Text
-	if info := item.ClipsMetadata.MusicInfo; info != nil {
-		caption = fmt.Sprintf("\n🎶 <a href='%s'>%s - %s</a>\n\n%s", info.MusicAssetInfo.ProgressiveDownloadURL, info.MusicAssetInfo.DisplayArtist, info.MusicAssetInfo.Title, caption)
-	}
-	caption = fmt.Sprintf("<a href='%s'>📷</a> <b>%s</b> <i>(by %s)</i>\n%s", url, item.User.FullName, message.Sender.DisplayName(), caption)
+	caption := fmt.Sprintf("<a href='%s'>📷</a> <b>%s</b> <i>(by %s)</i>\n%s", url, resp.Uploader, message.Sender.DisplayName(), resp.Description)
 	if len(caption) > 1024 {
 		// strip by last space or line break if caption size limit exceeded
 		index := strings.LastIndex(caption[:1024], " ")
@@ -83,31 +71,31 @@ func (flow *InstagramFlow) handleReel(url string, message *core.Message, bot cor
 		caption = caption[:index]
 	}
 
-	if item.VideoDuration < 360 { // apparently 6 min file takes less than 50 MB
-		return flow.sendAsMedia(item, caption, message, bot)
-	}
-
-	video, err := flow.createVideo.CreateVideo(item.VideoVersions[0].URL)
+	vf, err := flow.getPreferredVideoFormat(resp)
 	if err != nil {
 		flow.l.Error(err)
 		return err
 	}
-	defer video.Dispose()
 
-	return flow.sendVideo.SendVideo(video, caption, bot)
+	media := core.Media{
+		Caption:     caption,
+		ResourceURL: vf.Url,
+		URL:         url,
+	}
+	return flow.sendMedia.SendMedia([]*core.Media{&media}, bot)
 }
 
-func (flow *InstagramFlow) sendAsMedia(item api.IgReelItem, caption string, message *core.Message, bot core.IBot) error {
-	media := &core.Media{
-		ResourceURL: item.VideoVersions[0].URL,
-		URL:         "https://www.instagram.com/reel/" + item.Code + "/",
-		Title:       item.User.FullName,
-		Caption:     caption,
+func (flow *InstagramFlow) getPreferredVideoFormat(resp *api.YtDlpResponse) (*api.YtDlpFormat, error) {
+	idx := -1
+	for i, f := range resp.Formats {
+		if strings.HasPrefix(f.FormatId, "dash-") {
+			continue
+		}
+		idx = i
 	}
 
-	err := flow.sendMedia.SendMedia([]*core.Media{media}, bot)
-	if err != nil {
-		flow.l.Error(err)
+	if idx < 0 {
+		return nil, fmt.Errorf("no appropriate format found")
 	}
-	return err
+	return resp.Formats[idx], nil
 }

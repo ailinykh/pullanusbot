@@ -16,7 +16,7 @@ type TikTokMediaFactory struct {
 }
 
 func (factory *TikTokMediaFactory) CreateMedia(url string) ([]*core.Media, error) {
-	item, err := factory.api.get(url)
+	item, err := factory.api.Get(url)
 	if err != nil {
 		factory.l.Error(err)
 		return nil, err

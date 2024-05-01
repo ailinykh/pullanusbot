@@ -100,9 +100,8 @@ func main() {
 	iDoNotCare := usecases.CreateIDoNotCare()
 	telebot.AddHandler(iDoNotCare)
 
-	instaAPI := api.CreateInstagramAPI(logger, os.Getenv("INSTAGRAM_COOKIE"))
-	downloadVideoFactory := helpers.CreateDownloadVideoFactory(logger, fileDownloader, converter)
-	instaFlow := usecases.CreateInstagramFlow(logger, instaAPI, downloadVideoFactory, localMediaSender, sendVideoStrategySplitDecorator)
+	instaAPI := api.CreateYtDlpApi(path.Join(getWorkingDir(), "cookies.txt"), logger)
+	instaFlow := usecases.CreateInstagramFlow(logger, instaAPI, localMediaSender)
 	removeInstaSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, instaFlow, core.SInstagramFlowRemoveSource, boolSettingProvider)
 	telebot.AddHandler(removeInstaSourceDecorator)
 

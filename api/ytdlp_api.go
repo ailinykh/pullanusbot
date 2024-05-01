@@ -10,7 +10,7 @@ import (
 )
 
 type YoutubeApi interface {
-	get(string) (*YtDlpResponse, error)
+	Get(string) (*YtDlpResponse, error)
 }
 
 func CreateYtDlpApi(cookie string, l core.ILogger) YoutubeApi {
@@ -22,7 +22,7 @@ type YtDlpApi struct {
 	l      core.ILogger
 }
 
-func (api *YtDlpApi) get(url string) (*YtDlpResponse, error) {
+func (api *YtDlpApi) Get(url string) (*YtDlpResponse, error) {
 	args := []string{
 		"--quiet",
 		"--no-warnings",

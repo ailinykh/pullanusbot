@@ -22,7 +22,7 @@ type YoutubeMediaFactory struct {
 
 // CreateMedia is a core.IMediaFactory interface implementation
 func (y *YoutubeMediaFactory) CreateMedia(url string) ([]*core.Media, error) {
-	resp, err := y.api.get(url)
+	resp, err := y.api.Get(url)
 	if err != nil {
 		y.l.Error(err)
 		return nil, err
@@ -73,7 +73,7 @@ func (y *YoutubeMediaFactory) getFormats(resp *YtDlpResponse) (*YtDlpFormat, *Yt
 
 // CreateVideo is a core.IVideoFactory interface implementation
 func (y *YoutubeMediaFactory) CreateVideo(id string) (*core.Video, error) {
-	resp, err := y.api.get(id)
+	resp, err := y.api.Get(id)
 	if err != nil {
 		y.l.Error(err)
 		return nil, err
