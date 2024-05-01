@@ -33,7 +33,7 @@ jobs:
       run: make test
       
     - name: Coverage
-      run: bash <(curl -s https://codecov.io/bash)
+      run: bash -v <(curl -s https://codecov.io/bash)
 
 
     - name: Generate build number
