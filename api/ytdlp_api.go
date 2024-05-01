@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
-	"strings"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
@@ -64,25 +63,4 @@ type YtDlpFormat struct {
 	Acodec     string `json:"acodec"`
 	Vcodec     string `json:"vcodec"`
 	Url        string `json:"url"`
-}
-
-func (y *YtDlpResponse) videoFormat(limit int64) (*YtDlpFormat, error) {
-	n := -1
-	for i, f := range y.Formats {
-		if f.Filesize > 0 && f.Filesize < limit && strings.HasPrefix(f.Vcodec, "avc1") && (n == -1 || y.Formats[n].Filesize < f.Filesize) {
-			n = i
-		}
-	}
-
-	if n < 0 {
-		// the smallest `mp4` video format
-		for _, f := range y.Formats {
-			if f.FormatId == "134" {
-				return f, nil
-			}
-		}
-		return nil, fmt.Errorf("appropriate video format not found")
-	}
-
-	return y.Formats[n], nil
 }

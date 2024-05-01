@@ -63,7 +63,7 @@ func (y *YoutubeMediaFactory) getFormats(resp *YtDlpResponse) (*YtDlpFormat, *Yt
 		return nil, nil, err
 	}
 
-	video, err := resp.videoFormat(50_000_000 - audio.Filesize)
+	video, err := y.getPreferredVideoFormat(resp)
 	if err != nil {
 		y.l.Error(err)
 		return nil, nil, err
@@ -157,4 +157,25 @@ func (y *YoutubeMediaFactory) getPreferredAudioFormat(resp *YtDlpResponse) (*YtD
 	}
 
 	return nil, fmt.Errorf("140 not found for %s", resp.Id)
+}
+
+func (y *YoutubeMediaFactory) getPreferredVideoFormat(resp *YtDlpResponse) (*YtDlpFormat, error) {
+	n := -1
+	for i, f := range resp.Formats {
+		if f.Filesize > 0 && f.Filesize < 50_000_000 && strings.HasPrefix(f.Vcodec, "avc1") && (n == -1 || resp.Formats[n].Filesize < f.Filesize) {
+			n = i
+		}
+	}
+
+	if n < 0 {
+		// the smallest `mp4` video format
+		for _, f := range resp.Formats {
+			if f.FormatId == "134" {
+				return f, nil
+			}
+		}
+		return nil, fmt.Errorf("appropriate video format not found")
+	}
+
+	return resp.Formats[n], nil
 }
