@@ -96,7 +96,7 @@ func (y *YoutubeMediaFactory) CreateVideo(id string) (*core.Video, error) {
 		return nil, fmt.Errorf(string(out))
 	}
 
-	thumb, err := y.getThumb(resp, video)
+	thumb, err := y.makeThumb(resp, video)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (y *YoutubeMediaFactory) CreateVideo(id string) (*core.Video, error) {
 	}, nil
 }
 
-func (y *YoutubeMediaFactory) getThumb(resp *YtDlpResponse, vf *YtDlpFormat) (*core.Image, error) {
+func (y *YoutubeMediaFactory) makeThumb(resp *YtDlpResponse, vf *YtDlpFormat) (*core.Image, error) {
 	filename := fmt.Sprintf("youtube[%s][%s].jpg", resp.Id, vf.FormatId)
 	originalThumbPath := path.Join(os.TempDir(), filename+"-original")
 	thumbPath := path.Join(os.TempDir(), filename)
