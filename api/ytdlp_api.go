@@ -66,16 +66,6 @@ type YtDlpFormat struct {
 	Url        string `json:"url"`
 }
 
-func (v YtDlpResponse) audioFormat() (*YtDlpFormat, error) {
-	for _, f := range v.Formats {
-		if f.FormatId == "140" {
-			return f, nil
-		}
-	}
-
-	return nil, fmt.Errorf("140 not found for %s", v.Id)
-}
-
 func (y *YtDlpResponse) videoFormat(limit int64) (*YtDlpFormat, error) {
 	n := -1
 	for i, f := range y.Formats {

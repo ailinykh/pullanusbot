@@ -57,7 +57,7 @@ func (y *YoutubeMediaFactory) CreateMedia(url string) ([]*core.Media, error) {
 }
 
 func (y *YoutubeMediaFactory) getFormats(resp *YtDlpResponse) (*YtDlpFormat, *YtDlpFormat, error) {
-	audio, err := resp.audioFormat()
+	audio, err := y.getPreferredAudioFormat(resp)
 	if err != nil {
 		y.l.Error(err)
 		return nil, nil, err
@@ -147,4 +147,14 @@ func (y *YoutubeMediaFactory) makeThumb(resp *YtDlpResponse, vf *YtDlpFormat) (*
 		Width:  vf.Width,
 		Height: vf.Height,
 	}, nil
+}
+
+func (y *YoutubeMediaFactory) getPreferredAudioFormat(resp *YtDlpResponse) (*YtDlpFormat, error) {
+	for _, f := range resp.Formats {
+		if f.FormatId == "140" {
+			return f, nil
+		}
+	}
+
+	return nil, fmt.Errorf("140 not found for %s", resp.Id)
 }
