@@ -38,26 +38,11 @@ func (flow *TikTokFlow) HandleText(message *core.Message, bot core.IBot) error {
 
 func (flow *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBot) error {
 	flow.l.Infof("processing %s", url)
-	fullURL, err := flow.httpClient.GetRedirectLocation(url)
-	if err != nil {
-		return err
-	}
 
-	r := regexp.MustCompile(`tiktok\.com/(@\S+)/video/(\d+)`)
-	match := r.FindStringSubmatch(fullURL)
-	if len(match) != 3 {
-		flow.l.Error(match)
-		return fmt.Errorf("unexpected redirect location %s", fullURL)
-	}
-
-	// apiURL := "https://www.tiktok.com/node/share/video/" + match[1] + "/" + match[2]
-	originalURL := "https://www.tiktok.com/" + match[1] + "/video/" + match[2]
-	flow.l.Infof("original: %s", originalURL)
-
-	media, err := flow.mediaFactory.CreateMedia(originalURL)
+	media, err := flow.mediaFactory.CreateMedia(url)
 	if err != nil {
 		if err.Error() == "Video currently unavailable" {
-			_, err := bot.SendText(originalURL + "\nV" + err.Error())
+			_, err := bot.SendText(url + "\nV" + err.Error())
 			return err
 		}
 		return err
