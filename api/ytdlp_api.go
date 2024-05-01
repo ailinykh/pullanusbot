@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"strings"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
 )
@@ -12,16 +13,27 @@ type YoutubeApi interface {
 	get(string) (*YtDlpResponse, error)
 }
 
-func CreateYtDlpApi(l core.ILogger) YoutubeApi {
-	return &YtDlpApi{l}
+func CreateYtDlpApi(cookie string, l core.ILogger) YoutubeApi {
+	return &YtDlpApi{cookie, l}
 }
 
 type YtDlpApi struct {
-	l core.ILogger
+	cookie string
+	l      core.ILogger
 }
 
 func (api *YtDlpApi) get(url string) (*YtDlpResponse, error) {
-	cmd := fmt.Sprintf(`yt-dlp --quiet --no-warnings --dump-json %s`, url)
+	args := []string{
+		"--quiet",
+		"--no-warnings",
+		"--dump-json",
+	}
+
+	if len(api.cookie) > 0 {
+		args = append(args, "--cookies", api.cookie)
+	}
+
+	cmd := fmt.Sprintf(`yt-dlp %s %s`, strings.Join(args, " "), url)
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		api.l.Error(err)
