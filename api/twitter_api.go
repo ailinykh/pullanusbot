@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"regexp"
 	"time"
 
 	"github.com/ailinykh/pullanusbot/v2/core"
@@ -16,7 +15,7 @@ import (
 func CreateTwitterAPI(l core.ILogger, t core.ITask) *TwitterAPI {
 	return &TwitterAPI{l, t, TwitterApiCredentials{
 		bearer_token: "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
-		guest_token:  "1679397394880888834",
+		guest_token:  "1794395096458088509",
 	},
 	}
 }
@@ -40,7 +39,7 @@ func (api *TwitterAPI) getTweetByID(tweetID string) (*Tweet, error) {
 	}
 
 	if err.Error() == "Bad guest token" {
-		guestToken, err := api.getGuestToken("https://twitter.com/username/status/" + tweetID)
+		guestToken, err := api.getGuestToken()
 		if err != nil {
 			return nil, err
 		}
@@ -58,12 +57,13 @@ func (api *TwitterAPI) getTweetByID(tweetID string) (*Tweet, error) {
 	return tweet, err
 }
 
-func (api *TwitterAPI) getGuestToken(url string) (string, error) {
+func (api *TwitterAPI) getGuestToken() (string, error) {
 	api.l.Info("updating guest token")
 
 	client := http.DefaultClient
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36")
+	req, _ := http.NewRequest("POST", "https://api.x.com/1.1/guest/activate.json", nil)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+	req.Header.Set("Authorization", "Bearer "+api.credentials.bearer_token)
 	res, err := client.Do(req)
 
 	if err != nil {
@@ -72,12 +72,21 @@ func (api *TwitterAPI) getGuestToken(url string) (string, error) {
 	defer res.Body.Close()
 
 	body, _ := io.ReadAll(res.Body)
-	r := regexp.MustCompile(`gt=(\d+);`)
-	match := r.FindStringSubmatch(string(body))
-	if len(match) < 2 {
-		return "", fmt.Errorf("failed to parse guest_token from %s", url)
+
+	type TokenResp struct {
+		Token   string `json:"guest_token,omitempty"`
+		Code    int    `json:"code,omitempty"`
+		Message string `json:"message,omitempty"`
 	}
-	return match[1], nil
+	var tokenResp TokenResp
+	json.Unmarshal(body, &tokenResp)
+
+	if len(tokenResp.Token) > 0 {
+		return tokenResp.Token, nil
+	}
+
+	api.l.Infof("%+v", tokenResp)
+	return "", fmt.Errorf(tokenResp.Message)
 }
 
 func (api *TwitterAPI) getTweetFromGraphQL(tweetID string) (*Tweet, error) {
