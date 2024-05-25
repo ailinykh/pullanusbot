@@ -34,6 +34,7 @@ func (api *YtDlpApi) Get(url string) (*YtDlpResponse, error) {
 	}
 
 	cmd := fmt.Sprintf(`yt-dlp %s %s`, strings.Join(args, " "), url)
+	api.l.Info(cmd)
 	out, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		api.l.Error(err)
