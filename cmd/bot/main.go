@@ -4,11 +4,11 @@ import (
 	"os"
 	"path"
 
-	"github.com/ailinykh/pullanusbot/v2/api"
-	"github.com/ailinykh/pullanusbot/v2/core"
-	"github.com/ailinykh/pullanusbot/v2/helpers"
-	"github.com/ailinykh/pullanusbot/v2/infrastructure"
-	"github.com/ailinykh/pullanusbot/v2/usecases"
+	"github.com/ailinykh/pullanusbot/v2/internal/legacy/api"
+	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/legacy/helpers"
+	"github.com/ailinykh/pullanusbot/v2/internal/legacy/infrastructure"
+	"github.com/ailinykh/pullanusbot/v2/internal/legacy/usecases"
 	"github.com/google/logger"
 )
 
