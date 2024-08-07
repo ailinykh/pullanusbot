@@ -13,10 +13,11 @@ import (
 )
 
 func main() {
-	logger := createLogger()
+	config := NewDefaultConfig()
+	logger := createLogger(config.WorkingDir())
 	defer logger.Close()
 
-	dbFile := path.Join(getWorkingDir(), "pullanusbot.db")
+	dbFile := path.Join(config.WorkingDir(), "pullanusbot.db")
 
 	settingsProvider := infrastructure.CreateSettingsStorage(dbFile)
 	boolSettingProvider := helpers.CreateBoolSettingProvider(settingsProvider)
@@ -100,7 +101,7 @@ func main() {
 	iDoNotCare := usecases.CreateIDoNotCare()
 	telebot.AddHandler(iDoNotCare)
 
-	instaAPI := api.CreateYtDlpApi(path.Join(getWorkingDir(), "cookies.txt"), logger)
+	instaAPI := api.CreateYtDlpApi(path.Join(config.WorkingDir(), "cookies.txt"), logger)
 	instaFlow := usecases.CreateInstagramFlow(logger, instaAPI, localMediaSender)
 	removeInstaSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, instaFlow, core.SInstagramFlowRemoveSource, boolSettingProvider)
 	telebot.AddHandler(removeInstaSourceDecorator)
@@ -113,20 +114,12 @@ func main() {
 	telebot.Run()
 }
 
-func createLogger() core.ILogger {
-	logFilePath := path.Join(getWorkingDir(), "pullanusbot.log")
+func createLogger(workingDir string) core.ILogger {
+	logFilePath := path.Join(workingDir, "pullanusbot.log")
 	lf, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
 	if err != nil {
 		panic(err)
 	}
 
 	return logger.Init("pullanusbot", true, false, lf)
-}
-
-func getWorkingDir() string {
-	workingDir := os.Getenv("WORKING_DIR")
-	if len(workingDir) == 0 {
-		return "pullanusbot-data"
-	}
-	return workingDir
 }
