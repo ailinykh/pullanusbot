@@ -2,7 +2,7 @@
 
 .PHONY: all serve kill run test build clean restart
 
-APP ?= bin/pullanusbot
+APP ?= bin/bot
 PID = $(APP).pid
 GO_FILES = $(wildcard *.go)
 
@@ -27,7 +27,7 @@ test:
 	GO_ENV=testing go test ./... -v -coverprofile=coverage.txt -race -covermode=atomic
 
 build: $(GO_FILES)
-	@go build -o $(APP) .
+	@go build -o $(APP) ./cmd/bot
 
 clean:
 	rm -f $(APP)
