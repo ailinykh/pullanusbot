@@ -98,6 +98,13 @@ func main() {
 		return err
 	})
 
+	accessKeyId, secretAccessKey := config.LightsailCredentials()
+	if accessKeyId != nil && secretAccessKey != nil {
+		lightsailApi := api.NewLightsailAPI(logger, *accessKeyId, *secretAccessKey)
+		rebootFlow := usecases.NewRebootServerFlow(lightsailApi, logger)
+		telebot.AddHandler(rebootFlow)
+	}
+
 	iDoNotCare := usecases.CreateIDoNotCare()
 	telebot.AddHandler(iDoNotCare)
 

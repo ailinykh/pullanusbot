@@ -10,6 +10,7 @@ type Config interface {
 	AmqpUrl() string
 	BotToken() string
 	WorkingDir() string
+	LightsailCredentials() (*string, *string)
 }
 
 type DefaultConfig struct{}
@@ -33,4 +34,13 @@ func (DefaultConfig) WorkingDir() string {
 		return workingDir
 	}
 	return "pullanusbot-data"
+}
+
+func (DefaultConfig) LightsailCredentials() (*string, *string) {
+	if accessKeyId, ok := os.LookupEnv("LIGHTSAIL_ACCESS_KEY_ID"); ok {
+		if secretAccessKey, ok := os.LookupEnv("LIGHTSAIL_SECRET_ACCESS_KEY"); ok {
+			return &accessKeyId, &secretAccessKey
+		}
+	}
+	return nil, nil
 }
