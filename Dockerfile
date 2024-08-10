@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 golang:stretch as builder
+FROM --platform=linux/amd64 golang:1.22 as builder
 WORKDIR /go/src/github.com/ailinykh/pullanusbot
 ADD . .
 RUN go mod download
