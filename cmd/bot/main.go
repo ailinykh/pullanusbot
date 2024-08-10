@@ -24,7 +24,7 @@ func main() {
 	databaseChatStorage := infrastructure.CreateChatStorage(dbFile, logger)
 	inMemoryChatStorage := infrastructure.CreateInMemoryChatStorage()
 	chatStorageDecorator := usecases.CreateChatStorageDecorator(logger, inMemoryChatStorage, databaseChatStorage)
-	telebot := api.CreateTelebot(os.Getenv("BOT_TOKEN"), logger)
+	telebot := api.CreateTelebot(config.BotToken(), logger)
 	telebot.SetupInfo()
 
 	databaseUserStorage := infrastructure.CreateUserStorage(dbFile, logger)
@@ -55,7 +55,7 @@ func main() {
 	sendVideoStrategySplitDecorator := helpers.CreateSendVideoStrategySplitDecorator(logger, sendVideoStrategy, converter)
 	localMediaSender := helpers.CreateUploadMediaDecorator(logger, remoteMediaSender, fileDownloader, converter, sendVideoStrategySplitDecorator)
 
-	rabbit, close := infrastructure.CreateRabbitFactory(logger, os.Getenv("AMQP_URL"))
+	rabbit, close := infrastructure.CreateRabbitFactory(logger, config.AmqpUrl())
 	defer close()
 	task := rabbit.NewTask("twitter_queue")
 

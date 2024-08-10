@@ -7,11 +7,19 @@ func NewDefaultConfig() Config {
 }
 
 type Config interface {
+	AmqpUrl() string
 	BotToken() string
 	WorkingDir() string
 }
 
 type DefaultConfig struct{}
+
+func (DefaultConfig) AmqpUrl() string {
+	if amqpUrl, ok := os.LookupEnv("AMQP_URL"); ok {
+		return amqpUrl
+	}
+	panic("Pass `AMQP_URL` via Environment variable. It shoud point to valid RabbitMQ url")
+}
 
 func (DefaultConfig) BotToken() string {
 	if botToken, ok := os.LookupEnv("BOT_TOKEN"); ok {
