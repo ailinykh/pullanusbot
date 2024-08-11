@@ -123,10 +123,15 @@ func main() {
 	iDoNotCare := usecases.CreateIDoNotCare()
 	telebot.AddHandler(iDoNotCare)
 
-	instaAPI := api.CreateYtDlpApi(path.Join(config.WorkingDir(), "cookies.txt"), logger)
-	instaFlow := usecases.CreateInstagramFlow(logger, instaAPI, localMediaSender)
-	removeInstaSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, instaFlow, core.SInstagramFlowRemoveSource, boolSettingProvider)
-	telebot.AddHandler(removeInstaSourceDecorator)
+	if cookiesFilePath := config.StringForKey("INSTAGRAM_COOKIES_FILE_PATH"); cookiesFilePath != nil {
+		logger.Infof("instagram logic enabled. Cookies file: %s", *cookiesFilePath)
+		instaAPI := api.CreateYtDlpApi(path.Join(config.WorkingDir(), *cookiesFilePath), logger)
+		instaFlow := usecases.CreateInstagramFlow(logger, instaAPI, localMediaSender)
+		removeInstaSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, instaFlow, core.SInstagramFlowRemoveSource, boolSettingProvider)
+		telebot.AddHandler(removeInstaSourceDecorator)
+	} else {
+		logger.Info("instagram logic disabled")
+	}
 
 	commonLocalizer := infrastructure.CreateCommonLocalizer()
 	startFlow := usecases.CreateStartFlow(logger, commonLocalizer, settingsProvider, commandService)
