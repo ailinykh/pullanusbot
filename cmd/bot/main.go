@@ -105,7 +105,7 @@ func main() {
 		chatId := config.StringForKey("REBOOT_SERVER_CHAT_ID")
 		command := config.StringForKey("REBOOT_SERVER_COMMAND")
 		if len(keyId) > 0 && len(secret) > 0 && len(chatId) > 0 && len(command) > 0 {
-			logger.Info("server reboot logic enabled for %d by %s", chatId, command)
+			logger.Infof("server reboot logic enabled for %s by %s", chatId, command)
 			chatID, err := strconv.ParseInt(chatId, 10, 64)
 			if err != nil {
 				logger.Errorf("failed to parse %s: %v", chatID, err)

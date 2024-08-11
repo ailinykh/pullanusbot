@@ -15,7 +15,7 @@ func NewRebootServerFlow(serverApi core.ServerAPI, commandService core.ICommandS
 		serverApi:      serverApi,
 		commandService: commandService,
 		rebootLog:      []*logEntry{},
-		cancelReboot:   make(chan bool),
+		confirmReboot:  make(chan bool),
 		opts:           opts,
 	}
 }
@@ -25,7 +25,7 @@ type logEntry struct {
 	message   string
 }
 
-const cancelRebootVpnButtonId = "cancel_reboot_vpn"
+const confirmRebootVpnButtonId = "confirm_reboot_vpn"
 
 type RebootServerOptions struct {
 	ChatId  int64
@@ -37,7 +37,7 @@ type RebootServerFlow struct {
 	serverApi      core.ServerAPI
 	commandService core.ICommandService
 	rebootLog      []*logEntry
-	cancelReboot   chan bool
+	confirmReboot  chan bool
 	opts           *RebootServerOptions
 }
 
@@ -67,7 +67,7 @@ func (flow *RebootServerFlow) Reboot(message *core.Message, bot core.IBot) error
 	for _, entry := range flow.rebootLog {
 		if time.Since(entry.timestamp) < 5*time.Minute {
 			flow.logger.Infof("reboot server timeout %s", entry.timestamp)
-			text := fmt.Sprintf("Server already restarted at <b>%s</b>", entry.timestamp.Format(time.UnixDate))
+			text := fmt.Sprintf("🔴 Server already restarted at <b>%s</b>", entry.timestamp.Format(time.UnixDate))
 			_, err := bot.SendText(text)
 			return err
 		}
@@ -94,46 +94,65 @@ func (flow *RebootServerFlow) Reboot(message *core.Message, bot core.IBot) error
 		return err
 	}
 
-	button := &core.Button{Text: "❌ Cancel", ID: cancelRebootVpnButtonId}
-	text := fmt.Sprintf("Restarting <b>%s</b> in <i>5 seconds...</i>\n\nTo cancel operation press the button below", servers[0].Name)
-	sent, err := bot.SendText(text, [][]*core.Button{{button}})
+	button := &core.Button{
+		ID:      confirmRebootVpnButtonId,
+		Text:    "🟢 Yes, reboot",
+		Payload: servers[0].Name,
+	}
+	messages := []string{
+		fmt.Sprintf("🟡 Server reboot requested by %s %s.", message.Sender.FirstName, message.Sender.LastName),
+		"",
+		fmt.Sprintf("To reboot <b>%s</b> press the button below:", servers[0].Name),
+	}
+	sent, err := bot.SendText(strings.Join(messages, "\n"), [][]*core.Button{{button}})
 	if err != nil {
 		return err
 	}
 
 	select {
-	case <-flow.cancelReboot:
-		flow.rebootLog = flow.rebootLog[:len(flow.rebootLog)-1]
-		return nil
-	case <-time.After(5 * time.Second):
-		flow.logger.Infof("restarting server due to cancel timeout reached")
-		messages := []string{
-			"✅ Server restarted.",
-			"",
-			"restart log:",
-		}
-		for _, entry := range flow.rebootLog {
-			text := fmt.Sprintf("<i>%s by %s</i>", entry.timestamp.Format(time.UnixDate), entry.message)
-			messages = append(messages, text)
-		}
-		_, err = bot.Edit(sent, strings.Join(messages, "\n"))
-		if err != nil {
+	case <-flow.confirmReboot:
+		if err = flow.serverApi.RebootServer(ctx, servers[0]); err != nil {
 			return err
 		}
-		return flow.serverApi.RebootServer(ctx, servers[0])
+
+		go func() {
+			time.Sleep(5 * time.Minute)
+			messages := []string{
+				"🟢 Server restarted.",
+				"",
+				"restart log:",
+			}
+			for _, entry := range flow.rebootLog {
+				text := fmt.Sprintf("<i>%s by %s</i>", entry.timestamp.Format(time.UnixDate), entry.message)
+				messages = append(messages, text)
+			}
+			_, err = bot.SendText(strings.Join(messages, "\n"))
+			if err != nil {
+				flow.logger.Error(err)
+			}
+		}()
+	case <-time.After(5 * time.Second):
+		flow.logger.Infof("server reboot interrupted due to confirm timeout reached")
+		flow.rebootLog = flow.rebootLog[:len(flow.rebootLog)-1]
+
+		_, err = bot.Edit(sent, "🔴 Server reboot canceled")
+		return err
 	}
+	return err
 }
 
 // GetButtonIds is a core.IButtonHandler protocol implementation
 func (flow *RebootServerFlow) GetButtonIds() []string {
-	return []string{cancelRebootVpnButtonId}
+	return []string{confirmRebootVpnButtonId}
 }
 
 // ButtonPressed is a core.IButtonHandler protocol implementation
 func (flow *RebootServerFlow) ButtonPressed(button *core.Button, message *core.Message, user *core.User, bot core.IBot) error {
-	text := fmt.Sprintf("❌ Reboot interrupted by %s %s", user.FirstName, user.LastName)
-	flow.logger.Info(text)
-	_, err := bot.Edit(message, text)
-	flow.cancelReboot <- true
-	return err
+	flow.logger.Infof("server reboot confirmed by %d %s", user.ID, user.DisplayName())
+	text := fmt.Sprintf("🟡 Server reboot in progress by %s %s...", user.FirstName, user.LastName)
+	if _, err := bot.Edit(message, text); err != nil {
+		return err
+	}
+	flow.confirmReboot <- true
+	return nil
 }
