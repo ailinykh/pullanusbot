@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"strings"
 )
 
 func NewDefaultConfig() Config {
@@ -13,7 +12,7 @@ type Config interface {
 	AmqpUrl() string
 	BotToken() string
 	WorkingDir() string
-	StringForKey(string) *string
+	StringForKey(string) string
 }
 
 type DefaultConfig struct{}
@@ -39,11 +38,6 @@ func (DefaultConfig) WorkingDir() string {
 	return "pullanusbot-data"
 }
 
-func (DefaultConfig) StringForKey(key string) *string {
-	if v, ok := os.LookupEnv(key); ok {
-		s := string(v)
-		s = strings.TrimPrefix(strings.TrimSuffix(s, `"`), `"`)
-		return &s
-	}
-	return nil
+func (DefaultConfig) StringForKey(key string) string {
+	return os.Getenv(key)
 }

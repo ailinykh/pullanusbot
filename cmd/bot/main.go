@@ -99,33 +99,36 @@ func main() {
 		return err
 	})
 
-	accessKeyId := config.StringForKey("LIGHTSAIL_ACCESS_KEY_ID")
-	secretAccessKey := config.StringForKey("LIGHTSAIL_SECRET_ACCESS_KEY")
-	rebootServerChatID := config.StringForKey("REBOOT_SERVER_CHAT_ID")
-	rebootServerCommand := config.StringForKey("REBOOT_SERVER_COMMAND")
-	if accessKeyId != nil && secretAccessKey != nil && rebootServerChatID != nil && rebootServerCommand != nil {
-		chatID, err := strconv.ParseInt(*rebootServerChatID, 10, 64)
-		if err != nil {
-			logger.Errorf("failed to parse %s: %v", *rebootServerChatID, err)
-		} else {
-			lightsailApi := api.NewLightsailAPI(logger, *accessKeyId, *secretAccessKey)
-			opts := &usecases.RebootServerOptions{
-				ChatId:  chatID,
-				Command: *rebootServerCommand,
+	{
+		keyId := config.StringForKey("LIGHTSAIL_ACCESS_KEY_ID")
+		secret := config.StringForKey("LIGHTSAIL_SECRET_ACCESS_KEY")
+		chatId := config.StringForKey("REBOOT_SERVER_CHAT_ID")
+		command := config.StringForKey("REBOOT_SERVER_COMMAND")
+		if len(keyId) > 0 && len(secret) > 0 && len(chatId) > 0 && len(command) > 0 {
+			logger.Info("server reboot logic enabled for %d by %s", chatId, command)
+			chatID, err := strconv.ParseInt(chatId, 10, 64)
+			if err != nil {
+				logger.Errorf("failed to parse %s: %v", chatID, err)
+			} else {
+				lightsailApi := api.NewLightsailAPI(logger, keyId, secret)
+				opts := &usecases.RebootServerOptions{
+					ChatId:  chatID,
+					Command: command,
+				}
+				rebootFlow := usecases.NewRebootServerFlow(lightsailApi, commandService, logger, opts)
+				telebot.AddHandler(rebootFlow)
 			}
-			rebootFlow := usecases.NewRebootServerFlow(lightsailApi, commandService, logger, opts)
-			telebot.AddHandler(rebootFlow)
+		} else {
+			logger.Info("server reboot logic disabled")
 		}
-	} else {
-		logger.Info("server reboot logic disabled")
 	}
 
 	iDoNotCare := usecases.CreateIDoNotCare()
 	telebot.AddHandler(iDoNotCare)
 
-	if cookiesFilePath := config.StringForKey("INSTAGRAM_COOKIES_FILE_PATH"); cookiesFilePath != nil {
-		logger.Infof("instagram logic enabled. Cookies file: %s", *cookiesFilePath)
-		instaAPI := api.CreateYtDlpApi(path.Join(config.WorkingDir(), *cookiesFilePath), logger)
+	if cookiesFilePath := config.StringForKey("INSTAGRAM_COOKIES_FILE_PATH"); len(cookiesFilePath) > 0 {
+		logger.Infof("instagram logic enabled. Cookies file: %s", cookiesFilePath)
+		instaAPI := api.CreateYtDlpApi(path.Join(config.WorkingDir(), cookiesFilePath), logger)
 		instaFlow := usecases.CreateInstagramFlow(logger, instaAPI, localMediaSender)
 		removeInstaSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, instaFlow, core.SInstagramFlowRemoveSource, boolSettingProvider)
 		telebot.AddHandler(removeInstaSourceDecorator)
