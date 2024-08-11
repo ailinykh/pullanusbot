@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path"
+	"strconv"
 
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/api"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
@@ -100,10 +101,23 @@ func main() {
 
 	accessKeyId := config.StringForKey("LIGHTSAIL_ACCESS_KEY_ID")
 	secretAccessKey := config.StringForKey("LIGHTSAIL_SECRET_ACCESS_KEY")
-	if accessKeyId != nil && secretAccessKey != nil {
-		lightsailApi := api.NewLightsailAPI(logger, *accessKeyId, *secretAccessKey)
-		rebootFlow := usecases.NewRebootServerFlow(lightsailApi, logger)
-		telebot.AddHandler(rebootFlow)
+	rebootServerChatID := config.StringForKey("REBOOT_SERVER_CHAT_ID")
+	rebootServerCommand := config.StringForKey("REBOOT_SERVER_COMMAND")
+	if accessKeyId != nil && secretAccessKey != nil && rebootServerChatID != nil && rebootServerCommand != nil {
+		chatID, err := strconv.ParseInt(*rebootServerChatID, 10, 64)
+		if err != nil {
+			logger.Errorf("failed to parse %s: %v", *rebootServerChatID, err)
+		} else {
+			lightsailApi := api.NewLightsailAPI(logger, *accessKeyId, *secretAccessKey)
+			opts := &usecases.RebootServerOptions{
+				ChatId:  chatID,
+				Command: *rebootServerCommand,
+			}
+			rebootFlow := usecases.NewRebootServerFlow(lightsailApi, commandService, logger, opts)
+			telebot.AddHandler(rebootFlow)
+		}
+	} else {
+		logger.Info("server reboot logic disabled")
 	}
 
 	iDoNotCare := usecases.CreateIDoNotCare()

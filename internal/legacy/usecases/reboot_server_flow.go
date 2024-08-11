@@ -9,12 +9,14 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func NewRebootServerFlow(serverApi core.ServerAPI, logger core.ILogger) *RebootServerFlow {
+func NewRebootServerFlow(serverApi core.ServerAPI, commandService core.ICommandService, logger core.ILogger, opts *RebootServerOptions) *RebootServerFlow {
 	return &RebootServerFlow{
-		logger:       logger,
-		serverApi:    serverApi,
-		rebootLog:    []*logEntry{},
-		cancelReboot: make(chan bool),
+		logger:         logger,
+		serverApi:      serverApi,
+		commandService: commandService,
+		rebootLog:      []*logEntry{},
+		cancelReboot:   make(chan bool),
+		opts:           opts,
 	}
 }
 
@@ -25,17 +27,35 @@ type logEntry struct {
 
 const cancelRebootVpnButtonId = "cancel_reboot_vpn"
 
+type RebootServerOptions struct {
+	ChatId  int64
+	Command string
+}
+
 type RebootServerFlow struct {
-	logger       core.ILogger
-	serverApi    core.ServerAPI
-	rebootLog    []*logEntry
-	cancelReboot chan bool
+	logger         core.ILogger
+	serverApi      core.ServerAPI
+	commandService core.ICommandService
+	rebootLog      []*logEntry
+	cancelReboot   chan bool
+	opts           *RebootServerOptions
 }
 
 // HandleText is a core.ITextHandler protocol implementation
 func (flow *RebootServerFlow) HandleText(message *core.Message, bot core.IBot) error {
-	if message.Text != "/rebootserver" {
+	if message.Text != flow.opts.Command {
 		return fmt.Errorf("not implemented")
+	}
+
+	if message.Chat.ID != flow.opts.ChatId {
+		return fmt.Errorf("wrong chat id. expect: %d, got: %d", flow.opts.ChatId, message.Chat.ID)
+	}
+
+	if err := flow.commandService.EnableCommands(flow.opts.ChatId, []core.Command{{
+		Text:        flow.opts.Command,
+		Description: "Reboot VPN Server",
+	}}, bot); err != nil {
+		return err
 	}
 
 	return flow.Reboot(message, bot)

@@ -1,6 +1,9 @@
 package main
 
-import "os"
+import (
+	"os"
+	"strings"
+)
 
 func NewDefaultConfig() Config {
 	return &DefaultConfig{}
@@ -37,6 +40,10 @@ func (DefaultConfig) WorkingDir() string {
 }
 
 func (DefaultConfig) StringForKey(key string) *string {
-	v, _ := os.LookupEnv(key)
-	return &v
+	if v, ok := os.LookupEnv(key); ok {
+		s := string(v)
+		s = strings.TrimPrefix(strings.TrimSuffix(s, `"`), `"`)
+		return &s
+	}
+	return nil
 }
