@@ -98,7 +98,8 @@ func main() {
 		return err
 	})
 
-	accessKeyId, secretAccessKey := config.LightsailCredentials()
+	accessKeyId := config.StringForKey("LIGHTSAIL_ACCESS_KEY_ID")
+	secretAccessKey := config.StringForKey("LIGHTSAIL_SECRET_ACCESS_KEY")
 	if accessKeyId != nil && secretAccessKey != nil {
 		lightsailApi := api.NewLightsailAPI(logger, *accessKeyId, *secretAccessKey)
 		rebootFlow := usecases.NewRebootServerFlow(lightsailApi, logger)
