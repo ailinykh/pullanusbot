@@ -13,13 +13,13 @@ type YoutubeApi interface {
 	Get(string) (*YtDlpResponse, error)
 }
 
-func CreateYtDlpApi(cookie string, l core.ILogger) YoutubeApi {
-	return &YtDlpApi{cookie, l}
+func CreateYtDlpApi(args []string, l core.ILogger) YoutubeApi {
+	return &YtDlpApi{args, l}
 }
 
 type YtDlpApi struct {
-	cookie string
-	l      core.ILogger
+	args []string
+	l    core.ILogger
 }
 
 func (api *YtDlpApi) Get(url string) (*YtDlpResponse, error) {
@@ -29,8 +29,8 @@ func (api *YtDlpApi) Get(url string) (*YtDlpResponse, error) {
 		"--dump-json",
 	}
 
-	if len(api.cookie) > 0 {
-		args = append(args, "--cookies", api.cookie)
+	if len(api.args) > 0 {
+		args = append(args, api.args...)
 	}
 
 	cmd := fmt.Sprintf(`yt-dlp %s %s`, strings.Join(args, " "), url)

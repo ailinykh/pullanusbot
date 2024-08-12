@@ -75,7 +75,7 @@ func main() {
 	telebot.AddHandler(removeLinkSourceDecorator)
 
 	tiktokHttpClient := api.CreateHttpClient() // domain specific headers and cookies
-	ytdlpApi := api.CreateYtDlpApi("", logger)
+	ytdlpApi := api.CreateYtDlpApi([]string{}, logger)
 	tiktokMediaFactory := api.CreateTikTokMediaFactory(logger, ytdlpApi)
 	tiktokFlow := usecases.CreateTikTokFlow(logger, tiktokHttpClient, tiktokMediaFactory, localMediaSender)
 	telebot.AddHandler(tiktokFlow)
@@ -149,7 +149,8 @@ func main() {
 
 	if cookiesFilePath := config.StringForKey("INSTAGRAM_COOKIES_FILE_PATH"); len(cookiesFilePath) > 0 {
 		logger.Infof("instagram logic enabled. Cookies file: %s", cookiesFilePath)
-		instaAPI := api.CreateYtDlpApi(path.Join(config.WorkingDir(), cookiesFilePath), logger)
+		cookies := path.Join(config.WorkingDir(), cookiesFilePath)
+		instaAPI := api.CreateYtDlpApi([]string{"--cookies", cookies}, logger)
 		instaFlow := usecases.CreateInstagramFlow(logger, instaAPI, localMediaSender)
 		removeInstaSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, instaFlow, core.SInstagramFlowRemoveSource, boolSettingProvider)
 		telebot.AddHandler(removeInstaSourceDecorator)
