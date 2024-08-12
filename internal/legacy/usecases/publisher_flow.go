@@ -1,22 +1,13 @@
 package usecases
 
 import (
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
 // CreatePublisherFlow is a basic PublisherFlow factory
-func CreatePublisherFlow(l core.ILogger) *PublisherFlow {
-	chatID, err := strconv.ParseInt(os.Getenv("PUBLISHER_CHAT_ID"), 10, 64)
-	if err != nil {
-		chatID = 0
-	}
-
-	username := os.Getenv("PUBLISHER_USERNAME")
-
+func CreatePublisherFlow(chatID core.ChatID, username string, l core.ILogger) *PublisherFlow {
 	publisher := PublisherFlow{
 		l:           l,
 		chatID:      chatID,

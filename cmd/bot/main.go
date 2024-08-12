@@ -84,9 +84,21 @@ func main() {
 	imageFlow := usecases.CreateImageFlow(logger, fileUploader, telebot)
 	telebot.AddHandler(imageFlow)
 
-	publisherFlow := usecases.CreatePublisherFlow(logger)
-	telebot.AddHandler(publisherFlow)
-	telebot.AddHandler("/loh666", publisherFlow.HandleRequest)
+	{
+		chatId := config.StringForKey("PUBLISHER_CHAT_ID")
+		username := config.StringForKey("PUBLISHER_USERNAME")
+		if len(chatId) > 0 && len(username) > 0 {
+			logger.Infof("publisher logic enabled for %s by %s", chatId, username)
+			chatID, err := strconv.ParseInt(chatId, 10, 64)
+			if err != nil {
+				logger.Errorf("failed to parse %s: %v", chatID, err)
+			} else {
+				publisherFlow := usecases.CreatePublisherFlow(chatID, username, logger)
+				telebot.AddHandler(publisherFlow)
+				telebot.AddHandler("/loh666", publisherFlow.HandleRequest)
+			}
+		}
+	}
 
 	youtubeMediaFactory := api.CreateYoutubeMediaFactory(logger, ytdlpApi, fileDownloader)
 	youtubeFlow := usecases.CreateYoutubeFlow(logger, youtubeMediaFactory, youtubeMediaFactory, sendVideoStrategySplitDecorator)
