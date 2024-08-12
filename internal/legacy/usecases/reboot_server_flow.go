@@ -28,7 +28,7 @@ type logEntry struct {
 const confirmRebootVpnButtonId = "confirm_reboot_vpn"
 
 type RebootServerOptions struct {
-	ChatId  int64
+	ChatIds []int64
 	Command string
 }
 
@@ -47,11 +47,19 @@ func (flow *RebootServerFlow) HandleText(message *core.Message, bot core.IBot) e
 		return fmt.Errorf("not implemented")
 	}
 
-	if message.Chat.ID != flow.opts.ChatId {
-		return fmt.Errorf("wrong chat id. expect: %d, got: %d", flow.opts.ChatId, message.Chat.ID)
+	contains := func(chatId int64) bool {
+		for _, id := range flow.opts.ChatIds {
+			if id == chatId {
+				return true
+			}
+		}
+		return false
+	}
+	if !contains(message.Chat.ID) {
+		return fmt.Errorf("chat id %d not in whitelist", message.Chat.ID)
 	}
 
-	if err := flow.commandService.EnableCommands(flow.opts.ChatId, []core.Command{{
+	if err := flow.commandService.EnableCommands(message.Chat.ID, []core.Command{{
 		Text:        flow.opts.Command,
 		Description: "Reboot VPN Server",
 	}}, bot); err != nil {
@@ -62,7 +70,7 @@ func (flow *RebootServerFlow) HandleText(message *core.Message, bot core.IBot) e
 }
 
 func (flow *RebootServerFlow) Reboot(message *core.Message, bot core.IBot) error {
-	flow.logger.Infof("attempt to reboot server via %+v", message.Sender)
+	flow.logger.Infof("attempt to reboot server via %+v in chat %+v", message.Sender, message.Chat)
 
 	for _, entry := range flow.rebootLog {
 		if time.Since(entry.timestamp) < 5*time.Minute {

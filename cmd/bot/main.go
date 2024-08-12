@@ -4,6 +4,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/api"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
@@ -117,18 +118,26 @@ func main() {
 		chatId := config.StringForKey("REBOOT_SERVER_CHAT_ID")
 		command := config.StringForKey("REBOOT_SERVER_COMMAND")
 		if len(keyId) > 0 && len(secret) > 0 && len(chatId) > 0 && len(command) > 0 {
-			logger.Infof("server reboot logic enabled for %s by %s", chatId, command)
-			chatID, err := strconv.ParseInt(chatId, 10, 64)
-			if err != nil {
-				logger.Errorf("failed to parse %s: %v", chatID, err)
-			} else {
+			chatIds := []int64{}
+			for _, chatId := range strings.Split(chatId, ",") {
+				chatID, err := strconv.ParseInt(chatId, 10, 64)
+				if err != nil {
+					logger.Errorf("failed to parse %s: %v", chatID, err)
+				} else {
+					chatIds = append(chatIds, chatID)
+				}
+			}
+			if len(chatIds) > 0 {
+				logger.Infof("server reboot logic enabled for %+v by %s", chatIds, command)
 				lightsailApi := api.NewLightsailAPI(logger, keyId, secret)
 				opts := &usecases.RebootServerOptions{
-					ChatId:  chatID,
+					ChatIds: chatIds,
 					Command: command,
 				}
 				rebootFlow := usecases.NewRebootServerFlow(lightsailApi, commandService, logger, opts)
 				telebot.AddHandler(rebootFlow)
+			} else {
+				logger.Infof("server reboot logic disabled due to no chat_id's specified %s", chatId)
 			}
 		} else {
 			logger.Info("server reboot logic disabled")
