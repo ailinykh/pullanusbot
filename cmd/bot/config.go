@@ -12,7 +12,6 @@ type Config interface {
 	AmqpUrl() string
 	BotToken() string
 	WorkingDir() string
-	StringForKey(string) string
 }
 
 type DefaultConfig struct{}
@@ -36,8 +35,4 @@ func (DefaultConfig) WorkingDir() string {
 		return workingDir
 	}
 	return "pullanusbot-data"
-}
-
-func (DefaultConfig) StringForKey(key string) string {
-	return os.Getenv(key)
 }

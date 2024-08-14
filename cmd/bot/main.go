@@ -86,8 +86,8 @@ func main() {
 	telebot.AddHandler(imageFlow)
 
 	{
-		chatId := config.StringForKey("PUBLISHER_CHAT_ID")
-		username := config.StringForKey("PUBLISHER_USERNAME")
+		chatId := os.Getenv("PUBLISHER_CHAT_ID")
+		username := os.Getenv("PUBLISHER_USERNAME")
 		if len(chatId) > 0 && len(username) > 0 {
 			logger.Infof("publisher logic enabled for %s by %s", chatId, username)
 			chatID, err := strconv.ParseInt(chatId, 10, 64)
@@ -113,10 +113,10 @@ func main() {
 	})
 
 	{
-		keyId := config.StringForKey("LIGHTSAIL_ACCESS_KEY_ID")
-		secret := config.StringForKey("LIGHTSAIL_SECRET_ACCESS_KEY")
-		chatId := config.StringForKey("REBOOT_SERVER_CHAT_ID")
-		command := config.StringForKey("REBOOT_SERVER_COMMAND")
+		keyId := os.Getenv("LIGHTSAIL_ACCESS_KEY_ID")
+		secret := os.Getenv("LIGHTSAIL_SECRET_ACCESS_KEY")
+		chatId := os.Getenv("REBOOT_SERVER_CHAT_ID")
+		command := os.Getenv("REBOOT_SERVER_COMMAND")
 		if len(keyId) > 0 && len(secret) > 0 && len(chatId) > 0 && len(command) > 0 {
 			chatIds := []int64{}
 			for _, chatId := range strings.Split(chatId, ",") {
@@ -147,7 +147,7 @@ func main() {
 	iDoNotCare := usecases.CreateIDoNotCare()
 	telebot.AddHandler(iDoNotCare)
 
-	if cookiesFilePath := config.StringForKey("INSTAGRAM_COOKIES_FILE_PATH"); len(cookiesFilePath) > 0 {
+	if cookiesFilePath := os.Getenv("INSTAGRAM_COOKIES_FILE_PATH"); len(cookiesFilePath) > 0 {
 		logger.Infof("instagram logic enabled. Cookies file: %s", cookiesFilePath)
 		cookies := path.Join(config.WorkingDir(), cookiesFilePath)
 		instaAPI := api.CreateYtDlpApi([]string{"--cookies", cookies}, logger)
