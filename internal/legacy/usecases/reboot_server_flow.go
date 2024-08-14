@@ -83,7 +83,7 @@ func (flow *RebootServerFlow) Reboot(message *core.Message, bot core.IBot) error
 
 	entry := logEntry{
 		timestamp: time.Now(),
-		message:   message.Sender.FirstName + " " + message.Sender.LastName,
+		message:   message.Sender.FirstName,
 	}
 	flow.rebootLog = append(flow.rebootLog, &entry)
 	// Limit log size
@@ -108,7 +108,7 @@ func (flow *RebootServerFlow) Reboot(message *core.Message, bot core.IBot) error
 		Payload: servers[0].Name,
 	}
 	messages := []string{
-		fmt.Sprintf("🟡 Server reboot requested by %s %s.", message.Sender.FirstName, message.Sender.LastName),
+		fmt.Sprintf("🟡 Server reboot requested by %s", message.Sender.FirstName),
 		"",
 		fmt.Sprintf("To reboot <b>%s</b> press the button below:", servers[0].Name),
 	}
