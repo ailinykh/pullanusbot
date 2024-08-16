@@ -9,20 +9,18 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/ailinykh/pullanusbot/v2/internal/api/logger"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/api"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/helpers"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/infrastructure"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/usecases"
-	"github.com/google/logger"
 )
 
 func main() {
-	config := NewDefaultConfig()
-	logger := createLogger(config.WorkingDir())
-	defer logger.Close()
-
 	ctx, cancel := context.WithCancel(context.Background())
+	config := NewDefaultConfig()
+	logger := logger.NewGoogleLogger(ctx, config.WorkingDir())
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGABRT)
@@ -181,14 +179,4 @@ func main() {
 	logger.Info("waiting for context...")
 	<-ctx.Done()
 	logger.Info("attempt to shutdown gracefully...")
-}
-
-func createLogger(workingDir string) core.ILogger {
-	logFilePath := path.Join(workingDir, "pullanusbot.log")
-	lf, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
-	if err != nil {
-		panic(err)
-	}
-
-	return logger.Init("pullanusbot", true, false, lf)
 }
