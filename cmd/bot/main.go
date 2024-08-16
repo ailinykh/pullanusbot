@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"os"
+	"os/signal"
 	"path"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/api"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
@@ -18,6 +21,16 @@ func main() {
 	config := NewDefaultConfig()
 	logger := createLogger(config.WorkingDir())
 	defer logger.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGABRT)
+	go func() {
+		sig := <-sigs
+		logger.Errorf("%s signal received", sig)
+		cancel()
+	}()
 
 	dbFile := path.Join(config.WorkingDir(), "pullanusbot.db")
 
@@ -163,7 +176,11 @@ func main() {
 	telebot.AddHandler("/start", startFlow.Start)
 	telebot.AddHandler("/help", startFlow.Help)
 	// Start endless loop
-	telebot.Run()
+	go telebot.Run()
+
+	logger.Info("waiting for context...")
+	<-ctx.Done()
+	logger.Info("attempt to shutdown gracefully...")
 }
 
 func createLogger(workingDir string) core.ILogger {
