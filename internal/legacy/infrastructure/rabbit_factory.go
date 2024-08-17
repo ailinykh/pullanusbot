@@ -1,6 +1,8 @@
 package infrastructure
 
 import (
+	"fmt"
+
 	"github.com/ailinykh/pullanusbot/v2/internal/core"
 	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 	"github.com/streadway/amqp"
@@ -34,8 +36,7 @@ func (q *RabbitFactory) Close() {
 func (q *RabbitFactory) reestablishConnection(url string) error {
 	conn, err := amqp.Dial(url)
 	if err != nil {
-		q.l.Error(err)
-		return err
+		return fmt.Errorf("failed to establish connection: %v", err)
 	}
 
 	ch, err := conn.Channel()
@@ -52,7 +53,7 @@ func (q *RabbitFactory) reestablishConnection(url string) error {
 		q.l.Error("connection closed", "error", err)
 		errr := q.reestablishConnection(url)
 		if errr != nil {
-			q.l.Error(errr)
+			q.l.Error("failed to establish connection", errr)
 		}
 	}()
 
