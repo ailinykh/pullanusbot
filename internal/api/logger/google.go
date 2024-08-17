@@ -38,10 +38,22 @@ func (l *GoogleLogger) Debug(v ...interface{}) {
 }
 
 func (l *GoogleLogger) Warn(v ...interface{}) {
+	if len(v) > 0 {
+		if s, ok := v[0].(string); ok {
+			l.l.WarningDepth(1, fmt.Sprintf(s, v[1:]...))
+			return
+		}
+	}
 	l.l.WarningDepth(1, v...)
 }
 
 func (l *GoogleLogger) Error(v ...interface{}) {
+	if len(v) > 0 {
+		if s, ok := v[0].(string); ok {
+			l.l.ErrorDepth(1, fmt.Sprintf(s, v[1:]...))
+			return
+		}
+	}
 	l.l.ErrorDepth(1, v...)
 }
 
@@ -50,6 +62,12 @@ func (l *GoogleLogger) Errorf(s string, v ...interface{}) {
 }
 
 func (l *GoogleLogger) Info(v ...interface{}) {
+	if len(v) > 0 {
+		if s, ok := v[0].(string); ok {
+			l.l.InfoDepth(1, fmt.Sprintf(s, v[1:]...))
+			return
+		}
+	}
 	l.l.InfoDepth(1, v...)
 }
 
