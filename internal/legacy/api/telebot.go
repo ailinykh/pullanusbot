@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -15,8 +14,15 @@ import (
 	tb "gopkg.in/telebot.v3"
 )
 
+type TelebotOpts struct {
+	BotToken     string
+	BotAPIUrl    *string
+	ReportChatId *int64
+}
+
 // Telebot is a telegram API
 type Telebot struct {
+	opts             TelebotOpts
 	bot              *tb.Bot
 	logger           core.Logger
 	coreFactory      *CoreFactory
@@ -29,14 +35,14 @@ type Telebot struct {
 }
 
 // CreateTelebot is a default Telebot factory
-func CreateTelebot(token string, logger core.Logger) *Telebot {
+func CreateTelebot(opts TelebotOpts, logger core.Logger) *Telebot {
 	poller := tb.NewMiddlewarePoller(&tb.LongPoller{Timeout: 10 * time.Second}, func(upd *tb.Update) bool {
 		return true
 	})
 
 	var err error
 	bot, err := tb.NewBot(tb.Settings{
-		Token:  token,
+		Token:  opts.BotToken,
 		Poller: poller,
 	})
 
@@ -45,13 +51,13 @@ func CreateTelebot(token string, logger core.Logger) *Telebot {
 	}
 
 	var multipart *helpers.SendMultipartVideo
-	apiURL := os.Getenv("BOT_API_URL")
-	if len(apiURL) > 0 {
-		apiURL = fmt.Sprintf("%s/bot%s/sendVideo", apiURL, token)
+	if opts.BotAPIUrl != nil {
+		apiURL := fmt.Sprintf("%s/bot%s/sendVideo", *opts.BotAPIUrl, opts.BotToken)
 		multipart = helpers.CreateSendMultipartVideo(logger, apiURL)
 	}
 
 	telebot := &Telebot{
+		opts,
 		bot,
 		logger,
 		&CoreFactory{},
@@ -247,21 +253,19 @@ func (t *Telebot) registerCommand(command string) {
 }
 
 func (t *Telebot) reportError(m *tb.Message, e error) {
-	chatID, err := strconv.ParseInt(os.Getenv("ADMIN_CHAT_ID"), 10, 64)
-	if err != nil {
-		t.logger.Error("ADMIN_CHAT_ID parsing failed %s", os.Getenv("ADMIN_CHAT_ID"))
+	if t.opts.ReportChatId == nil {
 		return
 	}
-	chat := &tb.Chat{ID: chatID}
+	chat := &tb.Chat{ID: *t.opts.ReportChatId}
 	opts := &tb.SendOptions{DisableWebPagePreview: true}
-	_, err = t.bot.Forward(chat, m, opts)
+	_, err := t.bot.Forward(chat, m, opts)
 	if err != nil {
-		t.logger.Error(err)
+		t.logger.Error("forward message failed", "message", m, "error", err)
 	}
 
 	_, err = t.bot.Send(chat, e.Error(), opts)
 	if err != nil {
-		t.logger.Error(err)
+		t.logger.Error("send message failed", "error", err)
 	}
 }
 
