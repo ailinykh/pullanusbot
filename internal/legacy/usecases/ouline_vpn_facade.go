@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/api"
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/infrastructure"
 )
 
-func CreateOutlineVpnFacade(apiUrl string, dbFile string, l core.ILogger, userStorage core.IUserStorage) core.IVpnAPI {
+func CreateOutlineVpnFacade(apiUrl string, dbFile string, l core.Logger, userStorage legacy.IUserStorage) legacy.IVpnAPI {
 	u, err := url.Parse(apiUrl)
 	if err != nil {
 		panic(err)
@@ -21,24 +22,24 @@ func CreateOutlineVpnFacade(apiUrl string, dbFile string, l core.ILogger, userSt
 }
 
 type OutlineVpnFacade struct {
-	l              core.ILogger
+	l              core.Logger
 	api            *api.OutlineAPI
 	host           string
 	outlineStorage *infrastructure.OutlineStorage
-	userStorage    core.IUserStorage
+	userStorage    legacy.IUserStorage
 }
 
 // GetKeys is a core.IVpnAPI interface implementation
-func (facade *OutlineVpnFacade) GetKeys(chatID int64) ([]*core.VpnKey, error) {
+func (facade *OutlineVpnFacade) GetKeys(chatID int64) ([]*legacy.VpnKey, error) {
 	keys, err := facade.outlineStorage.GetKeys(chatID)
 	if err != nil {
 		facade.l.Error(err)
 		return nil, err
 	}
 
-	keys2 := []*core.VpnKey{}
+	keys2 := []*legacy.VpnKey{}
 	for _, k := range keys {
-		keys2 = append(keys2, &core.VpnKey{
+		keys2 = append(keys2, &legacy.VpnKey{
 			ID:     k.ID,
 			ChatID: k.ChatID,
 			Title:  k.Title,
@@ -49,7 +50,7 @@ func (facade *OutlineVpnFacade) GetKeys(chatID int64) ([]*core.VpnKey, error) {
 }
 
 // CreateKey is a core.IVpnAPI interface implementation
-func (facade *OutlineVpnFacade) CreateKey(chatID int64, title string) (*core.VpnKey, error) {
+func (facade *OutlineVpnFacade) CreateKey(chatID int64, title string) (*legacy.VpnKey, error) {
 	keys, err := facade.outlineStorage.GetKeys(chatID)
 	if err != nil {
 		facade.l.Error(err)
@@ -74,7 +75,7 @@ func (facade *OutlineVpnFacade) CreateKey(chatID int64, title string) (*core.Vpn
 		return nil, err
 	}
 
-	return &core.VpnKey{
+	return &legacy.VpnKey{
 		ID:     key.ID,
 		ChatID: chatID,
 		Title:  title,
@@ -83,7 +84,7 @@ func (facade *OutlineVpnFacade) CreateKey(chatID int64, title string) (*core.Vpn
 }
 
 // DeleteKey is a core.IVpnAPI interface implementation
-func (facade *OutlineVpnFacade) DeleteKey(key *core.VpnKey) error {
+func (facade *OutlineVpnFacade) DeleteKey(key *legacy.VpnKey) error {
 	err := facade.api.DeleteKey(key)
 	if err != nil {
 		facade.l.Error(err)

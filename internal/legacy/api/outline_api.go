@@ -5,14 +5,15 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
 // CreateOutlineAPI is a default OutlineAPI factory
-func CreateOutlineAPI(l core.ILogger, url string) *OutlineAPI {
+func CreateOutlineAPI(l core.Logger, url string) *OutlineAPI {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -21,7 +22,7 @@ func CreateOutlineAPI(l core.ILogger, url string) *OutlineAPI {
 }
 
 type OutlineAPI struct {
-	l      core.ILogger
+	l      core.Logger
 	url    string
 	client *http.Client
 }
@@ -48,7 +49,7 @@ func (api *OutlineAPI) GetKeys(chatID int64) ([]*VpnKey, error) {
 	defer res.Body.Close()
 
 	var keys OutlineAPIKeys
-	body, _ := ioutil.ReadAll(res.Body)
+	body, _ := io.ReadAll(res.Body)
 
 	err = json.Unmarshal(body, &keys)
 	if err != nil {
@@ -68,7 +69,7 @@ func (api *OutlineAPI) CreateKey(chatID int64, name string) (*VpnKey, error) {
 	defer res.Body.Close()
 
 	var key VpnKey
-	body, _ := ioutil.ReadAll(res.Body)
+	body, _ := io.ReadAll(res.Body)
 
 	err = json.Unmarshal(body, &key)
 	if err != nil {
@@ -98,14 +99,14 @@ func (api *OutlineAPI) CreateKey(chatID int64, name string) (*VpnKey, error) {
 	}
 
 	if res.StatusCode != 204 {
-		api.l.Warningf("unexpected response: %+v", res)
+		api.l.Warn("unexpected response: %+v", res)
 		return nil, fmt.Errorf("can't rename created key")
 	}
 
 	return &key, nil
 }
 
-func (api *OutlineAPI) DeleteKey(key *core.VpnKey) error {
+func (api *OutlineAPI) DeleteKey(key *legacy.VpnKey) error {
 	req, err := http.NewRequest(http.MethodDelete, api.url+"/access-keys/"+key.ID, bytes.NewBuffer([]byte{}))
 	if err != nil {
 		api.l.Error(err)
@@ -119,7 +120,7 @@ func (api *OutlineAPI) DeleteKey(key *core.VpnKey) error {
 	}
 
 	if res.StatusCode != 204 {
-		api.l.Warningf("unexpected response: %+v", res)
+		api.l.Warn("unexpected response: %+v", res)
 		return fmt.Errorf("can't remove key")
 	}
 

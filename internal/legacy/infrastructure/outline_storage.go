@@ -3,14 +3,15 @@ package infrastructure
 import (
 	"time"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
 // CreateOutlineStorage is a default OutlineStorage factory
-func CreateOutlineStorage(dbFile string, l core.ILogger) *OutlineStorage {
+func CreateOutlineStorage(dbFile string, l core.Logger) *OutlineStorage {
 	conn, err := gorm.Open(sqlite.Open(dbFile+"?cache=shared"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Error),
 	})
@@ -24,7 +25,7 @@ func CreateOutlineStorage(dbFile string, l core.ILogger) *OutlineStorage {
 
 type OutlineStorage struct {
 	conn *gorm.DB
-	l    core.ILogger
+	l    core.Logger
 }
 
 type VpnKey struct {
@@ -50,7 +51,7 @@ func (storage *OutlineStorage) GetKeys(chatID int64) ([]*VpnKey, error) {
 }
 
 func (storage *OutlineStorage) CreateKey(id string, chatID int64, host string, title string, key string) error {
-	storage.l.Infof("creating key with id: %s, chat_id: %d, host: %s, title: %s, key: %s", id, chatID, host, title, key)
+	storage.l.Info("creating key with id: %s, chat_id: %d, host: %s, title: %s, key: %s", id, chatID, host, title, key)
 	k := VpnKey{
 		ID:     id,
 		ChatID: chatID,
@@ -62,7 +63,7 @@ func (storage *OutlineStorage) CreateKey(id string, chatID int64, host string, t
 	return res.Error
 }
 
-func (storage *OutlineStorage) DeleteKey(key *core.VpnKey, host string) error {
+func (storage *OutlineStorage) DeleteKey(key *legacy.VpnKey, host string) error {
 	res := storage.conn.Delete(VpnKey{
 		ID:     key.ID,
 		ChatID: key.ChatID,
