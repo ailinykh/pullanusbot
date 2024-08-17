@@ -9,7 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/helpers"
 	tb "gopkg.in/telebot.v3"
 )
@@ -17,18 +18,18 @@ import (
 // Telebot is a telegram API
 type Telebot struct {
 	bot              *tb.Bot
-	logger           core.ILogger
+	logger           core.Logger
 	coreFactory      *CoreFactory
 	multipart        *helpers.SendMultipartVideo
 	commandHandlers  []string
-	textHandlers     []core.ITextHandler
-	documentHandlers []core.IDocumentHandler
-	imageHandlers    []core.IImageHandler
-	videoHandlers    []core.IVideoHandler
+	textHandlers     []legacy.ITextHandler
+	documentHandlers []legacy.IDocumentHandler
+	imageHandlers    []legacy.IImageHandler
+	videoHandlers    []legacy.IVideoHandler
 }
 
 // CreateTelebot is a default Telebot factory
-func CreateTelebot(token string, logger core.ILogger) *Telebot {
+func CreateTelebot(token string, logger core.Logger) *Telebot {
 	poller := tb.NewMiddlewarePoller(&tb.LongPoller{Timeout: 10 * time.Second}, func(upd *tb.Update) bool {
 		return true
 	})
@@ -56,10 +57,10 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		&CoreFactory{},
 		multipart,
 		[]string{},
-		[]core.ITextHandler{},
-		[]core.IDocumentHandler{},
-		[]core.IImageHandler{},
-		[]core.IVideoHandler{},
+		[]legacy.ITextHandler{},
+		[]legacy.IDocumentHandler{},
+		[]legacy.IImageHandler{},
+		[]legacy.IVideoHandler{},
 	}
 
 	bot.Handle(tb.OnText, func(c tb.Context) error {
@@ -72,7 +73,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 				if err.Error() == "not implemented" {
 					err = nil // skip "not implemented" error
 				} else {
-					logger.Errorf("%T: %s", h, err)
+					logger.Error("%T: %s", h, err)
 					telebot.reportError(c.Message(), err)
 				}
 			}
@@ -90,7 +91,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 			mutex.Lock()
 			defer mutex.Unlock()
 
-			logger.Infof("Attempt to download %s %s (sent by %s)", m.Document.FileName, m.Document.MIME, m.Sender.Username)
+			logger.Info("Attempt to download %s %s (sent by %s)", m.Document.FileName, m.Document.MIME, m.Sender.Username)
 
 			path := path.Join(os.TempDir(), m.Document.FileName)
 			err := bot.Download(&m.Document.File, path)
@@ -99,16 +100,16 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 				return err
 			}
 
-			logger.Infof("Downloaded to %s", strings.ReplaceAll(path, os.TempDir(), "$TMPDIR/"))
+			logger.Info("Downloaded to %s", strings.ReplaceAll(path, os.TempDir(), "$TMPDIR/"))
 			defer os.Remove(path)
 
 			for _, h := range telebot.documentHandlers {
-				err = h.HandleDocument(&core.Document{
-					File: core.File{Name: m.Document.FileName, Path: path},
+				err = h.HandleDocument(&legacy.Document{
+					File: legacy.File{Name: m.Document.FileName, Path: path},
 					MIME: m.Document.MIME,
 				}, telebot.coreFactory.makeMessage(m), telebot.coreFactory.makeIBot(m, telebot))
 				if err != nil {
-					logger.Errorf("%T: %s", h, err)
+					logger.Error("%T: %s", h, err)
 					telebot.reportError(m, err)
 				}
 			}
@@ -119,7 +120,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 	bot.Handle(tb.OnPhoto, func(c tb.Context) error {
 		var err error
 		var m = c.Message()
-		image := &core.Image{
+		image := &legacy.Image{
 			ID:      m.Photo.FileID,
 			FileURL: m.Photo.FileURL,
 			Width:   m.Photo.Width,
@@ -129,7 +130,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		for _, h := range telebot.imageHandlers {
 			err = h.HandleImage(image, telebot.coreFactory.makeMessage(m), telebot.coreFactory.makeIBot(m, telebot))
 			if err != nil {
-				logger.Errorf("%T: %s", h, err)
+				logger.Error("%T: %s", h, err)
 				telebot.reportError(m, err)
 			}
 		}
@@ -139,7 +140,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 	bot.Handle(tb.OnVideo, func(c tb.Context) error {
 		var err error
 		var m = c.Message()
-		video := &core.Video{
+		video := &legacy.Video{
 			ID:     m.Video.FileID,
 			Width:  m.Video.Width,
 			Height: m.Video.Height,
@@ -148,7 +149,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 		for _, h := range telebot.videoHandlers {
 			err = h.HandleVideo(video, telebot.coreFactory.makeMessage(m), telebot.coreFactory.makeIBot(m, telebot))
 			if err != nil {
-				logger.Errorf("%T: %s", h, err)
+				logger.Error("%T: %s", h, err)
 				telebot.reportError(m, err)
 			}
 		}
@@ -159,7 +160,7 @@ func CreateTelebot(token string, logger core.ILogger) *Telebot {
 }
 
 // Download is a core.IImageDownloader interface implementation
-func (t *Telebot) Download(image *core.Image) (*core.File, error) {
+func (t *Telebot) Download(image *legacy.Image) (*legacy.File, error) {
 	//TODO: potential race condition
 	file := tb.FromURL(image.FileURL)
 	file.FileID = image.ID
@@ -171,24 +172,24 @@ func (t *Telebot) Download(image *core.Image) (*core.File, error) {
 		return nil, err
 	}
 
-	t.logger.Infof("image %s downloaded to %s", file.UniqueID, path)
+	t.logger.Info("image %s downloaded to %s", file.UniqueID, path)
 	return t.coreFactory.makeFile(name, path), nil
 }
 
 // AddHandler register object as one of core.Handler's
 func (t *Telebot) AddHandler(handler ...interface{}) {
 	switch h := handler[0].(type) {
-	case core.IDocumentHandler:
+	case legacy.IDocumentHandler:
 		t.documentHandlers = append(t.documentHandlers, h)
-	case core.ITextHandler:
+	case legacy.ITextHandler:
 		t.textHandlers = append(t.textHandlers, h)
-	case core.IImageHandler:
+	case legacy.IImageHandler:
 		t.imageHandlers = append(t.imageHandlers, h)
-	case core.IVideoHandler:
+	case legacy.IVideoHandler:
 		t.videoHandlers = append(t.videoHandlers, h)
 	case string:
 		t.registerCommand(h)
-		if f, ok := handler[1].(func(*core.Message, core.IBot) error); ok {
+		if f, ok := handler[1].(func(*legacy.Message, legacy.IBot) error); ok {
 			t.bot.Handle(h, func(c tb.Context) error {
 				m := c.Message()
 				return f(t.coreFactory.makeMessage(m), &TelebotAdapter{m, t})
@@ -200,12 +201,12 @@ func (t *Telebot) AddHandler(handler ...interface{}) {
 		panic(fmt.Sprintf("something wrong with %s", h))
 	}
 
-	if h, ok := handler[0].(core.IButtonHandler); ok {
+	if h, ok := handler[0].(legacy.IButtonHandler); ok {
 		for _, id := range h.GetButtonIds() {
 			t.bot.Handle("\f"+id, func(c tb.Context) error {
 				m := c.Message()
 				cb := c.Callback()
-				button := core.Button{
+				button := legacy.Button{
 					ID:      cb.Unique,
 					Text:    c.Text(),
 					Payload: c.Data(),
@@ -248,7 +249,7 @@ func (t *Telebot) registerCommand(command string) {
 func (t *Telebot) reportError(m *tb.Message, e error) {
 	chatID, err := strconv.ParseInt(os.Getenv("ADMIN_CHAT_ID"), 10, 64)
 	if err != nil {
-		t.logger.Errorf("ADMIN_CHAT_ID parsing failed %s", os.Getenv("ADMIN_CHAT_ID"))
+		t.logger.Error("ADMIN_CHAT_ID parsing failed %s", os.Getenv("ADMIN_CHAT_ID"))
 		return
 	}
 	chat := &tb.Chat{ID: chatID}
@@ -267,12 +268,12 @@ func (t *Telebot) reportError(m *tb.Message, e error) {
 type CoreFactory struct {
 }
 
-func (factory *CoreFactory) makeMessage(m *tb.Message) *core.Message {
+func (factory *CoreFactory) makeMessage(m *tb.Message) *legacy.Message {
 	text := m.Text
 	if m.Document != nil {
 		text = m.Caption
 	}
-	message := &core.Message{
+	message := &legacy.Message{
 		ID:        m.ID,
 		Chat:      factory.makeChat(m.Chat),
 		IsPrivate: m.Private(),
@@ -291,20 +292,20 @@ func (factory *CoreFactory) makeMessage(m *tb.Message) *core.Message {
 	return message
 }
 
-func (factory *CoreFactory) makeChat(c *tb.Chat) *core.Chat {
+func (factory *CoreFactory) makeChat(c *tb.Chat) *legacy.Chat {
 	title := c.Title
 	if c.Type == tb.ChatPrivate {
 		title = c.FirstName + " " + c.LastName
 	}
-	return &core.Chat{
+	return &legacy.Chat{
 		ID:    c.ID,
 		Title: title,
 		Type:  string(c.Type),
 	}
 }
 
-func (CoreFactory) makeUser(u *tb.User) *core.User {
-	return &core.User{
+func (CoreFactory) makeUser(u *tb.User) *legacy.User {
+	return &legacy.User{
 		ID:           u.ID,
 		FirstName:    u.FirstName,
 		LastName:     u.LastName,
@@ -313,9 +314,9 @@ func (CoreFactory) makeUser(u *tb.User) *core.User {
 	}
 }
 
-func (factory *CoreFactory) makeVideo(v *tb.Video) *core.Video {
-	return &core.Video{
-		File: core.File{
+func (factory *CoreFactory) makeVideo(v *tb.Video) *legacy.Video {
+	return &legacy.Video{
+		File: legacy.File{
 			Name: v.FileName,
 			Path: v.FileURL,
 		},
@@ -329,9 +330,9 @@ func (factory *CoreFactory) makeVideo(v *tb.Video) *core.Video {
 	}
 }
 
-func (CoreFactory) makePhoto(p *tb.Photo) *core.Image {
-	return &core.Image{
-		File: core.File{
+func (CoreFactory) makePhoto(p *tb.Photo) *legacy.Image {
+	return &legacy.Image{
+		File: legacy.File{
 			Name: p.FileLocal,
 			Path: p.FilePath,
 		},
@@ -342,10 +343,10 @@ func (CoreFactory) makePhoto(p *tb.Photo) *core.Image {
 	}
 }
 
-func (CoreFactory) makeCommands(commands []tb.Command) []core.Command {
-	comands := []core.Command{}
+func (CoreFactory) makeCommands(commands []tb.Command) []legacy.Command {
+	comands := []legacy.Command{}
 	for _, command := range commands {
-		c := core.Command{
+		c := legacy.Command{
 			Text:        command.Text,
 			Description: command.Description,
 		}
@@ -354,13 +355,13 @@ func (CoreFactory) makeCommands(commands []tb.Command) []core.Command {
 	return comands
 }
 
-func (CoreFactory) makeFile(name string, path string) *core.File {
-	return &core.File{
+func (CoreFactory) makeFile(name string, path string) *legacy.File {
+	return &legacy.File{
 		Name: name,
 		Path: path,
 	}
 }
 
-func (CoreFactory) makeIBot(m *tb.Message, t *Telebot) core.IBot {
+func (CoreFactory) makeIBot(m *tb.Message, t *Telebot) legacy.IBot {
 	return &TelebotAdapter{m, t}
 }

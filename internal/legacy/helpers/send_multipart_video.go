@@ -3,7 +3,6 @@ package helpers
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -11,21 +10,22 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
 // FIXME: SendMultipartVideo should conform to core.ISendVideoStrategy
-func CreateSendMultipartVideo(l core.ILogger, url core.URL) *SendMultipartVideo {
+func CreateSendMultipartVideo(l core.Logger, url legacy.URL) *SendMultipartVideo {
 	return &SendMultipartVideo{l, http.DefaultClient, url}
 }
 
 type SendMultipartVideo struct {
-	l      core.ILogger
+	l      core.Logger
 	client *http.Client
-	url    core.URL
+	url    legacy.URL
 }
 
-func (strategy *SendMultipartVideo) SendVideo(video *core.Video, caption string, chatId int64) ([]byte, error) {
+func (strategy *SendMultipartVideo) SendVideo(video *legacy.Video, caption string, chatId int64) ([]byte, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -44,7 +44,7 @@ func (strategy *SendMultipartVideo) SendVideo(video *core.Video, caption string,
 	writer.Close()
 
 	start := time.Now()
-	strategy.l.Infof("uploading %s (%.2f MB)", video.Name, float64(video.Size)/1024/1024)
+	strategy.l.Info("uploading %s (%.2f MB)", video.Name, float64(video.Size)/1024/1024)
 	r, _ := http.NewRequest("POST", strategy.url, body)
 	r.Header.Add("Content-Type", writer.FormDataContentType())
 	res, err := strategy.client.Do(r)
@@ -53,8 +53,8 @@ func (strategy *SendMultipartVideo) SendVideo(video *core.Video, caption string,
 		return nil, err
 	}
 	defer res.Body.Close()
-	strategy.l.Infof("successfully sent %s (%.2f MB) %s", video.Name, float64(video.Size)/1024/1024, time.Now().Sub(start))
-	return ioutil.ReadAll(res.Body)
+	strategy.l.Info("successfully sent %s (%.2f MB) %s", video.Name, float64(video.Size)/1024/1024, time.Now().Sub(start))
+	return io.ReadAll(res.Body)
 }
 
 func (strategy *SendMultipartVideo) addParams(writer *multipart.Writer, params map[string]interface{}) {
@@ -72,7 +72,7 @@ func (strategy *SendMultipartVideo) addParams(writer *multipart.Writer, params m
 		case int64:
 			part, err = writer.CreateFormField(key)
 			reader = strings.NewReader(strconv.FormatInt(p, 10))
-		case core.File:
+		case legacy.File:
 			file, err := os.Open(p.Path)
 			if err != nil {
 				strategy.l.Error(err)
@@ -82,7 +82,7 @@ func (strategy *SendMultipartVideo) addParams(writer *multipart.Writer, params m
 			part, err = writer.CreateFormFile(key, file.Name())
 			reader = file
 		default:
-			strategy.l.Errorf("unexpected param type %+v", p)
+			strategy.l.Error("unexpected param type %+v", p)
 			continue
 		}
 
