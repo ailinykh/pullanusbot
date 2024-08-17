@@ -2,19 +2,19 @@ package api
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
 )
 
-func CreateJsonCookieJar(l core.ILogger, cookieFile string) http.CookieJar {
+func CreateJsonCookieJar(l core.Logger, cookieFile string) http.CookieJar {
 	return &JsonCookieJar{l, cookieFile, []*http.Cookie{}}
 }
 
 type JsonCookieJar struct {
-	l        core.ILogger
+	l        core.Logger
 	filename string
 	cookies  []*http.Cookie
 }
@@ -27,7 +27,7 @@ func (jar *JsonCookieJar) SetCookies(u *url.URL, cookies []*http.Cookie) {
 		return
 	}
 
-	err = ioutil.WriteFile(jar.filename, data, 0644)
+	err = os.WriteFile(jar.filename, data, 0644)
 	if err != nil {
 		jar.l.Error(err)
 		return
@@ -35,7 +35,7 @@ func (jar *JsonCookieJar) SetCookies(u *url.URL, cookies []*http.Cookie) {
 }
 
 func (jar *JsonCookieJar) Cookies(u *url.URL) []*http.Cookie {
-	data, err := ioutil.ReadFile(jar.filename)
+	data, err := os.ReadFile(jar.filename)
 	if err != nil {
 		jar.l.Error(err)
 		jar.cookies = []*http.Cookie{}

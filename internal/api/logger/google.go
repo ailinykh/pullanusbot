@@ -33,6 +33,14 @@ type GoogleLogger struct {
 	l *logger.Logger
 }
 
+func (l *GoogleLogger) Debug(v ...interface{}) {
+	l.l.InfoDepth(1, v...)
+}
+
+func (l *GoogleLogger) Warn(v ...interface{}) {
+	l.l.WarningDepth(1, v...)
+}
+
 func (l *GoogleLogger) Error(v ...interface{}) {
 	l.l.ErrorDepth(1, v...)
 }
