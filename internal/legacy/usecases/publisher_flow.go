@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ailinykh/pullanusbot/v2/internal/core"
@@ -64,7 +65,7 @@ func (p *PublisherFlow) runLoop() {
 
 	disposal := func(m legacy.Message, bot legacy.IBot, timeout int) {
 		time.Sleep(time.Duration(timeout) * time.Second)
-		p.l.Info("disposing message %d from chat %d", m.ID, m.Chat.ID)
+		p.l.Info("disposing message", "message_id", m.ID, "chat_id", m.Chat.ID)
 		err := bot.Delete(&m)
 		if err != nil {
 			p.l.Error(err)
@@ -74,12 +75,12 @@ func (p *PublisherFlow) runLoop() {
 	for {
 		select {
 		case is := <-p.imageChan:
-			p.l.Info("got photo %s", is.imageID)
+			p.l.Info("got photo", "iamge_id", is.imageID)
 			queue = append(queue, is.imageID)
 
 		case <-time.After(1 * time.Second):
 			if len(queue) > 0 {
-				p.l.Info("had %d actual photo(s)", len(queue))
+				p.l.Info(fmt.Sprintf("had %d actual photo(s)", len(queue)))
 				photos = queue
 				queue = []string{}
 			}
@@ -101,7 +102,7 @@ func (p *PublisherFlow) runLoop() {
 					go disposal(*sent, ms.bot, 30)
 				}
 			default:
-				p.l.Info("have %d actual photos", count)
+				p.l.Info("have many actual photos", "count", count)
 				album := []*legacy.Image{}
 				for _, p := range photos {
 					album = append(album, &legacy.Image{ID: p})

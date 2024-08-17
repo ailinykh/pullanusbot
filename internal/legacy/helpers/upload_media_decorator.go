@@ -44,7 +44,7 @@ func (decorator *UploadMediaDecorator) fallbackToUploading(media *legacy.Media, 
 
 	switch media.Type {
 	case legacy.TText:
-		decorator.l.Warn("unexpected media type %+v", media.Type)
+		decorator.l.Warn("unexpected media type", "type", media.Type)
 	case legacy.TPhoto:
 		image := &legacy.Image{File: *file}
 		_, err = bot.SendImage(image, media.Caption)
@@ -77,7 +77,7 @@ func (decorator *UploadMediaDecorator) downloadMedia(media *legacy.Media) (*lega
 		return nil, fmt.Errorf("failed to download video: %v", err)
 	}
 
-	decorator.l.Info("file downloaded: %s %0.2fMB", file.Name, float64(file.Size)/1024/1024)
+	decorator.l.Info("file downloaded", "file_name", file.Name, "file_size", fmt.Sprintf("%0.2fMB", float64(file.Size)/1024/1024))
 
 	return file, nil
 }

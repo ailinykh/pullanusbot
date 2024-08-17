@@ -35,7 +35,7 @@ func (flow *ImageFlow) HandleImage(image *legacy.Image, message *legacy.Message,
 		return err
 	}
 
-	flow.l.Info(url)
+	flow.l.Info("image uploaded", "url", url)
 	_, err = bot.SendText(url)
 	return err
 }

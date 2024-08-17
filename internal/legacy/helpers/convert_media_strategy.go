@@ -26,7 +26,7 @@ type ConvertMediaStrategy struct {
 func (cms *ConvertMediaStrategy) SendMedia(media []*legacy.Media, bot legacy.IBot) error {
 	for _, m := range media {
 		if cms.needToConvert(m) {
-			cms.l.Info("expected mp4/h264 codec, but got %s", m.Codec)
+			cms.l.Info("fallback ot convert", "codec", m.Codec)
 			return cms.fallbackToConverting(m, bot)
 		}
 	}
@@ -83,7 +83,7 @@ func (cms *ConvertMediaStrategy) downloadMedia(media *legacy.Media) (*legacy.Fil
 		return nil, fmt.Errorf("failed to download video: %v", err)
 	}
 
-	cms.l.Info("file downloaded: %s %0.2fMB", file.Name, float64(file.Size)/1024/1024)
+	cms.l.Info("file downloaded", "file_name", file.Name, "file_size", fmt.Sprintf("%0.2fMB", float64(file.Size)/1024/1024))
 
 	return file, nil
 }

@@ -54,7 +54,7 @@ func (flow *LinkFlow) handleURL(url legacy.URL, message *legacy.Message, bot leg
 		case legacy.TVideo:
 			m.Caption = fmt.Sprintf(`<a href="%s">🔗</a> <b>%s</b> <i>(by %s)</i>`, m.URL, path.Base(m.URL), message.Sender.DisplayName())
 		case legacy.TText:
-			flow.l.Warn("Unexpected content type %+v", m)
+			flow.l.Warn("Unexpected content type", "type", m)
 		}
 	}
 

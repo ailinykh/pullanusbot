@@ -26,7 +26,7 @@ type TwitterFlow struct {
 
 // Process is a ITweetHandler protocol implementation
 func (flow *TwitterFlow) Process(tweetID string, message *legacy.Message, bot legacy.IBot) error {
-	flow.l.Info("processing tweet %s", tweetID)
+	flow.l.Info("processing tweet", "tweet_id", tweetID)
 	media, err := flow.mediaFactory.CreateMedia(tweetID)
 	if err != nil {
 		return fmt.Errorf("failed to create media: %v", err)

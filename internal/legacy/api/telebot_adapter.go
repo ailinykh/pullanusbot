@@ -108,19 +108,19 @@ func (a *TelebotAdapter) SendMedia(media *core.Media) (*core.Message, error) {
 	opts := &tb.SendOptions{ParseMode: tb.ModeHTML, DisableWebPagePreview: true}
 	switch media.Type {
 	case core.TPhoto:
-		a.t.logger.Info("sending media as photo: %v", media)
+		a.t.logger.Info("sending media as photo", "media", media)
 		file := &tb.Photo{File: tb.FromURL(media.ResourceURL)}
 		file.Caption = makeCaption(media.Caption)
 		a.t.bot.Notify(a.m.Chat, tb.UploadingPhoto)
 		sent, err = a.t.bot.Send(a.m.Chat, file, opts)
 	case core.TVideo:
-		a.t.logger.Info("sending media as video: %v", media)
+		a.t.logger.Info("sending media as video", "media", media)
 		file := &tb.Video{File: tb.FromURL(media.ResourceURL)}
 		file.Caption = makeCaption(media.Caption)
 		a.t.bot.Notify(a.m.Chat, tb.UploadingVideo)
 		sent, err = a.t.bot.Send(a.m.Chat, file, opts)
 	case core.TText:
-		a.t.logger.Info("sending media as text: %v", media)
+		a.t.logger.Info("sending media as text", "media", media)
 		sent, err = a.t.bot.Send(a.m.Chat, makeCaption(media.Caption), opts)
 	}
 
@@ -182,14 +182,14 @@ func (a *TelebotAdapter) SendVideo(vf *core.Video, caption string) (*core.Messag
 		}
 		return a.t.coreFactory.makeMessage(resp.Result), err
 	}
-	a.t.logger.Info("uploading video %s (%.2f MB)", vf.Name, float64(vf.Size)/1024/1024)
+	a.t.logger.Info("uploading video", "file_name", vf.Name, "size", fmt.Sprintf("(%.2f MB)", float64(vf.Size)/1024/1024))
 	video := makeTbVideo(vf, caption)
 	a.t.bot.Notify(a.m.Chat, tb.UploadingVideo)
 	sent, err := video.Send(a.t.bot, a.m.Chat, &tb.SendOptions{ParseMode: tb.ModeHTML})
 	if err != nil {
 		return nil, err
 	}
-	a.t.logger.Info("%s successfully sent", vf.Name)
+	a.t.logger.Info("video successfully sent", "file_name", vf.Name)
 	return a.t.coreFactory.makeMessage(sent), err
 }
 

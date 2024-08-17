@@ -49,7 +49,7 @@ func (q *RabbitFactory) reestablishConnection(url string) error {
 
 	go func() {
 		err := <-conn.NotifyClose(make(chan *amqp.Error))
-		q.l.Error("connection closed", err)
+		q.l.Error("connection closed", "error", err)
 		errr := q.reestablishConnection(url)
 		if errr != nil {
 			q.l.Error(errr)

@@ -73,7 +73,7 @@ func CreateTelebot(token string, logger core.Logger) *Telebot {
 				if err.Error() == "not implemented" {
 					err = nil // skip "not implemented" error
 				} else {
-					logger.Error("%T: %s", h, err)
+					logger.Error(fmt.Sprintf("%T: %s", h, err))
 					telebot.reportError(c.Message(), err)
 				}
 			}
@@ -91,7 +91,7 @@ func CreateTelebot(token string, logger core.Logger) *Telebot {
 			mutex.Lock()
 			defer mutex.Unlock()
 
-			logger.Info("Attempt to download %s %s (sent by %s)", m.Document.FileName, m.Document.MIME, m.Sender.Username)
+			logger.Info("attempt to download document", "file_name", m.Document.FileName, "mime", m.Document.MIME, "username", m.Sender.Username)
 
 			path := path.Join(os.TempDir(), m.Document.FileName)
 			err := bot.Download(&m.Document.File, path)
@@ -100,7 +100,7 @@ func CreateTelebot(token string, logger core.Logger) *Telebot {
 				return err
 			}
 
-			logger.Info("Downloaded to %s", strings.ReplaceAll(path, os.TempDir(), "$TMPDIR/"))
+			logger.Info("document downloaded", "path", strings.ReplaceAll(path, os.TempDir(), "$TMPDIR/"))
 			defer os.Remove(path)
 
 			for _, h := range telebot.documentHandlers {
@@ -145,11 +145,11 @@ func CreateTelebot(token string, logger core.Logger) *Telebot {
 			Width:  m.Video.Width,
 			Height: m.Video.Height,
 		}
-		logger.Info(m, video)
+		logger.Info("handle video", "message", m, "video", video)
 		for _, h := range telebot.videoHandlers {
 			err = h.HandleVideo(video, telebot.coreFactory.makeMessage(m), telebot.coreFactory.makeIBot(m, telebot))
 			if err != nil {
-				logger.Error("%T: %s", h, err)
+				logger.Error(fmt.Sprintf("%T: %s", h, err))
 				telebot.reportError(m, err)
 			}
 		}
@@ -172,7 +172,7 @@ func (t *Telebot) Download(image *legacy.Image) (*legacy.File, error) {
 		return nil, err
 	}
 
-	t.logger.Info("image %s downloaded to %s", file.UniqueID, path)
+	t.logger.Info("image downloaded", "file_id", file.UniqueID, "file_path", path)
 	return t.coreFactory.makeFile(name, path), nil
 }
 

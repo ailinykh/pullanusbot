@@ -71,11 +71,11 @@ func (flow *RebootServerFlow) HandleText(message *legacy.Message, bot legacy.IBo
 }
 
 func (flow *RebootServerFlow) Reboot(message *legacy.Message, bot legacy.IBot) error {
-	flow.logger.Info("attempt to reboot server via %+v in chat %+v", message.Sender, message.Chat)
+	flow.logger.Info("attempt to reboot server", "user", message.Sender, "chat", message.Chat)
 
 	for _, entry := range flow.rebootLog {
 		if time.Since(entry.timestamp) < 5*time.Minute {
-			flow.logger.Info("reboot server timeout %s", entry.timestamp)
+			flow.logger.Info("reboot server timeout", "timestamp", entry.timestamp)
 			text := fmt.Sprintf("🔴 Server already restarted at <b>%s</b>", entry.timestamp.Format(time.UnixDate))
 			_, err := bot.SendText(text)
 			return err
@@ -157,7 +157,7 @@ func (flow *RebootServerFlow) GetButtonIds() []string {
 
 // ButtonPressed is a core.IButtonHandler protocol implementation
 func (flow *RebootServerFlow) ButtonPressed(button *legacy.Button, message *legacy.Message, user *legacy.User, bot legacy.IBot) error {
-	flow.logger.Info("server reboot confirmed by %d %s", user.ID, user.DisplayName())
+	flow.logger.Info("server reboot confirmed", "user", user)
 	text := fmt.Sprintf("🟡 Server reboot in progress by %s %s...", user.FirstName, user.LastName)
 	if _, err := bot.Edit(message, text); err != nil {
 		return err

@@ -74,7 +74,7 @@ func (c *FfmpegConverter) CreateMedia(url string) ([]*legacy.Media, error) {
 
 	size, err := strconv.Atoi(ffprobe.Format.Size)
 	if err != nil {
-		c.l.Error("failed to convert size: %v", err)
+		c.l.Error("failed to convert size", "error", err)
 		size = 0
 	}
 
@@ -124,7 +124,7 @@ func (c *FfmpegConverter) Split(video *legacy.Video, limit int) ([]*legacy.Video
 
 // CreateVideo is a core.IVideoFactory interface implementation
 func (c *FfmpegConverter) CreateVideo(path string) (*legacy.Video, error) {
-	c.l.Info("create video: %s", strings.ReplaceAll(path, os.TempDir(), "$TMPDIR/"))
+	c.l.Info("create video", "file_path", strings.ReplaceAll(path, os.TempDir(), "$TMPDIR/"))
 	ffprobe, err := c.getFFProbe(path)
 	if err != nil {
 		c.l.Error(err)

@@ -32,7 +32,7 @@ func (flow *VideoFlow) HandleDocument(document *legacy.Document, message *legacy
 	expectedBitrate := int(math.Min(float64(vf.Bitrate), 568320))
 
 	if expectedBitrate != vf.Bitrate {
-		flow.l.Info("Converting %s because of bitrate", vf.Name)
+		flow.l.Info("converting because of bitrate", "file_name", vf.Name)
 		cvf, err := flow.converter.Convert(vf, expectedBitrate)
 		if err != nil {
 			return fmt.Errorf("failed to convert video: %v", err)
@@ -49,7 +49,7 @@ func (flow *VideoFlow) HandleDocument(document *legacy.Document, message *legacy
 	}
 
 	if vf.Codec != "h264" {
-		flow.l.Info("converting %s because of codec %s", vf.Name, vf.Codec)
+		flow.l.Info("converting because of codec", "file_name", vf.Name, "codec", vf.Codec)
 		cvf, err := flow.converter.Convert(vf, 0)
 		if err != nil {
 			return fmt.Errorf("failed to convert video: %v", err)
@@ -65,7 +65,7 @@ func (flow *VideoFlow) HandleDocument(document *legacy.Document, message *legacy
 		return bot.Delete(message)
 	}
 
-	flow.l.Info("no need to convert %s", vf.Name)
+	flow.l.Info("no need to convert", "file_name", vf.Name)
 	caption := fmt.Sprintf("<b>%s</b> <i>(by %s)</i>", vf.Name, message.Sender.DisplayName())
 	_, err = bot.SendVideo(vf, caption)
 	if err != nil {

@@ -25,7 +25,7 @@ type FileDownloader struct {
 // Download is a core.IFileDownloader interface implementation
 func (downloader *FileDownloader) Download(url legacy.URL, filepath string) (*legacy.File, error) {
 	name := path.Base(filepath)
-	downloader.l.Info("downloading %s %s", url, strings.ReplaceAll(filepath, os.TempDir(), "$TMPDIR/"))
+	downloader.l.Info("downloading", "url", url, "file_path", strings.ReplaceAll(filepath, os.TempDir(), "$TMPDIR/"))
 	// Get the data
 	client := http.DefaultClient
 	req, _ := http.NewRequest("GET", url, nil)

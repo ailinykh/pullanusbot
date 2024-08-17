@@ -69,6 +69,6 @@ func (storage *UserStorage) CreateUser(user *legacy.User) error {
 		return fmt.Errorf("failed to create user: %v", err)
 	}
 
-	storage.l.Info("user created: %v", user)
+	storage.l.Info("user created", "user", user)
 	return nil
 }

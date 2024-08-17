@@ -46,14 +46,14 @@ func (flow *YoutubeFlow) process(id string, match string, message *legacy.Messag
 	flow.mutex.Lock()
 	defer flow.mutex.Unlock()
 
-	flow.l.Info("processing %s from %s", id, match)
+	flow.l.Info("processing youtube", "id", id, "match", match)
 	id = "https://youtu.be/" + id // -e9_M7-0quU
 	media, err := flow.mediaFactory.CreateMedia(id)
 	if err != nil {
 		return fmt.Errorf("failed to create media: %v", err)
 	}
 
-	flow.l.Info("video: %s %.2f MB %d sec, audio: %s %.2f MB", media[0].Codec, float64(media[0].Size)/1024/1024, media[0].Duration, media[1].Codec, float64(media[1].Size)/1024/1024)
+	flow.l.Info(fmt.Sprintf("video: %s %.2f MB %d sec, audio: %s %.2f MB", media[0].Codec, float64(media[0].Size)/1024/1024, media[0].Duration, media[1].Codec, float64(media[1].Size)/1024/1024))
 
 	totlalSize := media[0].Size + media[1].Size
 	if !message.IsPrivate && totlalSize > 50_000_000 {

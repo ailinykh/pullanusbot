@@ -51,7 +51,7 @@ func (storage *OutlineStorage) GetKeys(chatID int64) ([]*VpnKey, error) {
 }
 
 func (storage *OutlineStorage) CreateKey(id string, chatID int64, host string, title string, key string) error {
-	storage.l.Info("creating key with id: %s, chat_id: %d, host: %s, title: %s, key: %s", id, chatID, host, title, key)
+	storage.l.Info("creating key", "id", id, "chat_id", chatID, "host", host, "title", title, "key", key)
 	k := VpnKey{
 		ID:     id,
 		ChatID: chatID,

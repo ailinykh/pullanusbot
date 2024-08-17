@@ -32,7 +32,7 @@ func (decorator *RemoveSourceDecorator) HandleText(message *legacy.Message, bot 
 	enabled := decorator.settingProvider.GetBool(message.Chat.ID, decorator.settingsKey)
 
 	if enabled {
-		decorator.l.Info("removing chat %d message %d", message.Chat.ID, message.ID)
+		decorator.l.Info("removing message", "message_id", message.ID, "chat_id", message.Chat.ID)
 		return bot.Delete(message)
 	}
 

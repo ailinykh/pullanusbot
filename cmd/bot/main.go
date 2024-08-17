@@ -26,7 +26,7 @@ func main() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		sig := <-sigs
-		logger.Error("%s signal received", sig)
+		logger.Error("signal received", "signal", sig)
 		cancel()
 	}()
 
@@ -100,10 +100,10 @@ func main() {
 		chatId := os.Getenv("PUBLISHER_CHAT_ID")
 		username := os.Getenv("PUBLISHER_USERNAME")
 		if len(chatId) > 0 && len(username) > 0 {
-			logger.Info("publisher logic enabled for %s by %s", chatId, username)
+			logger.Info("publisher logic enabled", "chat_id", chatId, "username", username)
 			chatID, err := strconv.ParseInt(chatId, 10, 64)
 			if err != nil {
-				logger.Error("failed to parse publisher chat id: %v", err)
+				logger.Error("failed to parse publisher chat id", "error", err)
 			} else {
 				publisherFlow := usecases.CreatePublisherFlow(chatID, username, logger)
 				telebot.AddHandler(publisherFlow)
@@ -133,13 +133,13 @@ func main() {
 			for _, chatId := range strings.Split(chatId, ",") {
 				chatID, err := strconv.ParseInt(chatId, 10, 64)
 				if err != nil {
-					logger.Error("failed to parse reboot server chat id: %v", err)
+					logger.Error("failed to parse reboot server chat id", "error", err)
 				} else {
 					chatIds = append(chatIds, chatID)
 				}
 			}
 			if len(chatIds) > 0 {
-				logger.Info("server reboot logic enabled for %+v by %s", chatIds, command)
+				logger.Info("server reboot logic enabled", "chats", chatIds, "command", command)
 				lightsailApi := api.NewLightsailAPI(logger, keyId, secret)
 				opts := &usecases.RebootServerOptions{
 					ChatIds: chatIds,

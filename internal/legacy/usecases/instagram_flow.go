@@ -54,7 +54,7 @@ func (flow *InstagramFlow) HandleText(message *legacy.Message, bot legacy.IBot) 
 }
 
 func (flow *InstagramFlow) handleReel(url string, message *legacy.Message, bot legacy.IBot) error {
-	flow.l.Info("processing %s", url)
+	flow.l.Info("processing reel", "url", url)
 	resp, err := flow.api.Get(url)
 	if err != nil {
 		flow.l.Error(err)

@@ -38,6 +38,6 @@ func (factory *DownloadVideoFactory) CreateVideo(url string) (*legacy.Video, err
 		file.Dispose()
 		return nil, fmt.Errorf("failed to download file for %s: %v", url, err)
 	}
-	factory.l.Info("file downloaded: %s %0.2fMB", file.Name, float64(file.Size)/1024/1024)
+	factory.l.Info("file downloaded", "file_name", file.Name, "file_size", fmt.Sprintf("%0.2fMB", float64(file.Size)/1024/1024))
 	return factory.videoFactory.CreateVideo(file.Path)
 }

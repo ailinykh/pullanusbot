@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -44,7 +45,8 @@ func (strategy *SendMultipartVideo) SendVideo(video *legacy.Video, caption strin
 	writer.Close()
 
 	start := time.Now()
-	strategy.l.Info("uploading %s (%.2f MB)", video.Name, float64(video.Size)/1024/1024)
+
+	strategy.l.Info("start uploading", "file_name", video.Name, "file_size", fmt.Sprintf("%0.2fMB", float64(video.Size)/1024/1024))
 	r, _ := http.NewRequest("POST", strategy.url, body)
 	r.Header.Add("Content-Type", writer.FormDataContentType())
 	res, err := strategy.client.Do(r)
@@ -53,7 +55,7 @@ func (strategy *SendMultipartVideo) SendVideo(video *legacy.Video, caption strin
 		return nil, err
 	}
 	defer res.Body.Close()
-	strategy.l.Info("successfully sent %s (%.2f MB) %s", video.Name, float64(video.Size)/1024/1024, time.Now().Sub(start))
+	strategy.l.Info("successfully sent", "file_name", video.Name, "file_size", fmt.Sprintf("%0.2fMB", float64(video.Size)/1024/1024), "time", time.Since(start))
 	return io.ReadAll(res.Body)
 }
 
@@ -79,7 +81,7 @@ func (strategy *SendMultipartVideo) addParams(writer *multipart.Writer, params m
 				continue
 			}
 			defer file.Close()
-			part, err = writer.CreateFormFile(key, file.Name())
+			part, _ = writer.CreateFormFile(key, file.Name())
 			reader = file
 		default:
 			strategy.l.Error("unexpected param type %+v", p)

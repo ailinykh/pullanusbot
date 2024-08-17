@@ -45,7 +45,7 @@ func (api *TwitterAPI) getTweetByID(tweetID string) (*Tweet, error) {
 			return nil, err
 		}
 
-		api.l.Info("guest token received: %s", guestToken)
+		api.l.Info("guest token received", "token", guestToken)
 
 		api.credentials = TwitterApiCredentials{
 			bearer_token: api.credentials.bearer_token,
@@ -86,7 +86,7 @@ func (api *TwitterAPI) getGuestToken() (string, error) {
 		return tokenResp.Token, nil
 	}
 
-	api.l.Info("%+v", tokenResp)
+	api.l.Info(fmt.Sprintf("%+v", tokenResp))
 	return "", fmt.Errorf(tokenResp.Message)
 }
 
@@ -207,7 +207,7 @@ func (api *TwitterAPI) getScreenshot(tweet *Tweet) (*TweetScreenshot, error) {
 		return nil, err
 	}
 
-	api.l.Info("retreiving screenshot for %s/%s", tweet.User.ScreenName, tweet.ID)
+	api.l.Info("retreiving screenshot", "user", tweet.User.ScreenName, "tweet", tweet.ID)
 
 	select {
 	case data := <-ch:

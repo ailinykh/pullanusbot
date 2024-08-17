@@ -22,7 +22,7 @@ type SendVideoStrategySplitDecorator struct {
 func (strategy *SendVideoStrategySplitDecorator) SendVideo(video *legacy.Video, caption string, bot legacy.IBot) error {
 	err := strategy.decoratee.SendVideo(video, caption, bot)
 	if err != nil && err.Error() == "telegram: Request Entity Too Large (400)" {
-		strategy.l.Info("Fallback to splitting")
+		strategy.l.Info("fallback to splitting")
 		// https://lists.ffmpeg.org/pipermail/ffmpeg-user/2014-January/019556.html
 		files, err := strategy.splitter.Split(video, 49)
 		if err != nil {
@@ -47,7 +47,7 @@ func (strategy *SendVideoStrategySplitDecorator) SendVideo(video *legacy.Video, 
 			}
 		}
 
-		strategy.l.Info("All parts successfully sent")
+		strategy.l.Info("all parts successfully sent")
 		return nil
 	}
 	return err

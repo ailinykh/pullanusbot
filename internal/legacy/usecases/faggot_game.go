@@ -80,7 +80,7 @@ func (flow *GameFlow) Play(message *legacy.Message, bot legacy.IBot) error {
 
 	flow.checkSettings(message.Chat.ID, bot)
 
-	flow.l.Info("chat_id: %d, game started by %v", message.Chat.ID, message.Sender)
+	flow.l.Info("game started", "chat_id", message.Chat.ID, "user", message.Sender)
 
 	players, _ := flow.s.GetPlayers(message.Chat.ID)
 	switch len(players) {
@@ -110,7 +110,7 @@ func (flow *GameFlow) Play(message *legacy.Message, bot legacy.IBot) error {
 		return err
 	}
 
-	flow.l.Info("day: %s, winner: %v", day, winner)
+	flow.l.Info("winner calculated", "date", day, "user", winner)
 
 	if winner.ID == message.Sender.ID {
 		if winner.FirstName != message.Sender.FirstName || winner.LastName != message.Sender.LastName || winner.Username != message.Sender.Username {
@@ -118,7 +118,7 @@ func (flow *GameFlow) Play(message *legacy.Message, bot legacy.IBot) error {
 			if err != nil {
 				flow.l.Error(fmt.Errorf("failed to update player: %v", err))
 			} else {
-				flow.l.Info("player info updated: %v", winner)
+				flow.l.Info("player info updated", "user", winner)
 			}
 		}
 	}

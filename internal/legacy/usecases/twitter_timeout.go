@@ -71,7 +71,7 @@ func (twitterTimeout *TwitterTimeout) parseTimeout(err error) (int64, error) {
 	}
 
 	timeout := limit - time.Now().Unix()
-	twitterTimeout.l.Info("Twitter api timeout %d seconds", timeout)
+	twitterTimeout.l.Info("twitter api timeout", "seconds", timeout)
 	timeout = int64(math.Max(float64(timeout), 2)) // Twitter api timeout might be negative
 	return timeout, nil
 }

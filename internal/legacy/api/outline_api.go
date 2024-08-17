@@ -99,7 +99,7 @@ func (api *OutlineAPI) CreateKey(chatID int64, name string) (*VpnKey, error) {
 	}
 
 	if res.StatusCode != 204 {
-		api.l.Warn("unexpected response: %+v", res)
+		api.l.Warn("unexpected response", "response", res)
 		return nil, fmt.Errorf("can't rename created key")
 	}
 
@@ -120,7 +120,7 @@ func (api *OutlineAPI) DeleteKey(key *legacy.VpnKey) error {
 	}
 
 	if res.StatusCode != 204 {
-		api.l.Warn("unexpected response: %+v", res)
+		api.l.Warn("unexpected response", "response", res)
 		return fmt.Errorf("can't remove key")
 	}
 

@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/ailinykh/pullanusbot/v2/internal/core"
 	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
@@ -18,8 +20,7 @@ type TwitterMediaFactory struct {
 func (tmf *TwitterMediaFactory) CreateMedia(tweetID string) ([]*legacy.Media, error) {
 	tweet, err := tmf.api.getTweetByID(tweetID)
 	if err != nil {
-		tmf.l.Error(err)
-		return nil, err
+		return nil, fmt.Errorf("failed to get tweet: %v", err)
 	}
 
 	url := "https://twitter.com/" + tweet.User.ScreenName + "/status/" + tweet.ID
@@ -27,7 +28,7 @@ func (tmf *TwitterMediaFactory) CreateMedia(tweetID string) ([]*legacy.Media, er
 
 	if len(media) == 0 && tweet.QuotedStatus != nil && len(tweet.QuotedStatus.ExtendedEntities.Media) > 0 {
 		media = tweet.QuotedStatus.ExtendedEntities.Media
-		tmf.l.Warn("tweet media is empty, using QuotedStatus instead %s", tweet.ID)
+		tmf.l.Warn("tweet media is empty, using QuotedStatus instead", "tweet_id", tweet.ID)
 	}
 
 	switch len(media) {
@@ -41,7 +42,6 @@ func (tmf *TwitterMediaFactory) CreateMedia(tweetID string) ([]*legacy.Media, er
 	default:
 		medias := []*legacy.Media{}
 		for _, m := range media {
-			tmf.l.Info("Type: %s", m.Type)
 			switch m.Type {
 			case "video", "animated_gif":
 				//TODO: Codec ??
@@ -60,7 +60,7 @@ func (tmf *TwitterMediaFactory) CreateMedia(tweetID string) ([]*legacy.Media, er
 					Type:        legacy.TPhoto,
 				})
 			default:
-				tmf.l.Error("unexpected type: %s", m.Type)
+				tmf.l.Error("unexpected media type", "type", m.Type)
 			}
 		}
 		return medias, nil

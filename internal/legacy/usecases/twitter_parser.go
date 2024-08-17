@@ -23,7 +23,7 @@ func (parser *TwitterParser) HandleText(message *legacy.Message, bot legacy.IBot
 	match := r.FindAllStringSubmatch(message.Text, -1)
 
 	if len(match) > 0 {
-		parser.l.Info("Processing %s", match[0][0])
+		parser.l.Info("processing url", "url", match[0][0])
 	} else {
 		return fmt.Errorf("not implemented")
 	}

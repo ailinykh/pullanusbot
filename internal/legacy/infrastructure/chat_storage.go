@@ -59,6 +59,6 @@ func (s *ChatStorage) CreateChat(chatID int64, title string, type_ string) error
 		return err
 	}
 
-	s.l.Info("chat created: {%d %s %s}", chat.ID, chat.Title, chat.Type)
+	s.l.Info("chat created", "id", chat.ID, "title", chat.Title, "type", chat.Type)
 	return nil
 }
