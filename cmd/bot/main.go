@@ -38,12 +38,15 @@ func main() {
 	inMemoryChatStorage := infrastructure.CreateInMemoryChatStorage()
 	chatStorageDecorator := usecases.CreateChatStorageDecorator(inMemoryChatStorage, databaseChatStorage)
 
-	opts := api.TelebotOpts{BotToken: config.BotToken()}
 	chatID, err := strconv.ParseInt(os.Getenv("ADMIN_CHAT_ID"), 10, 64)
-	if err == nil {
-		opts.ReportChatId = &chatID
+	if err != nil {
+		chatID = 0
 	}
-	telebot := api.CreateTelebot(opts, logger)
+	telebot := api.CreateTelebot(
+		logger,
+		api.WithBotToken(config.BotToken()),
+		api.WithReportChatId(chatID),
+	)
 	telebot.SetupInfo()
 
 	databaseUserStorage := infrastructure.CreateUserStorage(dbFile, logger)

@@ -14,15 +14,9 @@ import (
 	tb "gopkg.in/telebot.v3"
 )
 
-type TelebotOpts struct {
-	BotToken     string
-	BotAPIUrl    *string
-	ReportChatId *int64
-}
-
 // Telebot is a telegram API
 type Telebot struct {
-	opts             TelebotOpts
+	config           *TelebotConfig
 	bot              *tb.Bot
 	logger           core.Logger
 	coreFactory      *CoreFactory
@@ -35,14 +29,20 @@ type Telebot struct {
 }
 
 // CreateTelebot is a default Telebot factory
-func CreateTelebot(opts TelebotOpts, logger core.Logger) *Telebot {
+func CreateTelebot(logger core.Logger, opts ...TelebotConfigOption) *Telebot {
+	config := TelebotConfig{}
+
+	for _, opt := range opts {
+		opt(&config)
+	}
+
 	poller := tb.NewMiddlewarePoller(&tb.LongPoller{Timeout: 10 * time.Second}, func(upd *tb.Update) bool {
 		return true
 	})
 
 	var err error
 	bot, err := tb.NewBot(tb.Settings{
-		Token:  opts.BotToken,
+		Token:  config.BotToken,
 		Poller: poller,
 	})
 
@@ -51,13 +51,13 @@ func CreateTelebot(opts TelebotOpts, logger core.Logger) *Telebot {
 	}
 
 	var multipart *helpers.SendMultipartVideo
-	if opts.BotAPIUrl != nil {
-		apiURL := fmt.Sprintf("%s/bot%s/sendVideo", *opts.BotAPIUrl, opts.BotToken)
+	if len(config.BotAPIUrl) > 0 {
+		apiURL := fmt.Sprintf("%s/bot%s/sendVideo", config.BotAPIUrl, config.BotToken)
 		multipart = helpers.CreateSendMultipartVideo(logger, apiURL)
 	}
 
 	telebot := &Telebot{
-		opts,
+		&config,
 		bot,
 		logger,
 		&CoreFactory{},
@@ -253,10 +253,10 @@ func (t *Telebot) registerCommand(command string) {
 }
 
 func (t *Telebot) reportError(m *tb.Message, e error) {
-	if t.opts.ReportChatId == nil {
+	if t.config.ReportChatId == 0 {
 		return
 	}
-	chat := &tb.Chat{ID: *t.opts.ReportChatId}
+	chat := &tb.Chat{ID: t.config.ReportChatId}
 	opts := &tb.SendOptions{DisableWebPagePreview: true}
 	_, err := t.bot.Forward(chat, m, opts)
 	if err != nil {
