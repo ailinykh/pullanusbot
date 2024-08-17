@@ -26,7 +26,7 @@ func main() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		sig := <-sigs
-		logger.Errorf("%s signal received", sig)
+		logger.Error("%s signal received", sig)
 		cancel()
 	}()
 
@@ -100,10 +100,10 @@ func main() {
 		chatId := os.Getenv("PUBLISHER_CHAT_ID")
 		username := os.Getenv("PUBLISHER_USERNAME")
 		if len(chatId) > 0 && len(username) > 0 {
-			logger.Infof("publisher logic enabled for %s by %s", chatId, username)
+			logger.Info("publisher logic enabled for %s by %s", chatId, username)
 			chatID, err := strconv.ParseInt(chatId, 10, 64)
 			if err != nil {
-				logger.Errorf("failed to parse publisher chat id: %v", err)
+				logger.Error("failed to parse publisher chat id: %v", err)
 			} else {
 				publisherFlow := usecases.CreatePublisherFlow(chatID, username, logger)
 				telebot.AddHandler(publisherFlow)
@@ -133,13 +133,13 @@ func main() {
 			for _, chatId := range strings.Split(chatId, ",") {
 				chatID, err := strconv.ParseInt(chatId, 10, 64)
 				if err != nil {
-					logger.Errorf("failed to parse reboot server chat id: %v", err)
+					logger.Error("failed to parse reboot server chat id: %v", err)
 				} else {
 					chatIds = append(chatIds, chatID)
 				}
 			}
 			if len(chatIds) > 0 {
-				logger.Infof("server reboot logic enabled for %+v by %s", chatIds, command)
+				logger.Info("server reboot logic enabled for %+v by %s", chatIds, command)
 				lightsailApi := api.NewLightsailAPI(logger, keyId, secret)
 				opts := &usecases.RebootServerOptions{
 					ChatIds: chatIds,
@@ -148,7 +148,7 @@ func main() {
 				rebootFlow := usecases.NewRebootServerFlow(lightsailApi, commandService, logger, opts)
 				telebot.AddHandler(rebootFlow)
 			} else {
-				logger.Warning("server reboot logic disabled due to no chat id's specified")
+				logger.Warn("server reboot logic disabled due to no chat id's specified")
 			}
 		} else {
 			logger.Info("server reboot logic disabled")
@@ -159,7 +159,7 @@ func main() {
 	telebot.AddHandler(iDoNotCare)
 
 	if cookiesFilePath := os.Getenv("INSTAGRAM_COOKIES_FILE_PATH"); len(cookiesFilePath) > 0 {
-		logger.Infof("instagram logic enabled. Cookies file: %s", cookiesFilePath)
+		logger.Info("instagram logic enabled. Cookies file: %s", cookiesFilePath)
 		cookies := path.Join(config.WorkingDir(), cookiesFilePath)
 		instaAPI := api.CreateYtDlpApi([]string{"--cookies", cookies}, logger)
 		instaFlow := usecases.CreateInstagramFlow(logger, instaAPI, localMediaSender)
