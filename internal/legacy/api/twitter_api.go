@@ -8,11 +8,12 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
 // CreateTwitterAPI is a default Twitter factory
-func CreateTwitterAPI(l core.ILogger, t core.ITask) *TwitterAPI {
+func CreateTwitterAPI(l core.Logger, t legacy.ITask) *TwitterAPI {
 	return &TwitterAPI{l, t, TwitterApiCredentials{
 		bearer_token: "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
 		guest_token:  "1794395096458088509",
@@ -27,8 +28,8 @@ type TwitterApiCredentials struct {
 
 // Twitter API
 type TwitterAPI struct {
-	l           core.ILogger
-	task        core.ITask
+	l           core.Logger
+	task        legacy.ITask
 	credentials TwitterApiCredentials
 }
 
@@ -44,7 +45,7 @@ func (api *TwitterAPI) getTweetByID(tweetID string) (*Tweet, error) {
 			return nil, err
 		}
 
-		api.l.Infof("guest token received: %s", guestToken)
+		api.l.Info("guest token received: %s", guestToken)
 
 		api.credentials = TwitterApiCredentials{
 			bearer_token: api.credentials.bearer_token,
@@ -85,7 +86,7 @@ func (api *TwitterAPI) getGuestToken() (string, error) {
 		return tokenResp.Token, nil
 	}
 
-	api.l.Infof("%+v", tokenResp)
+	api.l.Info("%+v", tokenResp)
 	return "", fmt.Errorf(tokenResp.Message)
 }
 
@@ -184,7 +185,7 @@ func (api *TwitterAPI) getTweetByIdAndToken(tweetID string, creds TwitterApiCred
 		if tweet.Errors[0].Code == 88 { // "Rate limit exceeded 88"
 			return nil, fmt.Errorf("%s %s", tweet.Errors[0].Message, res.Header["X-Rate-Limit-Reset"][0])
 		}
-		api.l.Errorf("%s %s", tweet.Errors, creds.guest_token)
+		api.l.Error("%s %s", tweet.Errors, creds.guest_token)
 		return nil, fmt.Errorf(tweet.Errors[0].Message)
 	}
 
@@ -206,7 +207,7 @@ func (api *TwitterAPI) getScreenshot(tweet *Tweet) (*TweetScreenshot, error) {
 		return nil, err
 	}
 
-	api.l.Infof("retreiving screenshot for %s/%s", tweet.User.ScreenName, tweet.ID)
+	api.l.Info("retreiving screenshot for %s/%s", tweet.User.ScreenName, tweet.ID)
 
 	select {
 	case data := <-ch:
