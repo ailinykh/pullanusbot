@@ -1,27 +1,29 @@
 package helpers
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"strings"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func CreateUploadMediaDecorator(l core.ILogger, decoratee core.ISendMediaStrategy, fileDownloader core.IFileDownloader, videoFactory core.IVideoFactory, sendVideo core.ISendVideoStrategy) core.ISendMediaStrategy {
+func CreateUploadMediaDecorator(l core.Logger, decoratee legacy.ISendMediaStrategy, fileDownloader legacy.IFileDownloader, videoFactory legacy.IVideoFactory, sendVideo legacy.ISendVideoStrategy) legacy.ISendMediaStrategy {
 	return &UploadMediaDecorator{l, decoratee, fileDownloader, videoFactory, sendVideo}
 }
 
 type UploadMediaDecorator struct {
-	l              core.ILogger
-	decoratee      core.ISendMediaStrategy
-	fileDownloader core.IFileDownloader
-	videoFactory   core.IVideoFactory
-	sendVideo      core.ISendVideoStrategy
+	l              core.Logger
+	decoratee      legacy.ISendMediaStrategy
+	fileDownloader legacy.IFileDownloader
+	videoFactory   legacy.IVideoFactory
+	sendVideo      legacy.ISendVideoStrategy
 }
 
 // SendMedia is a core.ISendMediaStrategy interface implementation
-func (decorator *UploadMediaDecorator) SendMedia(media []*core.Media, bot core.IBot) error {
+func (decorator *UploadMediaDecorator) SendMedia(media []*legacy.Media, bot legacy.IBot) error {
 	err := decorator.decoratee.SendMedia(media, bot)
 	if err != nil {
 		if strings.Contains(err.Error(), "failed to get HTTP URL content") || strings.Contains(err.Error(), "wrong file identifier/HTTP URL specified") {
@@ -32,7 +34,7 @@ func (decorator *UploadMediaDecorator) SendMedia(media []*core.Media, bot core.I
 	return err
 }
 
-func (decorator *UploadMediaDecorator) fallbackToUploading(media *core.Media, bot core.IBot) error {
+func (decorator *UploadMediaDecorator) fallbackToUploading(media *legacy.Media, bot legacy.IBot) error {
 	decorator.l.Info("send by uploading")
 	file, err := decorator.downloadMedia(media)
 	if err != nil {
@@ -41,24 +43,23 @@ func (decorator *UploadMediaDecorator) fallbackToUploading(media *core.Media, bo
 	defer file.Dispose()
 
 	switch media.Type {
-	case core.TText:
-		decorator.l.Warning("unexpected media type")
-	case core.TPhoto:
-		image := &core.Image{File: *file}
+	case legacy.TText:
+		decorator.l.Warn("unexpected media type %+v", media.Type)
+	case legacy.TPhoto:
+		image := &legacy.Image{File: *file}
 		_, err = bot.SendImage(image, media.Caption)
 		return err
-	case core.TVideo:
+	case legacy.TVideo:
 		vf, err := decorator.videoFactory.CreateVideo(file.Path)
 		if err != nil {
-			decorator.l.Errorf("can't create video file for %s, %v", file.Path, err)
-			return err
+			return fmt.Errorf("can't create video file for %s, %v", file.Path, err)
 		}
 		return decorator.sendVideo.SendVideo(vf, media.Caption, bot)
 	}
 	return err
 }
 
-func (decorator *UploadMediaDecorator) downloadMedia(media *core.Media) (*core.File, error) {
+func (decorator *UploadMediaDecorator) downloadMedia(media *legacy.Media) (*legacy.File, error) {
 	//TODO: duplicated code
 	filename := path.Base(media.ResourceURL)
 	if strings.Contains(filename, "?") {
@@ -73,11 +74,10 @@ func (decorator *UploadMediaDecorator) downloadMedia(media *core.Media) (*core.F
 	mediaPath := path.Join(os.TempDir(), filename)
 	file, err := decorator.fileDownloader.Download(media.ResourceURL, mediaPath)
 	if err != nil {
-		decorator.l.Errorf("video download error: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to download video: %v", err)
 	}
 
-	decorator.l.Infof("file downloaded: %s %0.2fMB", file.Name, float64(file.Size)/1024/1024)
+	decorator.l.Info("file downloaded: %s %0.2fMB", file.Name, float64(file.Size)/1024/1024)
 
 	return file, nil
 }

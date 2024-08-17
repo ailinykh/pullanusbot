@@ -1,24 +1,24 @@
 package helpers
 
 import (
+	"fmt"
+
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func CreateSendVideoStrategy(l core.ILogger) core.ISendVideoStrategy {
-	return &SendVideoStrategy{l}
+func CreateSendVideoStrategy() core.ISendVideoStrategy {
+	return &SendVideoStrategy{}
 }
 
-type SendVideoStrategy struct {
-	l core.ILogger
-}
+type SendVideoStrategy struct{}
 
 // SendMedia is a core.ISendVideoStrategy interface implementation
 func (strategy *SendVideoStrategy) SendVideo(video *core.Video, caption string, bot core.IBot) error {
 	_, err := bot.SendVideo(video, caption)
 
 	if err != nil {
-		strategy.l.Error(err)
+		return fmt.Errorf("failed to send video: %v", err)
 	}
 
-	return err
+	return nil
 }

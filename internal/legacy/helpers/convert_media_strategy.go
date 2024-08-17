@@ -1,38 +1,40 @@
 package helpers
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"strings"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func CreateConvertMediaStrategy(l core.ILogger, sms core.ISendMediaStrategy, fd core.IFileDownloader, vf core.IVideoFactory, vc core.IVideoConverter) *ConvertMediaStrategy {
+func CreateConvertMediaStrategy(l core.Logger, sms legacy.ISendMediaStrategy, fd legacy.IFileDownloader, vf legacy.IVideoFactory, vc legacy.IVideoConverter) *ConvertMediaStrategy {
 	return &ConvertMediaStrategy{l, sms, fd, vf, vc}
 }
 
 type ConvertMediaStrategy struct {
-	l   core.ILogger
-	sms core.ISendMediaStrategy
-	fd  core.IFileDownloader
-	vf  core.IVideoFactory
-	vc  core.IVideoConverter
+	l   core.Logger
+	sms legacy.ISendMediaStrategy
+	fd  legacy.IFileDownloader
+	vf  legacy.IVideoFactory
+	vc  legacy.IVideoConverter
 }
 
 // SendMedia is a core.ISendMediaStrategy interface implementation
-func (cms *ConvertMediaStrategy) SendMedia(media []*core.Media, bot core.IBot) error {
+func (cms *ConvertMediaStrategy) SendMedia(media []*legacy.Media, bot legacy.IBot) error {
 	for _, m := range media {
 		if cms.needToConvert(m) {
-			cms.l.Infof("expected mp4/h264 codec, but got %s", m.Codec)
+			cms.l.Info("expected mp4/h264 codec, but got %s", m.Codec)
 			return cms.fallbackToConverting(m, bot)
 		}
 	}
 	return cms.sms.SendMedia(media, bot)
 }
 
-func (cms *ConvertMediaStrategy) needToConvert(media *core.Media) bool {
-	if media.Type != core.TVideo {
+func (cms *ConvertMediaStrategy) needToConvert(media *legacy.Media) bool {
+	if media.Type != legacy.TVideo {
 		return false
 	}
 
@@ -44,7 +46,7 @@ func (cms *ConvertMediaStrategy) needToConvert(media *core.Media) bool {
 	return true
 }
 
-func (cms *ConvertMediaStrategy) fallbackToConverting(media *core.Media, bot core.IBot) error {
+func (cms *ConvertMediaStrategy) fallbackToConverting(media *legacy.Media, bot legacy.IBot) error {
 	cms.l.Info("send by converting")
 	file, err := cms.downloadMedia(media)
 	if err != nil {
@@ -54,15 +56,13 @@ func (cms *ConvertMediaStrategy) fallbackToConverting(media *core.Media, bot cor
 
 	vf, err := cms.vf.CreateVideo(file.Path)
 	if err != nil {
-		cms.l.Errorf("can't create video file for %s, %v", file.Path, err)
-		return err
+		return fmt.Errorf("failed to create video file at %s: %v", file.Path, err)
 	}
 	defer vf.Dispose()
 
 	vfc, err := cms.vc.Convert(vf, 0)
 	if err != nil {
-		cms.l.Errorf("cant convert video file: %v", err)
-		return err
+		return fmt.Errorf("failed to convert video file: %v", err)
 	}
 	defer vfc.Dispose()
 
@@ -70,7 +70,7 @@ func (cms *ConvertMediaStrategy) fallbackToConverting(media *core.Media, bot cor
 	return err
 }
 
-func (cms *ConvertMediaStrategy) downloadMedia(media *core.Media) (*core.File, error) {
+func (cms *ConvertMediaStrategy) downloadMedia(media *legacy.Media) (*legacy.File, error) {
 	//TODO: duplicated code
 	filename := path.Base(media.ResourceURL)
 	if strings.Contains(filename, "?") {
@@ -80,11 +80,10 @@ func (cms *ConvertMediaStrategy) downloadMedia(media *core.Media) (*core.File, e
 	mediaPath := path.Join(os.TempDir(), filename)
 	file, err := cms.fd.Download(media.ResourceURL, mediaPath)
 	if err != nil {
-		cms.l.Errorf("video download error: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to download video: %v", err)
 	}
 
-	cms.l.Infof("file downloaded: %s %0.2fMB", file.Name, float64(file.Size)/1024/1024)
+	cms.l.Info("file downloaded: %s %0.2fMB", file.Name, float64(file.Size)/1024/1024)
 
 	return file, nil
 }

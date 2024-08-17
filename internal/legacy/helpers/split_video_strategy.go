@@ -4,21 +4,22 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func CreateSendVideoStrategySplitDecorator(l core.ILogger, decoratee core.ISendVideoStrategy, splitter core.IVideoSplitter) core.ISendVideoStrategy {
+func CreateSendVideoStrategySplitDecorator(l core.Logger, decoratee legacy.ISendVideoStrategy, splitter legacy.IVideoSplitter) legacy.ISendVideoStrategy {
 	return &SendVideoStrategySplitDecorator{l, decoratee, splitter}
 }
 
 type SendVideoStrategySplitDecorator struct {
-	l         core.ILogger
-	decoratee core.ISendVideoStrategy
-	splitter  core.IVideoSplitter
+	l         core.Logger
+	decoratee legacy.ISendVideoStrategy
+	splitter  legacy.IVideoSplitter
 }
 
 // SendMedia is a core.ISendVideoStrategy interface implementation
-func (strategy *SendVideoStrategySplitDecorator) SendVideo(video *core.Video, caption string, bot core.IBot) error {
+func (strategy *SendVideoStrategySplitDecorator) SendVideo(video *legacy.Video, caption string, bot legacy.IBot) error {
 	err := strategy.decoratee.SendVideo(video, caption, bot)
 	if err != nil && err.Error() == "telegram: Request Entity Too Large (400)" {
 		strategy.l.Info("Fallback to splitting")

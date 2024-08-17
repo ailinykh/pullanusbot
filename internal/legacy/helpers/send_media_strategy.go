@@ -1,22 +1,22 @@
 package helpers
 
 import (
+	"fmt"
+
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func CreateSendMediaStrategy(l core.ILogger) *SendMediaStrategy {
-	return &SendMediaStrategy{l}
+func CreateSendMediaStrategy() *SendMediaStrategy {
+	return &SendMediaStrategy{}
 }
 
-type SendMediaStrategy struct {
-	l core.ILogger
-}
+type SendMediaStrategy struct{}
 
 // SendMedia is a core.ISendMediaStrategy interface implementation
 func (sms *SendMediaStrategy) SendMedia(media []*core.Media, bot core.IBot) error {
 	switch len(media) {
 	case 0:
-		sms.l.Warning("Unexpected empty media")
+		return fmt.Errorf("attempt to send an empty media")
 	case 1:
 		_, err := bot.SendMedia(media[0])
 		return err
@@ -24,5 +24,4 @@ func (sms *SendMediaStrategy) SendMedia(media []*core.Media, bot core.IBot) erro
 		_, err := bot.SendMediaAlbum(media)
 		return err
 	}
-	return nil
 }

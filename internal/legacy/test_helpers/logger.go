@@ -6,6 +6,8 @@ func CreateLogger() *FakeLogger {
 
 type FakeLogger struct{}
 
+func (FakeLogger) Debug(...interface{})            {}
+func (FakeLogger) Warn(...interface{})             {}
 func (FakeLogger) Close()                          {}
 func (FakeLogger) Error(...interface{})            {}
 func (FakeLogger) Errorf(string, ...interface{})   {}

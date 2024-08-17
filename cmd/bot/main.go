@@ -63,8 +63,8 @@ func main() {
 	telebot.AddHandler(videoFlow)
 
 	fileDownloader := infrastructure.CreateFileDownloader(logger)
-	remoteMediaSender := helpers.CreateSendMediaStrategy(logger)
-	sendVideoStrategy := helpers.CreateSendVideoStrategy(logger)
+	remoteMediaSender := helpers.CreateSendMediaStrategy()
+	sendVideoStrategy := helpers.CreateSendVideoStrategy()
 	sendVideoStrategySplitDecorator := helpers.CreateSendVideoStrategySplitDecorator(logger, sendVideoStrategy, converter)
 	localMediaSender := helpers.CreateUploadMediaDecorator(logger, remoteMediaSender, fileDownloader, converter, sendVideoStrategySplitDecorator)
 

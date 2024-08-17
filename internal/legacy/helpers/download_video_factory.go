@@ -1,25 +1,27 @@
 package helpers
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"strings"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func CreateDownloadVideoFactory(l core.ILogger, fileDownloader core.IFileDownloader, videoFactory core.IVideoFactory) core.IVideoFactory {
+func CreateDownloadVideoFactory(l core.Logger, fileDownloader legacy.IFileDownloader, videoFactory legacy.IVideoFactory) legacy.IVideoFactory {
 	return &DownloadVideoFactory{l, fileDownloader, videoFactory}
 }
 
 type DownloadVideoFactory struct {
-	l              core.ILogger
-	fileDownloader core.IFileDownloader
-	videoFactory   core.IVideoFactory
+	l              core.Logger
+	fileDownloader legacy.IFileDownloader
+	videoFactory   legacy.IVideoFactory
 }
 
 // CreateVideo is a core.IVideoFactory interface implementation
-func (factory *DownloadVideoFactory) CreateVideo(url string) (*core.Video, error) {
+func (factory *DownloadVideoFactory) CreateVideo(url string) (*legacy.Video, error) {
 	filename := path.Base(url)
 	if strings.Contains(filename, "?") {
 		parts := strings.Split(url, "?")
@@ -33,10 +35,9 @@ func (factory *DownloadVideoFactory) CreateVideo(url string) (*core.Video, error
 	videoPath := path.Join(os.TempDir(), filename)
 	file, err := factory.fileDownloader.Download(url, videoPath)
 	if err != nil {
-		factory.l.Error(err)
 		file.Dispose()
-		return nil, err
+		return nil, fmt.Errorf("failed to download file for %s: %v", url, err)
 	}
-	factory.l.Infof("file downloaded: %s %0.2fMB", file.Name, float64(file.Size)/1024/1024)
+	factory.l.Info("file downloaded: %s %0.2fMB", file.Name, float64(file.Size)/1024/1024)
 	return factory.videoFactory.CreateVideo(file.Path)
 }
