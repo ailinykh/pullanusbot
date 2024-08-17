@@ -1,15 +1,17 @@
 package infrastructure
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
-func CreateUserStorage(dbFile string, l core.ILogger) core.IUserStorage {
+func CreateUserStorage(dbFile string, l core.Logger) legacy.IUserStorage {
 	conn, err := gorm.Open(sqlite.Open(dbFile+"?cache=shared"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Error),
 	})
@@ -23,7 +25,7 @@ func CreateUserStorage(dbFile string, l core.ILogger) core.IUserStorage {
 
 type UserStorage struct {
 	conn *gorm.DB
-	l    core.ILogger
+	l    core.Logger
 }
 
 // User
@@ -38,15 +40,14 @@ type User struct {
 }
 
 // GetUserById is a core.IUserStorage interface implementation
-func (storage *UserStorage) GetUserById(userID int64) (*core.User, error) {
+func (storage *UserStorage) GetUserById(userID int64) (*legacy.User, error) {
 	var user User
 	res := storage.conn.First(&user, userID)
 
 	if res.Error != nil {
-		storage.l.Error(res.Error)
-		return nil, res.Error
+		return nil, fmt.Errorf("failed to find user: %v", res.Error)
 	}
-	return &core.User{
+	return &legacy.User{
 		ID:           user.UserID,
 		FirstName:    user.FirstName,
 		LastName:     user.LastName,
@@ -55,7 +56,7 @@ func (storage *UserStorage) GetUserById(userID int64) (*core.User, error) {
 }
 
 // CreateUser is a core.IUserStorage interface implementation
-func (storage *UserStorage) CreateUser(user *core.User) error {
+func (storage *UserStorage) CreateUser(user *legacy.User) error {
 	u := User{
 		UserID:       user.ID,
 		FirstName:    user.FirstName,
@@ -65,10 +66,9 @@ func (storage *UserStorage) CreateUser(user *core.User) error {
 	}
 	err := storage.conn.Create(&u).Error
 	if err != nil {
-		storage.l.Error(err)
-		return err
+		return fmt.Errorf("failed to create user: %v", err)
 	}
 
-	storage.l.Infof("user created: %v", user)
+	storage.l.Info("user created: %v", user)
 	return nil
 }

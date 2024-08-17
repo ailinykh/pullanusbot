@@ -1,11 +1,12 @@
 package infrastructure
 
 import (
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 	"github.com/streadway/amqp"
 )
 
-func CreateRabbitFactory(l core.ILogger, url string) (core.ITaskFactory, func()) {
+func CreateRabbitFactory(l core.Logger, url string) (legacy.ITaskFactory, func()) {
 	factory := &RabbitFactory{l: l}
 	err := factory.reestablishConnection(url)
 	if err != nil {
@@ -15,14 +16,14 @@ func CreateRabbitFactory(l core.ILogger, url string) (core.ITaskFactory, func())
 }
 
 type RabbitFactory struct {
-	l    core.ILogger
+	l    core.Logger
 	conn *amqp.Connection
 	ch   *amqp.Channel
 }
 
 // NewTask is a core.ITaskFactory interface implementation
-func (q *RabbitFactory) NewTask(name string) core.ITask {
-	return &RabbitWorker{q.l, name, q.ch}
+func (q *RabbitFactory) NewTask(name string) legacy.ITask {
+	return &RabbitWorker{name, q.ch}
 }
 
 func (q *RabbitFactory) Close() {

@@ -9,21 +9,22 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
 // CreateFfmpegConverter is a basic FfmpegConverter factory
-func CreateFfmpegConverter(l core.ILogger) *FfmpegConverter {
+func CreateFfmpegConverter(l core.Logger) *FfmpegConverter {
 	return &FfmpegConverter{l}
 }
 
 // FfmpegConverter implements core.IVideoConverter and core.IVideoFactory using ffmpeg
 type FfmpegConverter struct {
-	l core.ILogger
+	l core.Logger
 }
 
 // Convert is a core.IVideoConverter interface implementation
-func (c *FfmpegConverter) Convert(vf *core.Video, bitrate int) (*core.Video, error) {
+func (c *FfmpegConverter) Convert(vf *legacy.Video, bitrate int) (*legacy.Video, error) {
 	path := path.Join(os.TempDir(), vf.Name+"_converted.mp4")
 	cmd := fmt.Sprintf(`ffmpeg -v error -y -i "%s" -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "%s"`, vf.Path, path)
 	if bitrate > 0 {
@@ -58,7 +59,7 @@ func (c *FfmpegConverter) GetCodec(path string) string {
 }
 
 // CreateMedia is a core.IMediaFactory interface implementation
-func (c *FfmpegConverter) CreateMedia(url string) ([]*core.Media, error) {
+func (c *FfmpegConverter) CreateMedia(url string) ([]*legacy.Media, error) {
 	ffprobe, err := c.getFFProbe(url)
 	if err != nil {
 		c.l.Error(err)
@@ -73,21 +74,21 @@ func (c *FfmpegConverter) CreateMedia(url string) ([]*core.Media, error) {
 
 	size, err := strconv.Atoi(ffprobe.Format.Size)
 	if err != nil {
-		c.l.Warning(err)
+		c.l.Error("failed to convert size: %v", err)
 		size = 0
 	}
 
 	if ffprobe.Format.FormatName == "image2" {
-		return []*core.Media{{ResourceURL: url, URL: url, Codec: stream.CodecName, Size: size, Type: core.TPhoto}}, nil
+		return []*legacy.Media{{ResourceURL: url, URL: url, Codec: stream.CodecName, Size: size, Type: legacy.TPhoto}}, nil
 	}
 
-	return []*core.Media{{ResourceURL: url, URL: url, Codec: stream.CodecName, Size: size, Type: core.TVideo}}, nil
+	return []*legacy.Media{{ResourceURL: url, URL: url, Codec: stream.CodecName, Size: size, Type: legacy.TVideo}}, nil
 }
 
 // CreateVideo is a core.IVideoSplitter interface implementation
-func (c *FfmpegConverter) Split(video *core.Video, limit int) ([]*core.Video, error) {
+func (c *FfmpegConverter) Split(video *legacy.Video, limit int) ([]*legacy.Video, error) {
 	duration, n := 0, 0
-	var videos = []*core.Video{}
+	var videos = []*legacy.Video{}
 	for duration < video.Duration {
 		path := fmt.Sprintf("%s[%02d].mp4", video.File.Path, n)
 		cmd := fmt.Sprintf(`ffmpeg -v error -y -i %s -ss %d -fs %dM -map_metadata 0 -c copy %s`, video.File.Path, duration, limit, path)
@@ -122,8 +123,8 @@ func (c *FfmpegConverter) Split(video *core.Video, limit int) ([]*core.Video, er
 }
 
 // CreateVideo is a core.IVideoFactory interface implementation
-func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
-	c.l.Infof("create video: %s", strings.ReplaceAll(path, os.TempDir(), "$TMPDIR/"))
+func (c *FfmpegConverter) CreateVideo(path string) (*legacy.Video, error) {
+	c.l.Info("create video: %s", strings.ReplaceAll(path, os.TempDir(), "$TMPDIR/"))
 	ffprobe, err := c.getFFProbe(path)
 	if err != nil {
 		c.l.Error(err)
@@ -137,8 +138,7 @@ func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
 	}
 
 	if duration < 10 {
-		c.l.Errorf("expected duration at least 10 seconds, got %f", duration)
-		return nil, fmt.Errorf("file is too short")
+		return nil, fmt.Errorf("file is too short: expected at least 10 seconds duration, got %f", duration)
 	}
 
 	stream, err := ffprobe.getVideoStream()
@@ -166,8 +166,8 @@ func (c *FfmpegConverter) CreateVideo(path string) (*core.Video, error) {
 		return nil, err
 	}
 
-	return &core.Video{
-		File:     core.File{Name: stat.Name(), Path: path, Size: stat.Size()},
+	return &legacy.Video{
+		File:     legacy.File{Name: stat.Name(), Path: path, Size: stat.Size()},
 		Width:    stream.Width,
 		Height:   stream.Height,
 		Bitrate:  bitrate,
@@ -195,7 +195,7 @@ func (c *FfmpegConverter) getFFProbe(file string) (*ffpResponse, error) {
 	return &resp, nil
 }
 
-func (c *FfmpegConverter) createThumb(videoPath string, scale string) (*core.Image, error) {
+func (c *FfmpegConverter) createThumb(videoPath string, scale string) (*legacy.Image, error) {
 	thumbPath := videoPath + ".jpg"
 
 	cmd := fmt.Sprintf(`ffmpeg -v error -y -i "%s" -ss 00:00:01.000 -vframes 1 -filter:v scale="%s" "%s"`, videoPath, scale, thumbPath)
@@ -212,8 +212,8 @@ func (c *FfmpegConverter) createThumb(videoPath string, scale string) (*core.Ima
 		return nil, err
 	}
 
-	return &core.Image{
-		File:   core.File{Name: path.Base(thumbPath), Path: thumbPath},
+	return &legacy.Image{
+		File:   legacy.File{Name: path.Base(thumbPath), Path: thumbPath},
 		Width:  ffprobe.Streams[0].Width,
 		Height: ffprobe.Streams[0].Height,
 	}, nil

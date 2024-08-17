@@ -1,13 +1,13 @@
 package infrastructure
 
 import (
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/streadway/amqp"
 )
 
 type RabbitWorker struct {
-	l   core.ILogger
 	key string
 	ch  *amqp.Channel
 }
@@ -22,7 +22,7 @@ func (worker *RabbitWorker) Perform(data []byte, ch chan []byte) error {
 		nil,   // arguments
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to declare queue: %v", err)
 	}
 
 	msgs, err := worker.ch.Consume(
@@ -35,7 +35,7 @@ func (worker *RabbitWorker) Perform(data []byte, ch chan []byte) error {
 		nil,    // args
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to consume channel: %v", err)
 	}
 
 	corrId := uuid.NewString()
@@ -51,7 +51,7 @@ func (worker *RabbitWorker) Perform(data []byte, ch chan []byte) error {
 			ReplyTo:       q.Name,
 		})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to publish a task: %v", err)
 	}
 
 	go func() {
