@@ -3,22 +3,23 @@ package usecases
 import (
 	"sync"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func CreateBootstrapFlow(l core.ILogger, chatStorage core.IChatStorage, userStorage core.IUserStorage) core.ITextHandler {
+func CreateBootstrapFlow(l core.Logger, chatStorage legacy.IChatStorage, userStorage legacy.IUserStorage) legacy.ITextHandler {
 	return &BootstrapFlow{l, chatStorage, userStorage, sync.Mutex{}}
 }
 
 type BootstrapFlow struct {
-	l           core.ILogger
-	chatStorage core.IChatStorage
-	userStorage core.IUserStorage
+	l           core.Logger
+	chatStorage legacy.IChatStorage
+	userStorage legacy.IUserStorage
 	lock        sync.Mutex
 }
 
 // HandleText is a core.ITextHandler protocol implementation
-func (flow *BootstrapFlow) HandleText(message *core.Message, bot core.IBot) error {
+func (flow *BootstrapFlow) HandleText(message *legacy.Message, bot legacy.IBot) error {
 	flow.lock.Lock()
 	defer flow.lock.Unlock()
 
@@ -37,7 +38,7 @@ func (flow *BootstrapFlow) HandleText(message *core.Message, bot core.IBot) erro
 	return err
 }
 
-func (flow *BootstrapFlow) ensureChatExists(chat *core.Chat) error {
+func (flow *BootstrapFlow) ensureChatExists(chat *legacy.Chat) error {
 	_, err := flow.chatStorage.GetChatByID(chat.ID)
 	if err != nil {
 		if err.Error() == "record not found" {
@@ -48,7 +49,7 @@ func (flow *BootstrapFlow) ensureChatExists(chat *core.Chat) error {
 	return err
 }
 
-func (flow *BootstrapFlow) ensureUserExists(user *core.User) error {
+func (flow *BootstrapFlow) ensureUserExists(user *legacy.User) error {
 	_, err := flow.userStorage.GetUserById(user.ID)
 	if err != nil {
 		if err.Error() == "record not found" {

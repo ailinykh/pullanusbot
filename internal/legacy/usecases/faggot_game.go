@@ -11,27 +11,28 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
 // CreateGameFlow is a simple GameFlow factory
-func CreateGameFlow(l core.ILogger, t core.ILocalizer, s core.IGameStorage, r core.IRand, settings core.ISettingsProvider, commandService core.ICommandService) *GameFlow {
+func CreateGameFlow(l core.Logger, t legacy.ILocalizer, s legacy.IGameStorage, r legacy.IRand, settings legacy.ISettingsProvider, commandService legacy.ICommandService) *GameFlow {
 	return &GameFlow{l, t, s, r, settings, commandService, sync.Mutex{}}
 }
 
 // GameFlow represents faggot game logic
 type GameFlow struct {
-	l              core.ILogger
-	t              core.ILocalizer
-	s              core.IGameStorage
-	r              core.IRand
-	settings       core.ISettingsProvider
-	commandService core.ICommandService
+	l              core.Logger
+	t              legacy.ILocalizer
+	s              legacy.IGameStorage
+	r              legacy.IRand
+	settings       legacy.ISettingsProvider
+	commandService legacy.ICommandService
 	mutex          sync.Mutex
 }
 
 // Rules of the game
-func (flow *GameFlow) Rules(message *core.Message, bot core.IBot) error {
+func (flow *GameFlow) Rules(message *legacy.Message, bot legacy.IBot) error {
 	if message.IsPrivate {
 		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_not_available_for_private"))
 		return err
@@ -41,7 +42,7 @@ func (flow *GameFlow) Rules(message *core.Message, bot core.IBot) error {
 }
 
 // Add a new player to game
-func (flow *GameFlow) Add(message *core.Message, bot core.IBot) error {
+func (flow *GameFlow) Add(message *legacy.Message, bot legacy.IBot) error {
 	if message.IsPrivate {
 		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_not_available_for_private"))
 		return err
@@ -69,7 +70,7 @@ func (flow *GameFlow) Add(message *core.Message, bot core.IBot) error {
 }
 
 // Play game
-func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
+func (flow *GameFlow) Play(message *legacy.Message, bot legacy.IBot) error {
 	if message.IsPrivate {
 		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_not_available_for_private"))
 		return err
@@ -79,7 +80,7 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 
 	flow.checkSettings(message.Chat.ID, bot)
 
-	flow.l.Infof("chat_id: %d, game started by %v", message.Chat.ID, message.Sender)
+	flow.l.Info("chat_id: %d, game started by %v", message.Chat.ID, message.Sender)
 
 	players, _ := flow.s.GetPlayers(message.Chat.ID)
 	switch len(players) {
@@ -109,20 +110,20 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 		return err
 	}
 
-	flow.l.Infof("day: %s, winner: %v", day, winner)
+	flow.l.Info("day: %s, winner: %v", day, winner)
 
 	if winner.ID == message.Sender.ID {
 		if winner.FirstName != message.Sender.FirstName || winner.LastName != message.Sender.LastName || winner.Username != message.Sender.Username {
 			err := flow.s.UpdatePlayer(message.Chat.ID, message.Sender)
 			if err != nil {
-				flow.l.Error(err)
+				flow.l.Error(fmt.Errorf("failed to update player: %v", err))
 			} else {
-				flow.l.Infof("player info updated: %v", winner)
+				flow.l.Info("player info updated: %v", winner)
 			}
 		}
 	}
 
-	round := &core.Round{Day: day, Winner: winner}
+	round := &legacy.Round{Day: day, Winner: winner}
 	flow.s.AddRound(message.Chat.ID, round)
 
 	for i := 0; i <= 3; i++ {
@@ -159,7 +160,7 @@ func (flow *GameFlow) Play(message *core.Message, bot core.IBot) error {
 }
 
 // All statistics for all time
-func (flow *GameFlow) All(message *core.Message, bot core.IBot) error {
+func (flow *GameFlow) All(message *legacy.Message, bot legacy.IBot) error {
 	if message.IsPrivate {
 		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_not_available_for_private"))
 		return err
@@ -177,7 +178,7 @@ func (flow *GameFlow) All(message *core.Message, bot core.IBot) error {
 }
 
 // Stats returns current year statistics
-func (flow *GameFlow) Stats(message *core.Message, bot core.IBot) error {
+func (flow *GameFlow) Stats(message *legacy.Message, bot legacy.IBot) error {
 	if message.IsPrivate {
 		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_not_available_for_private"))
 		return err
@@ -222,7 +223,7 @@ func (flow *GameFlow) Stats(message *core.Message, bot core.IBot) error {
 }
 
 // Me returns your personal statistics
-func (flow *GameFlow) Me(message *core.Message, bot core.IBot) error {
+func (flow *GameFlow) Me(message *legacy.Message, bot legacy.IBot) error {
 	if message.IsPrivate {
 		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_not_available_for_private"))
 		return err
@@ -239,7 +240,7 @@ func (flow *GameFlow) Me(message *core.Message, bot core.IBot) error {
 	return err
 }
 
-func (flow *GameFlow) getStat(message *core.Message) ([]Stat, error) {
+func (flow *GameFlow) getStat(message *legacy.Message) ([]Stat, error) {
 	entries := []Stat{}
 	rounds, err := flow.s.GetRounds(message.Chat.ID)
 
@@ -263,8 +264,8 @@ func (flow *GameFlow) getStat(message *core.Message) ([]Stat, error) {
 	return entries, nil
 }
 
-func (flow *GameFlow) checkSettings(chatID core.ChatID, bot core.IBot) error {
-	data, err := flow.settings.GetData(chatID, core.SFaggotGameEnabled)
+func (flow *GameFlow) checkSettings(chatID legacy.ChatID, bot legacy.IBot) error {
+	data, err := flow.settings.GetData(chatID, legacy.SFaggotGameEnabled)
 
 	if err != nil {
 		flow.l.Error(err)
@@ -277,7 +278,7 @@ func (flow *GameFlow) checkSettings(chatID core.ChatID, bot core.IBot) error {
 	err = json.Unmarshal(data, &settingsV1)
 	if err != nil {
 		flow.l.Error(err)
-		// TODO: perform a migration
+		// TODO: perform a migration?
 	}
 
 	if settingsV1.Enabled {
@@ -291,13 +292,13 @@ func (flow *GameFlow) checkSettings(chatID core.ChatID, bot core.IBot) error {
 		return err
 	}
 
-	err = flow.settings.SetData(chatID, core.SFaggotGameEnabled, data)
+	err = flow.settings.SetData(chatID, legacy.SFaggotGameEnabled, data)
 	if err != nil {
 		flow.l.Error(err)
 		return err
 	}
 
-	commands := []core.Command{
+	commands := []legacy.Command{
 		{Text: "pidor", Description: "play the game, see /pidorules first"},
 		{Text: "pidorules", Description: "POTD game rules"},
 		{Text: "pidoreg", Description: "register for POTD game"},

@@ -3,11 +3,12 @@ package usecases
 import (
 	"time"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
 // CreatePublisherFlow is a basic PublisherFlow factory
-func CreatePublisherFlow(chatID core.ChatID, username string, l core.ILogger) *PublisherFlow {
+func CreatePublisherFlow(chatID legacy.ChatID, username string, l core.Logger) *PublisherFlow {
 	publisher := PublisherFlow{
 		l:           l,
 		chatID:      chatID,
@@ -22,7 +23,7 @@ func CreatePublisherFlow(chatID core.ChatID, username string, l core.ILogger) *P
 
 // PublisherFlow represents last sent image keeper logic
 type PublisherFlow struct {
-	l core.ILogger
+	l core.Logger
 
 	chatID      int64
 	username    string
@@ -32,16 +33,16 @@ type PublisherFlow struct {
 
 type imgSource struct {
 	imageID string
-	bot     core.IBot
+	bot     legacy.IBot
 }
 
 type msgSource struct {
-	message core.Message
-	bot     core.IBot
+	message legacy.Message
+	bot     legacy.IBot
 }
 
 // HandleImage is a core.IImageHandler protocol implementation
-func (p *PublisherFlow) HandleImage(image *core.Image, message *core.Message, bot core.IBot) error {
+func (p *PublisherFlow) HandleImage(image *legacy.Image, message *legacy.Message, bot legacy.IBot) error {
 	if message.Chat.ID == p.chatID && message.Sender.Username == p.username {
 		p.imageChan <- imgSource{image.ID, bot}
 	}
@@ -49,7 +50,7 @@ func (p *PublisherFlow) HandleImage(image *core.Image, message *core.Message, bo
 	return nil
 }
 
-func (p *PublisherFlow) HandleRequest(message *core.Message, bot core.IBot) error {
+func (p *PublisherFlow) HandleRequest(message *legacy.Message, bot legacy.IBot) error {
 	if message.Chat.ID == p.chatID {
 		p.requestChan <- msgSource{*message, bot}
 	}
@@ -61,9 +62,9 @@ func (p *PublisherFlow) runLoop() {
 	photos := []string{}
 	queue := []string{}
 
-	disposal := func(m core.Message, bot core.IBot, timeout int) {
+	disposal := func(m legacy.Message, bot legacy.IBot, timeout int) {
 		time.Sleep(time.Duration(timeout) * time.Second)
-		p.l.Infof("disposing message %d from chat %d", m.ID, m.Chat.ID)
+		p.l.Info("disposing message %d from chat %d", m.ID, m.Chat.ID)
 		err := bot.Delete(&m)
 		if err != nil {
 			p.l.Error(err)
@@ -73,12 +74,12 @@ func (p *PublisherFlow) runLoop() {
 	for {
 		select {
 		case is := <-p.imageChan:
-			p.l.Infof("got photo %s", is.imageID)
+			p.l.Info("got photo %s", is.imageID)
 			queue = append(queue, is.imageID)
 
 		case <-time.After(1 * time.Second):
 			if len(queue) > 0 {
-				p.l.Infof("had %d actual photo(s)", len(queue))
+				p.l.Info("had %d actual photo(s)", len(queue))
 				photos = queue
 				queue = []string{}
 			}
@@ -93,17 +94,17 @@ func (p *PublisherFlow) runLoop() {
 				}
 			case 1:
 				p.l.Info("have one actual photo")
-				sent, err := ms.bot.SendImage(&core.Image{ID: photos[0]}, "")
+				sent, err := ms.bot.SendImage(&legacy.Image{ID: photos[0]}, "")
 				if err != nil {
 					p.l.Error(err)
 				} else {
 					go disposal(*sent, ms.bot, 30)
 				}
 			default:
-				p.l.Infof("have %d actual photos", count)
-				album := []*core.Image{}
+				p.l.Info("have %d actual photos", count)
+				album := []*legacy.Image{}
 				for _, p := range photos {
-					album = append(album, &core.Image{ID: p})
+					album = append(album, &legacy.Image{ID: p})
 				}
 				sent, err := ms.bot.SendAlbum(album)
 				if err != nil {

@@ -36,7 +36,7 @@ func main() {
 	boolSettingProvider := helpers.CreateBoolSettingProvider(settingsProvider)
 	databaseChatStorage := infrastructure.CreateChatStorage(dbFile, logger)
 	inMemoryChatStorage := infrastructure.CreateInMemoryChatStorage()
-	chatStorageDecorator := usecases.CreateChatStorageDecorator(logger, inMemoryChatStorage, databaseChatStorage)
+	chatStorageDecorator := usecases.CreateChatStorageDecorator(inMemoryChatStorage, databaseChatStorage)
 	telebot := api.CreateTelebot(config.BotToken(), logger)
 	telebot.SetupInfo()
 
@@ -49,7 +49,7 @@ func main() {
 	localizer := infrastructure.CreateGameLocalizer()
 	gameStorage := infrastructure.CreateGameStorage(dbFile)
 	rand := infrastructure.CreateMathRand()
-	commandService := usecases.CreateCommandService(logger)
+	commandService := usecases.CreateCommandService()
 	gameFlow := usecases.CreateGameFlow(logger, localizer, gameStorage, rand, settingsProvider, commandService)
 	telebot.AddHandler("/pidorules", gameFlow.Rules)
 	telebot.AddHandler("/pidoreg", gameFlow.Add)
@@ -88,7 +88,7 @@ func main() {
 	tiktokHttpClient := api.CreateHttpClient() // domain specific headers and cookies
 	ytdlpApi := api.CreateYtDlpApi([]string{}, logger)
 	tiktokMediaFactory := api.CreateTikTokMediaFactory(ytdlpApi)
-	tiktokFlow := usecases.CreateTikTokFlow(logger, tiktokHttpClient, tiktokMediaFactory, localMediaSender)
+	tiktokFlow := usecases.CreateTikTokFlow(tiktokHttpClient, tiktokMediaFactory, localMediaSender)
 	telebot.AddHandler(tiktokFlow)
 
 	fileUploader := api.CreateTelegraphAPI()

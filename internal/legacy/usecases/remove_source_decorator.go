@@ -1,22 +1,23 @@
 package usecases
 
 import (
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func CreateRemoveSourceDecorator(l core.ILogger, decoratee core.ITextHandler, settingsKey core.SettingKey, settingProvider core.IBoolSettingProvider) *RemoveSourceDecorator {
+func CreateRemoveSourceDecorator(l core.Logger, decoratee legacy.ITextHandler, settingsKey legacy.SettingKey, settingProvider legacy.IBoolSettingProvider) *RemoveSourceDecorator {
 	return &RemoveSourceDecorator{l, decoratee, settingsKey, settingProvider}
 }
 
 type RemoveSourceDecorator struct {
-	l               core.ILogger
-	decoratee       core.ITextHandler
-	settingsKey     core.SettingKey
-	settingProvider core.IBoolSettingProvider
+	l               core.Logger
+	decoratee       legacy.ITextHandler
+	settingsKey     legacy.SettingKey
+	settingProvider legacy.IBoolSettingProvider
 }
 
 // HandleText is a core.ITextHandler protocol implementation
-func (decorator *RemoveSourceDecorator) HandleText(message *core.Message, bot core.IBot) error {
+func (decorator *RemoveSourceDecorator) HandleText(message *legacy.Message, bot legacy.IBot) error {
 	err := decorator.decoratee.HandleText(message, bot)
 	//TODO: error handling protocol
 	if err != nil && err.Error() == "not implemented" {
@@ -31,7 +32,7 @@ func (decorator *RemoveSourceDecorator) HandleText(message *core.Message, bot co
 	enabled := decorator.settingProvider.GetBool(message.Chat.ID, decorator.settingsKey)
 
 	if enabled {
-		decorator.l.Infof("removing chat %d message %d", message.Chat.ID, message.ID)
+		decorator.l.Info("removing chat %d message %d", message.Chat.ID, message.ID)
 		return bot.Delete(message)
 	}
 

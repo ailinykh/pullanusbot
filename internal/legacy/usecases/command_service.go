@@ -6,12 +6,11 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func CreateCommandService(l core.ILogger) core.ICommandService {
-	return &CommandService{l, make(map[int64][]core.Command)}
+func CreateCommandService() core.ICommandService {
+	return &CommandService{make(map[int64][]core.Command)}
 }
 
 type CommandService struct {
-	l     core.ILogger
 	cache map[int64][]core.Command
 }
 
@@ -43,7 +42,6 @@ func (service *CommandService) EnableCommands(chatID int64, commands []core.Comm
 	}
 
 	if len(new) == 0 {
-		// service.l.Warning("all the commands already enabled")
 		return nil
 	}
 

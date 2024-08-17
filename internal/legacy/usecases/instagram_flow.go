@@ -5,22 +5,23 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/api"
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func CreateInstagramFlow(l core.ILogger, api api.YoutubeApi, sendMedia core.ISendMediaStrategy) core.ITextHandler {
+func CreateInstagramFlow(l core.Logger, api api.YoutubeApi, sendMedia legacy.ISendMediaStrategy) legacy.ITextHandler {
 	return &InstagramFlow{l, api, sendMedia}
 }
 
 type InstagramFlow struct {
-	l         core.ILogger
+	l         core.Logger
 	api       api.YoutubeApi
-	sendMedia core.ISendMediaStrategy
+	sendMedia legacy.ISendMediaStrategy
 }
 
 // HandleText is a core.ITextHandler protocol implementation
-func (flow *InstagramFlow) HandleText(message *core.Message, bot core.IBot) error {
+func (flow *InstagramFlow) HandleText(message *legacy.Message, bot legacy.IBot) error {
 	r := regexp.MustCompile(`https://www.instagram.com/reel/\S+`)
 	rmatch := r.FindAllString(message.Text, -1)
 
@@ -52,8 +53,8 @@ func (flow *InstagramFlow) HandleText(message *core.Message, bot core.IBot) erro
 	return fmt.Errorf("not implemented")
 }
 
-func (flow *InstagramFlow) handleReel(url string, message *core.Message, bot core.IBot) error {
-	flow.l.Infof("processing %s", url)
+func (flow *InstagramFlow) handleReel(url string, message *legacy.Message, bot legacy.IBot) error {
+	flow.l.Info("processing %s", url)
 	resp, err := flow.api.Get(url)
 	if err != nil {
 		flow.l.Error(err)
@@ -77,12 +78,12 @@ func (flow *InstagramFlow) handleReel(url string, message *core.Message, bot cor
 		return err
 	}
 
-	media := core.Media{
+	media := legacy.Media{
 		Caption:     caption,
 		ResourceURL: vf.Url,
 		URL:         url,
 	}
-	return flow.sendMedia.SendMedia([]*core.Media{&media}, bot)
+	return flow.sendMedia.SendMedia([]*legacy.Media{&media}, bot)
 }
 
 func (flow *InstagramFlow) getPreferredVideoFormat(resp *api.YtDlpResponse) (*api.YtDlpFormat, error) {

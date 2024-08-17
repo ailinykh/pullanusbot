@@ -319,7 +319,7 @@ func makeSUT(args ...interface{}) (*usecases.GameFlow, *test_helpers.FakeBot, *G
 	}
 
 	t := test_helpers.CreateLocalizer(dict)
-	c := test_helpers.CreateCommandService(l)
+	c := test_helpers.CreateCommandService()
 	r := &RandMock{}
 	game := usecases.CreateGameFlow(l, t, storage, r, s, c)
 	return game, bot, storage

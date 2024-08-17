@@ -15,7 +15,7 @@ func Test_HandleText_CreateChatPayload(t *testing.T) {
 	logger := test_helpers.CreateLogger()
 	loc := test_helpers.CreateLocalizer(map[string]string{})
 	settingsProvider := test_helpers.CreateSettingsProvider()
-	commandService := test_helpers.CreateCommandService(logger)
+	commandService := test_helpers.CreateCommandService()
 	startFlow := usecases.CreateStartFlow(logger, loc, settingsProvider, commandService)
 
 	bot := test_helpers.CreateBot()
@@ -49,16 +49,16 @@ func Test_HandleText_CreateChatPayload(t *testing.T) {
 	assert.Equal(t, true, contains("another_payload", settingsV1.Payload))
 
 	expected := []string{
-		"enable commands 1488 [{help show help message}]",
-		"enable commands 1488 [{help show help message}]",
-		"enable commands 1488 [{help show help message}]",
+		"enable commands 42 [{help show help message}]",
+		"enable commands 42 [{help show help message}]",
+		"enable commands 42 [{help show help message}]",
 	}
 	assert.Equal(t, expected, commandService.ActionLog)
 }
 
 func makeMessage(text string) *core.Message {
-	chat := core.Chat{ID: 1488, Title: "Paul Durov", Type: "private"}
-	sender := core.User{ID: 1, FirstName: "Paul", LastName: "Durov"}
+	chat := core.Chat{ID: 42, Title: "Vinny The Pooh", Type: "private"}
+	sender := core.User{ID: 1, FirstName: "Vinny", LastName: "The Pooh"}
 	return &core.Message{Text: text, Chat: &chat, Sender: &sender}
 }
 

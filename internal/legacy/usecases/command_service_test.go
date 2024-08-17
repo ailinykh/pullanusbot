@@ -11,8 +11,7 @@ import (
 
 func Test_EnableCommands_DoNotCallsSetCommandsMoreThanOneTime(t *testing.T) {
 	bot := test_helpers.CreateBot()
-	logger := test_helpers.CreateLogger()
-	service := usecases.CreateCommandService(logger)
+	service := usecases.CreateCommandService()
 
 	service.EnableCommands(1, []core.Command{{Text: "c1", Description: "d1"}}, bot)
 	assert.Equal(t, []string{"get commands 1", "set commands 1 [{c1 d1}]"}, bot.ActionLog)
@@ -26,8 +25,7 @@ func Test_EnableCommands_DoNotCallsSetCommandsMoreThanOneTime(t *testing.T) {
 
 func Test_DisableCommands_DoNotCallsSetCommandsMoreThanOneTime(t *testing.T) {
 	bot := test_helpers.CreateBot()
-	logger := test_helpers.CreateLogger()
-	service := usecases.CreateCommandService(logger)
+	service := usecases.CreateCommandService()
 
 	service.EnableCommands(14, []core.Command{
 		{Text: "one", Description: "1"},

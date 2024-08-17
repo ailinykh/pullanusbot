@@ -8,23 +8,24 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
 // CreateTwitterFlow is a basic TwitterFlow factory
-func CreateTwitterTimeout(l core.ILogger, tweetHandler ITweetHandler) *TwitterTimeout {
-	return &TwitterTimeout{l, tweetHandler, make(map[core.Message]core.Message)}
+func CreateTwitterTimeout(l core.Logger, tweetHandler ITweetHandler) *TwitterTimeout {
+	return &TwitterTimeout{l, tweetHandler, make(map[legacy.Message]legacy.Message)}
 }
 
 // TwitterTimeout is a decorator for TwitterFlow to handle API timeouts gracefully
 type TwitterTimeout struct {
-	l            core.ILogger
+	l            core.Logger
 	tweetHandler ITweetHandler
-	replies      map[core.Message]core.Message
+	replies      map[legacy.Message]legacy.Message
 }
 
 // Process is a ITweetHandler protocol implementation
-func (twitterTimeout *TwitterTimeout) Process(tweetID string, message *core.Message, bot core.IBot) error {
+func (twitterTimeout *TwitterTimeout) Process(tweetID string, message *legacy.Message, bot legacy.IBot) error {
 	err := twitterTimeout.tweetHandler.Process(tweetID, message, bot)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Rate limit exceeded") {
@@ -70,7 +71,7 @@ func (twitterTimeout *TwitterTimeout) parseTimeout(err error) (int64, error) {
 	}
 
 	timeout := limit - time.Now().Unix()
-	twitterTimeout.l.Infof("Twitter api timeout %d seconds", timeout)
+	twitterTimeout.l.Info("Twitter api timeout %d seconds", timeout)
 	timeout = int64(math.Max(float64(timeout), 2)) // Twitter api timeout might be negative
 	return timeout, nil
 }

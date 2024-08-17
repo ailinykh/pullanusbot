@@ -1,13 +1,14 @@
 package usecases
 
-import "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+import (
+	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+)
 
-func CreateChatStorageDecorator(l core.ILogger, cache core.IChatStorage, db core.IChatStorage) core.IChatStorage {
-	return &ChatStorageDecorator{l, cache, db}
+func CreateChatStorageDecorator(cache core.IChatStorage, db core.IChatStorage) core.IChatStorage {
+	return &ChatStorageDecorator{cache, db}
 }
 
 type ChatStorageDecorator struct {
-	l     core.ILogger
 	cache core.IChatStorage
 	db    core.IChatStorage
 }

@@ -6,12 +6,11 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func CreateCommandService(l core.ILogger) *CommandServiceMock {
-	return &CommandServiceMock{l, []string{}}
+func CreateCommandService() *CommandServiceMock {
+	return &CommandServiceMock{[]string{}}
 }
 
 type CommandServiceMock struct {
-	l         core.ILogger
 	ActionLog []string
 }
 

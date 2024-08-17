@@ -4,32 +4,32 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
 type ITweetHandler interface {
-	Process(string, *core.Message, core.IBot) error
+	Process(string, *legacy.Message, legacy.IBot) error
 }
 
 // CreateTwitterFlow is a basic TwitterFlow factory
-func CreateTwitterFlow(l core.ILogger, mediaFactory core.IMediaFactory, sendMediaStrategy core.ISendMediaStrategy) *TwitterFlow {
+func CreateTwitterFlow(l core.Logger, mediaFactory legacy.IMediaFactory, sendMediaStrategy legacy.ISendMediaStrategy) *TwitterFlow {
 	return &TwitterFlow{l, mediaFactory, sendMediaStrategy}
 }
 
 // TwitterFlow represents tweet processing logic
 type TwitterFlow struct {
-	l                 core.ILogger
-	mediaFactory      core.IMediaFactory
-	sendMediaStrategy core.ISendMediaStrategy
+	l                 core.Logger
+	mediaFactory      legacy.IMediaFactory
+	sendMediaStrategy legacy.ISendMediaStrategy
 }
 
 // Process is a ITweetHandler protocol implementation
-func (flow *TwitterFlow) Process(tweetID string, message *core.Message, bot core.IBot) error {
-	flow.l.Infof("processing tweet %s", tweetID)
+func (flow *TwitterFlow) Process(tweetID string, message *legacy.Message, bot legacy.IBot) error {
+	flow.l.Info("processing tweet %s", tweetID)
 	media, err := flow.mediaFactory.CreateMedia(tweetID)
 	if err != nil {
-		flow.l.Error(err)
-		return err
+		return fmt.Errorf("failed to create media: %v", err)
 	}
 
 	for _, m := range media {
@@ -40,8 +40,7 @@ func (flow *TwitterFlow) Process(tweetID string, message *core.Message, bot core
 
 	err = flow.sendMediaStrategy.SendMedia(media, bot)
 	if err != nil {
-		flow.l.Error(err)
-		return err
+		return fmt.Errorf("failed to send media: %v", err)
 	}
 
 	return nil

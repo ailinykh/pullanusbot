@@ -6,10 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func NewRebootServerFlow(serverApi core.ServerAPI, commandService core.ICommandService, logger core.ILogger, opts *RebootServerOptions) *RebootServerFlow {
+func NewRebootServerFlow(serverApi legacy.ServerAPI, commandService legacy.ICommandService, logger core.Logger, opts *RebootServerOptions) *RebootServerFlow {
 	return &RebootServerFlow{
 		logger:         logger,
 		serverApi:      serverApi,
@@ -33,16 +34,16 @@ type RebootServerOptions struct {
 }
 
 type RebootServerFlow struct {
-	logger         core.ILogger
-	serverApi      core.ServerAPI
-	commandService core.ICommandService
+	logger         core.Logger
+	serverApi      legacy.ServerAPI
+	commandService legacy.ICommandService
 	rebootLog      []*logEntry
 	confirmReboot  chan bool
 	opts           *RebootServerOptions
 }
 
 // HandleText is a core.ITextHandler protocol implementation
-func (flow *RebootServerFlow) HandleText(message *core.Message, bot core.IBot) error {
+func (flow *RebootServerFlow) HandleText(message *legacy.Message, bot legacy.IBot) error {
 	if message.Text != flow.opts.Command {
 		return fmt.Errorf("not implemented")
 	}
@@ -59,7 +60,7 @@ func (flow *RebootServerFlow) HandleText(message *core.Message, bot core.IBot) e
 		return fmt.Errorf("chat id %d not in whitelist", message.Chat.ID)
 	}
 
-	if err := flow.commandService.EnableCommands(message.Chat.ID, []core.Command{{
+	if err := flow.commandService.EnableCommands(message.Chat.ID, []legacy.Command{{
 		Text:        flow.opts.Command,
 		Description: "Reboot VPN Server",
 	}}, bot); err != nil {
@@ -69,12 +70,12 @@ func (flow *RebootServerFlow) HandleText(message *core.Message, bot core.IBot) e
 	return flow.Reboot(message, bot)
 }
 
-func (flow *RebootServerFlow) Reboot(message *core.Message, bot core.IBot) error {
-	flow.logger.Infof("attempt to reboot server via %+v in chat %+v", message.Sender, message.Chat)
+func (flow *RebootServerFlow) Reboot(message *legacy.Message, bot legacy.IBot) error {
+	flow.logger.Info("attempt to reboot server via %+v in chat %+v", message.Sender, message.Chat)
 
 	for _, entry := range flow.rebootLog {
 		if time.Since(entry.timestamp) < 5*time.Minute {
-			flow.logger.Infof("reboot server timeout %s", entry.timestamp)
+			flow.logger.Info("reboot server timeout %s", entry.timestamp)
 			text := fmt.Sprintf("🔴 Server already restarted at <b>%s</b>", entry.timestamp.Format(time.UnixDate))
 			_, err := bot.SendText(text)
 			return err
@@ -102,7 +103,7 @@ func (flow *RebootServerFlow) Reboot(message *core.Message, bot core.IBot) error
 		return err
 	}
 
-	button := &core.Button{
+	button := &legacy.Button{
 		ID:      confirmRebootVpnButtonId,
 		Text:    "🟢 Yes, reboot",
 		Payload: servers[0].Name,
@@ -112,7 +113,7 @@ func (flow *RebootServerFlow) Reboot(message *core.Message, bot core.IBot) error
 		"",
 		fmt.Sprintf("To reboot <b>%s</b> press the button below:", servers[0].Name),
 	}
-	sent, err := bot.SendText(strings.Join(messages, "\n"), [][]*core.Button{{button}})
+	sent, err := bot.SendText(strings.Join(messages, "\n"), [][]*legacy.Button{{button}})
 	if err != nil {
 		return err
 	}
@@ -140,7 +141,7 @@ func (flow *RebootServerFlow) Reboot(message *core.Message, bot core.IBot) error
 			}
 		}()
 	case <-time.After(5 * time.Second):
-		flow.logger.Infof("server reboot interrupted due to confirm timeout reached")
+		flow.logger.Info("server reboot interrupted due to confirm timeout reached")
 		flow.rebootLog = flow.rebootLog[:len(flow.rebootLog)-1]
 
 		_, err = bot.Edit(sent, "🔴 Server reboot canceled")
@@ -155,8 +156,8 @@ func (flow *RebootServerFlow) GetButtonIds() []string {
 }
 
 // ButtonPressed is a core.IButtonHandler protocol implementation
-func (flow *RebootServerFlow) ButtonPressed(button *core.Button, message *core.Message, user *core.User, bot core.IBot) error {
-	flow.logger.Infof("server reboot confirmed by %d %s", user.ID, user.DisplayName())
+func (flow *RebootServerFlow) ButtonPressed(button *legacy.Button, message *legacy.Message, user *legacy.User, bot legacy.IBot) error {
+	flow.logger.Info("server reboot confirmed by %d %s", user.ID, user.DisplayName())
 	text := fmt.Sprintf("🟡 Server reboot in progress by %s %s...", user.FirstName, user.LastName)
 	if _, err := bot.Edit(message, text); err != nil {
 		return err

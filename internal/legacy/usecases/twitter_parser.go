@@ -4,25 +4,26 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func CreateTwitterParser(l core.ILogger, tweetHandler ITweetHandler) *TwitterParser {
+func CreateTwitterParser(l core.Logger, tweetHandler ITweetHandler) *TwitterParser {
 	return &TwitterParser{l, tweetHandler}
 }
 
 type TwitterParser struct {
-	l            core.ILogger
+	l            core.Logger
 	tweetHandler ITweetHandler
 }
 
 // HandleText is a core.ITextHandler protocol implementation
-func (parser *TwitterParser) HandleText(message *core.Message, bot core.IBot) error {
+func (parser *TwitterParser) HandleText(message *legacy.Message, bot legacy.IBot) error {
 	r := regexp.MustCompile(`https://(?i:twitter|x)\.com\S+/(\d+)\S*`)
 	match := r.FindAllStringSubmatch(message.Text, -1)
 
 	if len(match) > 0 {
-		parser.l.Infof("Processing %s", match[0][0])
+		parser.l.Info("Processing %s", match[0][0])
 	} else {
 		return fmt.Errorf("not implemented")
 	}

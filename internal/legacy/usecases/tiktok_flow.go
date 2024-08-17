@@ -7,12 +7,11 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func CreateTikTokFlow(l core.ILogger, httpClient core.IHttpClient, mediaFactory core.IMediaFactory, sendMediaStrategy core.ISendMediaStrategy) *TikTokFlow {
-	return &TikTokFlow{l, httpClient, mediaFactory, sendMediaStrategy}
+func CreateTikTokFlow(httpClient core.IHttpClient, mediaFactory core.IMediaFactory, sendMediaStrategy core.ISendMediaStrategy) *TikTokFlow {
+	return &TikTokFlow{httpClient, mediaFactory, sendMediaStrategy}
 }
 
 type TikTokFlow struct {
-	l                 core.ILogger
 	httpClient        core.IHttpClient
 	mediaFactory      core.IMediaFactory
 	sendMediaStrategy core.ISendMediaStrategy
@@ -25,8 +24,7 @@ func (flow *TikTokFlow) HandleText(message *core.Message, bot core.IBot) error {
 	for _, l := range links {
 		err := flow.handleURL(l, message, bot)
 		if err != nil {
-			flow.l.Error(err)
-			return err
+			return fmt.Errorf("failed to process %s: %v", l, err)
 		}
 	}
 
@@ -37,8 +35,6 @@ func (flow *TikTokFlow) HandleText(message *core.Message, bot core.IBot) error {
 }
 
 func (flow *TikTokFlow) handleURL(url string, message *core.Message, bot core.IBot) error {
-	flow.l.Infof("processing %s", url)
-
 	media, err := flow.mediaFactory.CreateMedia(url)
 	if err != nil {
 		if err.Error() == "Video currently unavailable" {
