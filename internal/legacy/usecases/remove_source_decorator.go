@@ -1,6 +1,8 @@
 package usecases
 
 import (
+	"fmt"
+
 	"github.com/ailinykh/pullanusbot/v2/internal/core"
 	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
@@ -25,8 +27,7 @@ func (decorator *RemoveSourceDecorator) HandleText(message *legacy.Message, bot 
 	}
 
 	if err != nil {
-		decorator.l.Error(err)
-		return err
+		return fmt.Errorf("failed to handle message: %v", err)
 	}
 
 	enabled := decorator.settingProvider.GetBool(message.Chat.ID, decorator.settingsKey)
