@@ -23,7 +23,7 @@ func main() {
 	logger := logger.NewGoogleLogger(ctx, config.WorkingDir())
 
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGABRT)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		sig := <-sigs
 		logger.Errorf("%s signal received", sig)
@@ -103,7 +103,7 @@ func main() {
 			logger.Infof("publisher logic enabled for %s by %s", chatId, username)
 			chatID, err := strconv.ParseInt(chatId, 10, 64)
 			if err != nil {
-				logger.Errorf("failed to parse %s: %v", chatID, err)
+				logger.Errorf("failed to parse publisher chat id: %v", err)
 			} else {
 				publisherFlow := usecases.CreatePublisherFlow(chatID, username, logger)
 				telebot.AddHandler(publisherFlow)
@@ -133,7 +133,7 @@ func main() {
 			for _, chatId := range strings.Split(chatId, ",") {
 				chatID, err := strconv.ParseInt(chatId, 10, 64)
 				if err != nil {
-					logger.Errorf("failed to parse %s: %v", chatID, err)
+					logger.Errorf("failed to parse reboot server chat id: %v", err)
 				} else {
 					chatIds = append(chatIds, chatID)
 				}
@@ -148,7 +148,7 @@ func main() {
 				rebootFlow := usecases.NewRebootServerFlow(lightsailApi, commandService, logger, opts)
 				telebot.AddHandler(rebootFlow)
 			} else {
-				logger.Infof("server reboot logic disabled due to no chat_id's specified %s", chatId)
+				logger.Warning("server reboot logic disabled due to no chat id's specified")
 			}
 		} else {
 			logger.Info("server reboot logic disabled")
