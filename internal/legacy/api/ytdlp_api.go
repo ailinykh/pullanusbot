@@ -6,20 +6,20 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
 )
 
 type YoutubeApi interface {
 	Get(string) (*YtDlpResponse, error)
 }
 
-func CreateYtDlpApi(args []string, l core.ILogger) YoutubeApi {
+func CreateYtDlpApi(args []string, l core.Logger) YoutubeApi {
 	return &YtDlpApi{args, l}
 }
 
 type YtDlpApi struct {
 	args []string
-	l    core.ILogger
+	l    core.Logger
 }
 
 func (api *YtDlpApi) Get(url string) (*YtDlpResponse, error) {

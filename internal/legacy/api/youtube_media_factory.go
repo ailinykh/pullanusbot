@@ -7,21 +7,22 @@ import (
 	"path"
 	"strings"
 
-	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func CreateYoutubeMediaFactory(l core.ILogger, api YoutubeApi, fd core.IFileDownloader) *YoutubeMediaFactory {
+func CreateYoutubeMediaFactory(l core.Logger, api YoutubeApi, fd legacy.IFileDownloader) *YoutubeMediaFactory {
 	return &YoutubeMediaFactory{l, api, fd}
 }
 
 type YoutubeMediaFactory struct {
-	l   core.ILogger
+	l   core.Logger
 	api YoutubeApi
-	fd  core.IFileDownloader
+	fd  legacy.IFileDownloader
 }
 
 // CreateMedia is a core.IMediaFactory interface implementation
-func (y *YoutubeMediaFactory) CreateMedia(url string) ([]*core.Media, error) {
+func (y *YoutubeMediaFactory) CreateMedia(url string) ([]*legacy.Media, error) {
 	resp, err := y.api.Get(url)
 	if err != nil {
 		y.l.Error(err)
@@ -34,7 +35,7 @@ func (y *YoutubeMediaFactory) CreateMedia(url string) ([]*core.Media, error) {
 		return nil, err
 	}
 
-	return []*core.Media{
+	return []*legacy.Media{
 		{
 			URL:         video.Url,
 			Title:       resp.Title,
@@ -42,7 +43,7 @@ func (y *YoutubeMediaFactory) CreateMedia(url string) ([]*core.Media, error) {
 			Duration:    int(resp.Duration),
 			Codec:       video.Vcodec,
 			Size:        int(video.Filesize),
-			Type:        core.TVideo,
+			Type:        legacy.TVideo,
 		},
 		{
 			URL:         audio.Url,
@@ -51,7 +52,7 @@ func (y *YoutubeMediaFactory) CreateMedia(url string) ([]*core.Media, error) {
 			Duration:    int(resp.Duration),
 			Codec:       audio.Acodec,
 			Size:        int(audio.Filesize),
-			Type:        core.TAudio,
+			Type:        legacy.TAudio,
 		},
 	}, nil
 }
@@ -72,7 +73,7 @@ func (y *YoutubeMediaFactory) getFormats(resp *YtDlpResponse) (*YtDlpFormat, *Yt
 }
 
 // CreateVideo is a core.IVideoFactory interface implementation
-func (y *YoutubeMediaFactory) CreateVideo(id string) (*core.Video, error) {
+func (y *YoutubeMediaFactory) CreateVideo(id string) (*legacy.Video, error) {
 	resp, err := y.api.Get(id)
 	if err != nil {
 		y.l.Error(err)
@@ -101,8 +102,8 @@ func (y *YoutubeMediaFactory) CreateVideo(id string) (*core.Video, error) {
 		return nil, err
 	}
 
-	return &core.Video{
-		File:     core.File{Name: name, Path: videoPath, Size: video.Filesize + audio.Filesize},
+	return &legacy.Video{
+		File:     legacy.File{Name: name, Path: videoPath, Size: video.Filesize + audio.Filesize},
 		Width:    video.Width,
 		Height:   video.Height,
 		Bitrate:  0,
@@ -112,7 +113,7 @@ func (y *YoutubeMediaFactory) CreateVideo(id string) (*core.Video, error) {
 	}, nil
 }
 
-func (y *YoutubeMediaFactory) makeThumb(resp *YtDlpResponse, vf *YtDlpFormat) (*core.Image, error) {
+func (y *YoutubeMediaFactory) makeThumb(resp *YtDlpResponse, vf *YtDlpFormat) (*legacy.Image, error) {
 	filename := fmt.Sprintf("youtube[%s][%s].jpg", resp.Id, vf.FormatId)
 	originalThumbPath := path.Join(os.TempDir(), filename+"-original")
 	thumbPath := path.Join(os.TempDir(), filename)
@@ -142,8 +143,8 @@ func (y *YoutubeMediaFactory) makeThumb(resp *YtDlpResponse, vf *YtDlpFormat) (*
 		return nil, err
 	}
 
-	return &core.Image{
-		File:   core.File{Name: filename, Path: thumbPath, Size: stat.Size()},
+	return &legacy.Image{
+		File:   legacy.File{Name: filename, Path: thumbPath, Size: stat.Size()},
 		Width:  vf.Width,
 		Height: vf.Height,
 	}, nil
