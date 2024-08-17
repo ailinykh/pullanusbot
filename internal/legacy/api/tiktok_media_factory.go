@@ -6,20 +6,18 @@ import (
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func CreateTikTokMediaFactory(l core.ILogger, api YoutubeApi) core.IMediaFactory {
-	return &TikTokMediaFactory{l, api}
+func CreateTikTokMediaFactory(api YoutubeApi) core.IMediaFactory {
+	return &TikTokMediaFactory{api}
 }
 
 type TikTokMediaFactory struct {
-	l   core.ILogger
 	api YoutubeApi
 }
 
 func (factory *TikTokMediaFactory) CreateMedia(url string) ([]*core.Media, error) {
 	item, err := factory.api.Get(url)
 	if err != nil {
-		factory.l.Error(err)
-		return nil, err
+		return nil, fmt.Errorf("failed to get content for %s: %v", url, err)
 	}
 
 	media := &core.Media{
