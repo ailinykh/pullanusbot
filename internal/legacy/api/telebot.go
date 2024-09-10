@@ -243,6 +243,10 @@ func (t *Telebot) Run() {
 	t.bot.Start()
 }
 
+func (t *Telebot) Stop() {
+	t.bot.Stop()
+}
+
 func (t *Telebot) registerCommand(command string) {
 	for _, c := range t.commandHandlers {
 		if c == command {

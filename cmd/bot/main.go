@@ -187,5 +187,6 @@ func main() {
 
 	logger.Info("waiting for context...")
 	<-ctx.Done()
+	telebot.Stop()
 	logger.Info("attempt to shutdown gracefully...")
 }
