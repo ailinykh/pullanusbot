@@ -73,28 +73,15 @@ func (flow *RebootServerFlow) HandleText(message *legacy.Message, bot legacy.IBo
 func (flow *RebootServerFlow) Reboot(message *legacy.Message, bot legacy.IBot) error {
 	flow.logger.Info("attempt to reboot server", "user", message.Sender, "chat", message.Chat)
 
-	for _, entry := range flow.rebootLog {
-		if time.Since(entry.timestamp) < 5*time.Minute {
-			flow.logger.Info("reboot server timeout", "timestamp", entry.timestamp)
-			text := fmt.Sprintf("🔴 Server already restarted at <b>%s</b>", entry.timestamp.Format(time.UnixDate))
-			_, err := bot.SendText(text)
-			return err
-		}
-	}
-
-	entry := logEntry{
-		timestamp: time.Now(),
-		message:   message.Sender.FirstName,
-	}
-	flow.rebootLog = append(flow.rebootLog, &entry)
-	// Limit log size
-	if len(flow.rebootLog) > 5 {
-		flow.rebootLog = flow.rebootLog[1:]
-	}
-
 	ctx := context.Background()
 	servers, err := flow.serverApi.GetServers(ctx)
 	if err != nil {
+		_, _ = bot.SendText(strings.Join([]string{
+			"🔴 Failed to get server list",
+			"please, try again later",
+			"",
+			err.Error(),
+			}, "\n"))
 		return err
 	}
 
@@ -120,8 +107,33 @@ func (flow *RebootServerFlow) Reboot(message *legacy.Message, bot legacy.IBot) e
 
 	select {
 	case <-flow.confirmReboot:
+		for _, entry := range flow.rebootLog {
+			if time.Since(entry.timestamp) < 5*time.Minute {
+				flow.logger.Info("reboot server timeout", "timestamp", entry.timestamp)
+				text := fmt.Sprintf("🔴 Server already restarted at <b>%s</b>", entry.timestamp.Format(time.UnixDate))
+				_, err := bot.SendText(text)
+				return err
+			}
+		}
+
 		if err = flow.serverApi.RebootServer(ctx, servers[0]); err != nil {
+			_, _ = bot.SendText(strings.Join([]string{
+				"🔴 Failed to reboot server",
+				"please, try again later",
+				"",
+				err.Error(),
+				}, "\n"))
 			return err
+		}
+
+		entry := logEntry{
+			timestamp: time.Now(),
+			message:   message.Sender.FirstName,
+		}
+		flow.rebootLog = append(flow.rebootLog, &entry)
+		// Limit log size
+		if len(flow.rebootLog) > 5 {
+			flow.rebootLog = flow.rebootLog[1:]
 		}
 
 		go func() {
@@ -142,8 +154,6 @@ func (flow *RebootServerFlow) Reboot(message *legacy.Message, bot legacy.IBot) e
 		}()
 	case <-time.After(5 * time.Second):
 		flow.logger.Info("server reboot interrupted due to confirm timeout reached")
-		flow.rebootLog = flow.rebootLog[:len(flow.rebootLog)-1]
-
 		_, err = bot.Edit(sent, "🔴 Server reboot canceled")
 		return err
 	}
