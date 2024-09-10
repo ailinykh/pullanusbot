@@ -41,8 +41,7 @@ func (q *RabbitFactory) reestablishConnection(url string) error {
 
 	ch, err := conn.Channel()
 	if err != nil {
-		q.l.Error(err)
-		return err
+		return fmt.Errorf("failed to open channel: %v", err)
 	}
 
 	q.conn = conn
@@ -51,9 +50,11 @@ func (q *RabbitFactory) reestablishConnection(url string) error {
 	go func() {
 		err := <-conn.NotifyClose(make(chan *amqp.Error))
 		q.l.Error("connection closed", "error", err)
-		errr := q.reestablishConnection(url)
-		if errr != nil {
-			q.l.Error("failed to establish connection", errr)
+		er := q.reestablishConnection(url)
+		if er != nil {
+			q.l.Error("failed to establish connection", err)
+		} else {
+			q.l.Info("connection established")
 		}
 	}()
 
