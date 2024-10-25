@@ -44,17 +44,9 @@ jobs:
 
       - name: Build docker container
         run: |
-          docker build -t ${{ github.repository }}:$TAG -t ${{ github.repository }}:latest .
+          docker build -t ${{ github.repository }}:$TAG -t ${{ github.repository }}:latest -t ${{ github.repository }}:prod .
           echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
           docker push --all-tags ${{ github.repository }}
         env:
           DOCKER_LOGIN: ${{ secrets.DOCKER_LOGIN }}
           DOCKER_PWD: ${{ secrets.DOCKER_PWD }}
-
-      - name: Deploy app
-        run: |
-          echo "$SSH_IDENTITY_KEY" > identity
-          chmod 600 identity
-          ssh -i identity -o StrictHostKeyChecking=no root@proxy.ailinykh.com "/bin/bash ./docker/pullanusbot/deploy_app.sh $TAG"
-        env:
-          SSH_IDENTITY_KEY: ${{ secrets.SSH_IDENTITY_KEY }}
