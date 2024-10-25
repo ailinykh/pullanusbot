@@ -21,16 +21,18 @@ func Test_HandleText_NotFoundAnyLinkByDefault(t *testing.T) {
 
 func Test_HandleText_FoundTweetLink(t *testing.T) {
 	parser, handler, bot := makeTwitterSUT()
-	m := makeTweetMessage("a message with https://twitter.com/status/username/123456")
+	m1 := makeTweetMessage("a message with https://twitter.com/username/status/123456")
+	m2 := makeTweetMessage("a message with https://x.com/x/status/654321/photo/1")
 
-	parser.HandleText(m, bot)
+	parser.HandleText(m1, bot)
+	parser.HandleText(m2, bot)
 
-	assert.Equal(t, []string{"123456"}, handler.tweets)
+	assert.Equal(t, []string{"123456", "654321"}, handler.tweets)
 }
 
 func Test_HandleText_FoundTweetLinkX(t *testing.T) {
 	parser, handler, bot := makeTwitterSUT()
-	m := makeTweetMessage("a message with https://x.com/status/username/123456")
+	m := makeTweetMessage("a message with https://x.com/username/status/123456")
 
 	parser.HandleText(m, bot)
 
@@ -39,7 +41,7 @@ func Test_HandleText_FoundTweetLinkX(t *testing.T) {
 
 func Test_HandleText_FoundMultipleTweetLinks(t *testing.T) {
 	parser, handler, bot := makeTwitterSUT()
-	m := makeTweetMessage("a message with https://twitter.com/username/status/123456 and https://twitter.com/username/status/789010 and some text")
+	m := makeTweetMessage("a message with https://twitter.com/username/status/123456 and https://x.com/username/status/789010 and some text")
 	parser.HandleText(m, bot)
 
 	assert.Equal(t, []string{"123456", "789010"}, handler.tweets)
@@ -56,7 +58,7 @@ func Test_HandleText_DoesNotRemoveOriginalMessage(t *testing.T) {
 
 func Test_HandleText_ReturnsErrorOnError(t *testing.T) {
 	parser, handler, bot := makeTwitterSUT()
-	m := makeTweetMessage("a message with https://twitter.com/status/username/123456")
+	m := makeTweetMessage("a message with https://x.com/username/status/123456")
 	handler.err = fmt.Errorf("an error")
 
 	err := parser.HandleText(m, bot)

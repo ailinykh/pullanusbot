@@ -19,7 +19,7 @@ type TwitterParser struct {
 
 // HandleText is a core.ITextHandler protocol implementation
 func (parser *TwitterParser) HandleText(message *legacy.Message, bot legacy.IBot) error {
-	r := regexp.MustCompile(`https://(?i:twitter|x)\.com\S+/(\d+)\S*`)
+	r := regexp.MustCompile(`https://(?i:twitter|x)\.com\S+/status/(\d+)`)
 	match := r.FindAllStringSubmatch(message.Text, -1)
 
 	if len(match) > 0 {
