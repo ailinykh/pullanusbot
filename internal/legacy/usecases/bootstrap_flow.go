@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/ailinykh/pullanusbot/v2/internal/core"
@@ -52,7 +53,7 @@ func (flow *BootstrapFlow) ensureChatExists(chat *legacy.Chat) error {
 func (flow *BootstrapFlow) ensureUserExists(user *legacy.User) error {
 	_, err := flow.userStorage.GetUserById(user.ID)
 	if err != nil {
-		if err.Error() == "record not found" {
+		if strings.HasSuffix(err.Error(), "record not found") {
 			return flow.userStorage.CreateUser(user)
 		}
 		flow.l.Error(err)

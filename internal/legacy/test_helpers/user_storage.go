@@ -20,7 +20,7 @@ func (storage *FakeUserStorage) GetUserById(userID int64) (*core.User, error) {
 	if user, ok := storage.Users[userID]; ok {
 		return user, nil
 	}
-	return nil, fmt.Errorf("record not found")
+	return nil, fmt.Errorf("failed to find user: record not found")
 }
 
 // CreateUser is a core.IUserStorage interface implementation
