@@ -7,7 +7,7 @@ ENV GOOS=linux
 ENV GOARCH=amd64
 RUN go build -v -a -installsuffix cgo -ldflags '-extldflags "-static"' ./cmd/bot
 
-FROM jrottenberg/ffmpeg:5.1-alpine313
+FROM jrottenberg/ffmpeg:6.1-alpine
 LABEL maintainer="Anton Ilinykh <anthonyilinykh@gmail.com>"
 RUN apk update && apk add tzdata python3 --no-cache && \
     wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O /usr/local/bin/yt-dlp && \
