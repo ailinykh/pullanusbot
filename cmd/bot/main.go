@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"path"
 	"strconv"
-	"strings"
 	"syscall"
 
 	"github.com/ailinykh/pullanusbot/v2/internal/api/logger"
@@ -19,8 +19,12 @@ import (
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
-	config := NewDefaultConfig()
-	logger := logger.NewGoogleLogger(ctx, config.WorkingDir())
+	config, err := NewBotConfig(os.Getenv("BOT_CONFIG_FILE"))
+	if err != nil {
+		panic(fmt.Sprintf("failed to load config: %v %s", err, os.Getenv("BOT_CONFIG_FILE")))
+	}
+	logger := logger.NewGoogleLogger(ctx, config.GetWorkingDir())
+	logger.Info("config loaded", "working_dir", config.GetWorkingDir())
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -30,7 +34,7 @@ func main() {
 		cancel()
 	}()
 
-	dbFile := path.Join(config.WorkingDir(), "pullanusbot.db")
+	dbFile := path.Join(config.GetWorkingDir(), "pullanusbot.db")
 
 	settingsProvider := infrastructure.CreateSettingsStorage(dbFile)
 	boolSettingProvider := helpers.CreateBoolSettingProvider(settingsProvider)
@@ -38,13 +42,14 @@ func main() {
 	inMemoryChatStorage := infrastructure.CreateInMemoryChatStorage()
 	chatStorageDecorator := usecases.CreateChatStorageDecorator(inMemoryChatStorage, databaseChatStorage)
 
-	chatID, err := strconv.ParseInt(os.Getenv("ADMIN_CHAT_ID"), 10, 64)
-	if err != nil {
-		chatID = 0
+	var chatID int64 = 0
+	if config.GetReportChatId() != nil {
+		chatID = *config.GetReportChatId()
+		logger.Info("using report", "chat_id", chatID)
 	}
 	telebot := api.CreateTelebot(
 		logger,
-		api.WithBotToken(config.BotToken()),
+		api.WithBotToken(config.GetBotToken()),
 		api.WithReportChatId(chatID),
 	)
 	telebot.SetupInfo()
@@ -77,7 +82,7 @@ func main() {
 	sendVideoStrategySplitDecorator := helpers.CreateSendVideoStrategySplitDecorator(logger, sendVideoStrategy, converter)
 	localMediaSender := helpers.CreateUploadMediaDecorator(logger, remoteMediaSender, fileDownloader, converter, sendVideoStrategySplitDecorator)
 
-	rabbit, close := infrastructure.CreateRabbitFactory(logger, config.AmqpUrl())
+	rabbit, close := infrastructure.CreateRabbitFactory(logger, config.GetAmqpUrl())
 	defer close()
 	task := rabbit.NewTask("twitter_queue")
 
@@ -132,36 +137,23 @@ func main() {
 		return err
 	})
 
-	{
-		keyId := os.Getenv("LIGHTSAIL_ACCESS_KEY_ID")
-		secret := os.Getenv("LIGHTSAIL_SECRET_ACCESS_KEY")
-		chatId := os.Getenv("REBOOT_SERVER_CHAT_ID")
-		command := os.Getenv("REBOOT_SERVER_COMMAND")
-		if len(keyId) > 0 && len(secret) > 0 && len(chatId) > 0 && len(command) > 0 {
-			chatIds := []int64{}
-			for _, chatId := range strings.Split(chatId, ",") {
-				chatID, err := strconv.ParseInt(chatId, 10, 64)
-				if err != nil {
-					logger.Error("failed to parse reboot server chat id", "error", err)
-				} else {
-					chatIds = append(chatIds, chatID)
-				}
-			}
-			if len(chatIds) > 0 {
-				logger.Info("server reboot logic enabled", "chats", chatIds, "command", command)
-				lightsailApi := api.NewLightsailAPI(logger, keyId, secret)
-				opts := &usecases.RebootServerOptions{
-					ChatIds: chatIds,
-					Command: command,
-				}
-				rebootFlow := usecases.NewRebootServerFlow(lightsailApi, commandService, logger, opts)
-				telebot.AddHandler(rebootFlow)
-			} else {
-				logger.Warn("server reboot logic disabled due to no chat id's specified")
-			}
-		} else {
-			logger.Info("server reboot logic disabled")
+	if serverConfigsPath, ok := os.LookupEnv("REBOOT_SERVER_CONFIG_FILE"); ok {
+		configs, err := NewServerConfigList(serverConfigsPath)
+		if err != nil {
+			panic(err)
 		}
+		for _, config := range configs {
+			logger.Info("server reboot logic enabled", "chats", config.GetChatIds(), "command", config.GetCommand())
+			lightsailApi := api.NewLightsailAPI(logger, config.GetKeyID(), config.GetSecretKey())
+			opts := &usecases.RebootServerOptions{
+				ChatIds: config.GetChatIds(),
+				Command: config.GetCommand(),
+			}
+			rebootFlow := usecases.NewRebootServerFlow(lightsailApi, commandService, logger, opts)
+			telebot.AddHandler(rebootFlow)
+		}
+	} else {
+		logger.Info("server reboot logic disabled")
 	}
 
 	iDoNotCare := usecases.CreateIDoNotCare()
@@ -169,7 +161,7 @@ func main() {
 
 	if cookiesFilePath := os.Getenv("INSTAGRAM_COOKIES_FILE_PATH"); len(cookiesFilePath) > 0 {
 		logger.Info("instagram logic enabled. Cookies file: %s", cookiesFilePath)
-		cookies := path.Join(config.WorkingDir(), cookiesFilePath)
+		cookies := path.Join(config.GetWorkingDir(), cookiesFilePath)
 		instaAPI := api.CreateYtDlpApi([]string{"--cookies", cookies}, logger)
 		instaFlow := usecases.CreateInstagramFlow(logger, instaAPI, localMediaSender)
 		removeInstaSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, instaFlow, core.SInstagramFlowRemoveSource, boolSettingProvider)
