@@ -81,7 +81,7 @@ func (flow *RebootServerFlow) Reboot(message *legacy.Message, bot legacy.IBot) e
 			"please, try again later",
 			"",
 			err.Error(),
-			}, "\n"))
+		}, "\n"))
 		return err
 	}
 
@@ -122,7 +122,7 @@ func (flow *RebootServerFlow) Reboot(message *legacy.Message, bot legacy.IBot) e
 				"please, try again later",
 				"",
 				err.Error(),
-				}, "\n"))
+			}, "\n"))
 			return err
 		}
 
@@ -142,11 +142,13 @@ func (flow *RebootServerFlow) Reboot(message *legacy.Message, bot legacy.IBot) e
 				"🟢 Server restarted.",
 				"",
 				"restart log:",
+				"<pre>",
 			}
 			for _, entry := range flow.rebootLog {
-				text := fmt.Sprintf("<i>%s by %s</i>", entry.timestamp.Format(time.UnixDate), entry.message)
+				text := fmt.Sprintf("%s by %s", entry.timestamp.Format(time.UnixDate), entry.message)
 				messages = append(messages, text)
 			}
+			messages = append(messages, "</pre>")
 			_, err = bot.SendText(strings.Join(messages, "\n"))
 			if err != nil {
 				flow.logger.Error(err)
