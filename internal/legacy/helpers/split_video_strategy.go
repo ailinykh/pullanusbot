@@ -3,6 +3,7 @@ package helpers
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/ailinykh/pullanusbot/v2/internal/core"
 	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
@@ -21,7 +22,7 @@ type SendVideoStrategySplitDecorator struct {
 // SendMedia is a core.ISendVideoStrategy interface implementation
 func (strategy *SendVideoStrategySplitDecorator) SendVideo(video *legacy.Video, caption string, bot legacy.IBot) error {
 	err := strategy.decoratee.SendVideo(video, caption, bot)
-	if err != nil && err.Error() == "telegram: Request Entity Too Large (400)" {
+	if err != nil && strings.HasSuffix(err.Error(), "telegram: Request Entity Too Large (400)") {
 		strategy.l.Info("fallback to splitting")
 		// https://lists.ffmpeg.org/pipermail/ffmpeg-user/2014-January/019556.html
 		files, err := strategy.splitter.Split(video, 49)
