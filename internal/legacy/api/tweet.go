@@ -51,7 +51,7 @@ func (info *VideoInfo) best() VideoInfoVariant {
 	variant := info.Variants[0]
 	for _, v := range info.Variants {
 		if v.ContentType == "video/mp4" && v.Bitrate > variant.Bitrate {
-			return v
+			variant = v
 		}
 	}
 	return variant
