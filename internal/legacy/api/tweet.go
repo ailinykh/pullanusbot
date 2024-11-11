@@ -93,9 +93,11 @@ type GraphQLResponseTweetResult struct {
 }
 
 type GraphQLResponseTweetResultResult struct {
-	Core   GraphQLResponseCore `json:"core"`
-	Legacy Tweet               `json:"legacy"`
-	RestId string              `json:"rest_id"`
+	Core     GraphQLResponseCore `json:"core"`
+	Legacy   Tweet               `json:"legacy"`
+	Reason   string              `json:"reason"`
+	RestId   string              `json:"rest_id"`
+	TypeName string              `json:"__typename"`
 }
 
 type GraphQLResponseCore struct {

@@ -152,6 +152,11 @@ func (api *TwitterAPI) getTweetFromGraphQL(tweetID string) (*Tweet, error) {
 		return nil, fmt.Errorf(response.Errors[0].Message)
 	}
 
+	if response.Data.TweetResult.Result.TypeName != "Tweet" {
+		api.l.Info("unexpected typename", "json", string(body))
+		return nil, fmt.Errorf("unexpected typename: %s, reason: %s", response.Data.TweetResult.Result.TypeName, response.Data.TweetResult.Result.Reason)
+	}
+
 	// TODO: combine `twitter_api` with `twitter_media_factory`
 	tweet := response.Data.TweetResult.Result.Legacy
 	user := response.Data.TweetResult.Result.Core.UserResults.Result.Legacy
