@@ -1,6 +1,8 @@
 package test_helpers
 
 import (
+	"os"
+
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
@@ -14,7 +16,8 @@ type FakeImageDownloader struct {
 }
 
 // Upload is a core.IImageDownloader interface implementation
-func (fid *FakeImageDownloader) Download(image *core.Image) (*core.File, error) {
+func (fid *FakeImageDownloader) Download(image *core.Image) (*os.File, error) {
 	fid.Downloaded = append(fid.Downloaded, image.FileURL)
-	return &core.File{Path: image.Path}, fid.Err
+	file, _ := os.Open(image.File.Path)
+	return file, fid.Err
 }

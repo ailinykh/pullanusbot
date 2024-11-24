@@ -127,6 +127,11 @@ func CreateTelebot(logger core.Logger, opts ...TelebotConfigOption) *Telebot {
 		var err error
 		var m = c.Message()
 		image := &legacy.Image{
+			File: legacy.File{
+				Name: m.Photo.File.UniqueID + ".jpg",
+				Path: m.Photo.File.FilePath,
+				Size: m.Photo.File.FileSize,
+			},
 			ID:      m.Photo.FileID,
 			FileURL: m.Photo.FileURL,
 			Width:   m.Photo.Width,
@@ -166,20 +171,26 @@ func CreateTelebot(logger core.Logger, opts ...TelebotConfigOption) *Telebot {
 }
 
 // Download is a core.IImageDownloader interface implementation
-func (t *Telebot) Download(image *legacy.Image) (*legacy.File, error) {
+func (t *Telebot) Download(image *legacy.Image) (*os.File, error) {
 	//TODO: potential race condition
 	file := tb.FromURL(image.FileURL)
 	file.FileID = image.ID
-	name := helpers.RandStringRunes(4) + ".jpg"
-	path := path.Join(os.TempDir(), name)
+	path := path.Join(os.TempDir(), image.Name)
 	err := t.bot.Download(&file, path)
 	if err != nil {
 		t.logger.Error(err)
 		return nil, err
 	}
 
-	t.logger.Info("image downloaded", "file_id", file.UniqueID, "file_path", path)
-	return t.coreFactory.makeFile(name, path), nil
+	osFile, err := os.Open(path)
+	if err != nil {
+		t.logger.Error(err)
+		return nil, err
+	}
+
+	t.logger.Info("image downloaded", "file_id", file.UniqueID, "file_path", path, "size", image.File.Size)
+
+	return osFile, nil
 }
 
 // AddHandler register object as one of core.Handler's

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/ailinykh/pullanusbot/v2/internal/api/image_uploader"
 	"github.com/ailinykh/pullanusbot/v2/internal/api/logger"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/api"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
@@ -105,9 +106,9 @@ func main() {
 	tiktokFlow := usecases.CreateTikTokFlow(tiktokHttpClient, tiktokMediaFactory, localMediaSender)
 	telebot.AddHandler(tiktokFlow)
 
-	fileUploader := api.CreateTelegraphAPI()
+	imageUploader := image_uploader.NewPostimages(logger)
 	//TODO: image_downloader := api.CreateTelebotImageDownloader()
-	imageFlow := usecases.CreateImageFlow(logger, fileUploader, telebot)
+	imageFlow := usecases.CreateImageFlow(logger, imageUploader, telebot)
 	telebot.AddHandler(imageFlow)
 
 	{

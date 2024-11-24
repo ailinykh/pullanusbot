@@ -1,6 +1,7 @@
 package usecases_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
@@ -11,13 +12,13 @@ import (
 
 func Test_HandleImage_DownloadsAndUploadsImage(t *testing.T) {
 	logger := test_helpers.CreateLogger()
-	file_uploader := test_helpers.CreateFileUploader()
+	image_uploader := test_helpers.CreateImageUploader()
 	image_downloader := test_helpers.CreateImageDownloader()
-	image_flow := usecases.CreateImageFlow(logger, file_uploader, image_downloader)
+	image_flow := usecases.CreateImageFlow(logger, image_uploader, image_downloader)
 
 	url := "http://an-image-url.com"
-	path := "/an/image/path.jpg"
-	image := &core.Image{FileURL: url, File: core.File{Path: path}}
+	path, _ := os.CreateTemp(t.TempDir(), t.Name())
+	image := &core.Image{FileURL: url, File: core.File{Path: path.Name()}}
 
 	message := &core.Message{IsPrivate: true}
 	bot := test_helpers.CreateBot()
@@ -25,5 +26,9 @@ func Test_HandleImage_DownloadsAndUploadsImage(t *testing.T) {
 	image_flow.HandleImage(image, message, bot)
 
 	assert.Equal(t, []string{url}, image_downloader.Downloaded)
-	assert.Equal(t, []string{path}, file_uploader.Uploaded)
+	assert.Equal(t, []string{path.Name()}, image_uploader.Uploaded)
+
+	_, err := os.Stat(path.Name())
+	assert.True(t, os.IsNotExist(err))
+
 }

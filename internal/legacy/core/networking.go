@@ -1,5 +1,7 @@
 package core
 
+import "os"
+
 // IFileDownloader turns URL to File
 type IFileDownloader interface {
 	Download(URL, string) (*File, error)
@@ -12,7 +14,7 @@ type IFileUploader interface {
 
 // IImageDownloader download Image to disk
 type IImageDownloader interface {
-	Download(image *Image) (*File, error)
+	Download(image *Image) (*os.File, error)
 }
 
 // IHttpClient retreives remote content info

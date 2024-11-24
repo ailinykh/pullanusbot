@@ -18,7 +18,7 @@ func CreateCommonLocalizer() *CommonLocalizer {
 - в групповых чатах ролики на youtube длиною до <i>10 минут</i> я так же скачиваю и присылаю как видео
 - если дать мне права на удаление сообщений, я буду удалять исходное сообщение с ссылкой
 - в личном чате я могу скачать и прислать частями по 50MB любой ролик на youtube, достаточно просто прислать мне ссылку
-- если прислать мне картинку, я загружу её на telegra.ph и отправлю ссылку в ответ
+- если прислать мне картинку, я загружу её на внешний хостинг и отправлю ссылку в ответ
 - функционал постоянно добавляется`,
 		}, "en": {
 			"start_welcome": "Welcome!",
@@ -30,7 +30,7 @@ func CreateCommonLocalizer() *CommonLocalizer {
 - In group chats, I can download and send YouTube videos up to <i>10 minutes</i> long as video files.
 - If you assign me an <i>admin</i> role in a group chat with <b>delete messages</b> permission, I will delete the original message with the link.
 - In a private chat, I can download and send any YouTube video in parts of 50MB each; just send me the link.
-- If you send me an image, I will upload it to telegra.ph and send the link in response.
+- If you send me an image, I will upload it to external hosting and send the hotlink in response.
 - Functionality is constantly being added.
 			`,
 		}},
