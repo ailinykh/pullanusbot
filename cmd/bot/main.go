@@ -66,12 +66,7 @@ func main() {
 	rand := infrastructure.CreateMathRand()
 	commandService := usecases.CreateCommandService()
 	gameFlow := usecases.CreateGameFlow(logger, localizer, gameStorage, rand, settingsProvider, commandService)
-	telebot.AddHandler("/pidorules", gameFlow.Rules)
-	telebot.AddHandler("/pidoreg", gameFlow.Add)
-	telebot.AddHandler("/pidor", gameFlow.Play)
-	telebot.AddHandler("/pidorstats", gameFlow.Stats)
-	telebot.AddHandler("/pidorall", gameFlow.All)
-	telebot.AddHandler("/pidorme", gameFlow.Me)
+	telebot.AddHandler(gameFlow)
 
 	converter := infrastructure.CreateFfmpegConverter(logger)
 	videoFlow := usecases.CreateVideoFlow(logger, converter, converter)

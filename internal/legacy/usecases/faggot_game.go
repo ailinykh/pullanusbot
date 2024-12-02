@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -29,6 +30,33 @@ type GameFlow struct {
 	settings       legacy.ISettingsProvider
 	commandService legacy.ICommandService
 	mutex          sync.Mutex
+}
+
+// HandleText is a core.ITextHandler protocol implementation
+func (flow *GameFlow) HandleText(message *legacy.Message, bot legacy.IBot) error {
+	if !strings.HasPrefix(message.Text, "/pidor") {
+		return fmt.Errorf("not implemented")
+	}
+
+	if strings.HasPrefix(message.Text, "/pidorules") {
+		return flow.Rules(message, bot)
+	} else if strings.HasPrefix(message.Text, "/pidoreg") {
+		return flow.Add(message, bot)
+	} else if strings.HasPrefix(message.Text, "/pidorstats") {
+		return flow.Stats(strconv.Itoa(time.Now().Year()), message, bot)
+	} else if strings.HasPrefix(message.Text, "/pidorall") {
+		return flow.All(message, bot)
+	} else if strings.HasPrefix(message.Text, "/pidorme") {
+		return flow.Me(message, bot)
+	}
+
+	r := regexp.MustCompile(`^/pidor(\d+)$`)
+	matches := r.FindAllStringSubmatch(message.Text, -1)
+	if len(matches) > 0 && len(matches[0]) > 1 {
+		return flow.Stats(matches[0][1], message, bot)
+	} else {
+		return flow.Play(message, bot)
+	}
 }
 
 // Rules of the game
@@ -178,13 +206,12 @@ func (flow *GameFlow) All(message *legacy.Message, bot legacy.IBot) error {
 }
 
 // Stats returns current year statistics
-func (flow *GameFlow) Stats(message *legacy.Message, bot legacy.IBot) error {
+func (flow *GameFlow) Stats(year string, message *legacy.Message, bot legacy.IBot) error {
 	if message.IsPrivate {
 		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_not_available_for_private"))
 		return err
 	}
 
-	year := strconv.Itoa(time.Now().Year())
 	rounds, _ := flow.s.GetRounds(message.Chat.ID)
 	entries := []Stat{}
 	players := map[int64]bool{}
@@ -201,6 +228,11 @@ func (flow *GameFlow) Stats(message *legacy.Message, bot legacy.IBot) error {
 		}
 	}
 
+	if len(entries) == 0 {
+		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_stats_empty", year))
+		return err
+	}
+
 	sort.Slice(entries, func(i, j int) bool {
 		if entries[i].Score == entries[j].Score {
 			return entries[i].Player.Username < entries[j].Player.Username
@@ -208,7 +240,13 @@ func (flow *GameFlow) Stats(message *legacy.Message, bot legacy.IBot) error {
 		return entries[i].Score > entries[j].Score
 	})
 
-	messages := []string{flow.t.I18n(message.Sender.LanguageCode, "faggot_stats_top"), ""}
+	messages := []string{}
+	if year == strconv.Itoa(time.Now().Year()) {
+		messages = append(messages, flow.t.I18n(message.Sender.LanguageCode, "faggot_stats_top"))
+	} else {
+		messages = append(messages, flow.t.I18n(message.Sender.LanguageCode, "faggot_stats_top_year", year))
+	}
+	messages = append(messages, "")
 	max := len(entries)
 	if max > 10 {
 		max = 10 // Top 10 only

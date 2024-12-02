@@ -21,7 +21,7 @@ func Test_AllTheCommands_WorksOnlyInGroupChats(t *testing.T) {
 	game.Rules(message, bot)
 	game.Add(message, bot)
 	game.Play(message, bot)
-	game.Stats(message, bot)
+	game.Stats("2020", message, bot)
 	game.All(message, bot)
 	game.Me(message, bot)
 
@@ -191,7 +191,7 @@ func Test_Stats_RespondsWithDescendingResultsForCurrentYear(t *testing.T) {
 		{Day: year + "-01-06", Winner: m1.Sender},
 	}
 
-	game.Stats(m1, bot)
+	game.Stats(year, m1, bot)
 	assert.Equal(t, expected, strings.Split(bot.SentMessages[0], "\n"))
 }
 
@@ -225,12 +225,13 @@ func Test_Stats_RespondsOnlyForTop10Players(t *testing.T) {
 		messages = append(messages, makeGameMessage(i, fmt.Sprintf("Faggot%02d", i)))
 	}
 
+	year := strconv.Itoa(time.Now().Year())
 	for i, m := range messages {
-		day := fmt.Sprintf("%d-%02d-%02d", time.Now().Year(), i/30+1, i%30)
+		day := fmt.Sprintf("%s-%02d-%02d", year, i/30+1, i%30)
 		storage.rounds = append(storage.rounds, &core.Round{Day: day, Winner: m.Sender})
 	}
 
-	game.Stats(messages[0], bot)
+	game.Stats(year, messages[0], bot)
 	assert.Equal(t, expected, strings.Split(bot.SentMessages[0], "\n"))
 }
 
