@@ -137,8 +137,9 @@ func (c *FfmpegConverter) CreateVideo(path string) (*legacy.Video, error) {
 		return nil, err
 	}
 
-	if duration < 10 {
-		return nil, fmt.Errorf("file is too short: expected at least 10 seconds duration, got %f", duration)
+	var min = 0.3
+	if duration < min {
+		return nil, fmt.Errorf("file is too short: expected at least %f seconds duration, got %f", min, duration)
 	}
 
 	stream, err := ffprobe.getVideoStream()
