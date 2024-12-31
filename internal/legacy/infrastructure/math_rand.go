@@ -1,7 +1,7 @@
 package infrastructure
 
 import (
-	"math/rand"
+	"math/rand/v2"
 
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
@@ -13,5 +13,5 @@ func CreateMathRand() core.IRand {
 type MathRand struct{}
 
 func (MathRand) GetRand(n int) int {
-	return rand.Intn(n)
+	return rand.IntN(n)
 }
