@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -8,8 +9,8 @@ import (
 	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 )
 
-func CreateOutlineVpnFlow(l core.Logger, loc legacy.ILocalizer, api legacy.IVpnAPI) legacy.ITextHandler {
-	flow := OutlineVpnFlow{l, loc, api, make(map[string]func(*legacy.Message, legacy.IBot) error), make(map[int64]OutlineVpnState)}
+func CreateVpnFlow(l core.Logger, loc legacy.ILocalizer, api legacy.IVpnAPI, settings legacy.ISettingsProvider) legacy.ITextHandler {
+	flow := VpnFlow{l, loc, api, settings, make(map[string]func(*legacy.Message, legacy.IBot) error), make(map[int64]VpnState)}
 	flow.callbacks["vpn_create_key"] = flow.create
 	flow.callbacks["vpn_manage_key"] = flow.manage
 	flow.callbacks["vpn_delete_key"] = flow.delete
@@ -18,22 +19,23 @@ func CreateOutlineVpnFlow(l core.Logger, loc legacy.ILocalizer, api legacy.IVpnA
 	return &flow
 }
 
-type OutlineVpnFlow struct {
-	l   core.Logger
-	loc legacy.ILocalizer
-	api legacy.IVpnAPI
+type VpnFlow struct {
+	l        core.Logger
+	loc      legacy.ILocalizer
+	api      legacy.IVpnAPI
+	settings legacy.ISettingsProvider
 
 	callbacks map[string]func(*legacy.Message, legacy.IBot) error
-	state     map[int64]OutlineVpnState
+	state     map[int64]VpnState
 }
 
-type OutlineVpnState struct {
+type VpnState struct {
 	action string
 	source int
 }
 
 // GetButtonIds is a core.IButtonHandler protocol implementation
-func (flow *OutlineVpnFlow) GetButtonIds() []string {
+func (flow *VpnFlow) GetButtonIds() []string {
 	keys := make([]string, len(flow.callbacks))
 
 	i := 0
@@ -46,7 +48,7 @@ func (flow *OutlineVpnFlow) GetButtonIds() []string {
 }
 
 // ButtonPressed is a core.IButtonHandler protocol implementation
-func (flow *OutlineVpnFlow) ButtonPressed(button *legacy.Button, message *legacy.Message, _ *legacy.User, bot legacy.IBot) error {
+func (flow *VpnFlow) ButtonPressed(button *legacy.Button, message *legacy.Message, _ *legacy.User, bot legacy.IBot) error {
 	if callback, ok := flow.callbacks[button.ID]; ok {
 		return callback(message, bot)
 	}
@@ -54,7 +56,7 @@ func (flow *OutlineVpnFlow) ButtonPressed(button *legacy.Button, message *legacy
 }
 
 // HandleText is a core.ITextHandler protocol implementation
-func (flow *OutlineVpnFlow) HandleText(message *legacy.Message, bot legacy.IBot) error {
+func (flow *VpnFlow) HandleText(message *legacy.Message, bot legacy.IBot) error {
 	if !message.IsPrivate {
 		return fmt.Errorf("not implemented")
 	}
@@ -63,14 +65,46 @@ func (flow *OutlineVpnFlow) HandleText(message *legacy.Message, bot legacy.IBot)
 		return flow.handleAction(state, message, bot)
 	}
 
-	if message.Text != "/vpnhelp" {
-		return fmt.Errorf("not implemented")
+	if message.Text == "/vpnhelp" {
+		if flow.hasAccess(message.Chat.ID) {
+			return flow.help(message, bot)
+		}
+		_, err := bot.SendText(flow.loc.I18n(message.Sender.LanguageCode, "vpn_mislead"))
+		return err
 	}
 
-	return flow.help(message, bot)
+	flow.l.Info(message.Text)
+
+	return fmt.Errorf("not implemented")
 }
 
-func (flow *OutlineVpnFlow) help(message *legacy.Message, bot legacy.IBot) error {
+func (flow *VpnFlow) hasAccess(chatID int64) bool {
+	data, err := flow.settings.GetData(chatID, legacy.SPayloadList)
+	if err != nil {
+		flow.l.Error(err)
+		return false
+	}
+
+	var settingsV1 struct {
+		Payload []string
+	}
+
+	err = json.Unmarshal(data, &settingsV1)
+	if err != nil {
+		flow.l.Error(err)
+		// TODO: perform a migration
+		return false
+	}
+
+	for _, s := range settingsV1.Payload {
+		if s == "vpnhelp" {
+			return true
+		}
+	}
+	return false
+}
+
+func (flow *VpnFlow) help(message *legacy.Message, bot legacy.IBot) error {
 	keys, err := flow.api.GetKeys(message.Chat.ID)
 	if err != nil {
 		flow.l.Error(err)
@@ -81,15 +115,15 @@ func (flow *OutlineVpnFlow) help(message *legacy.Message, bot legacy.IBot) error
 	return err
 }
 
-func (flow *OutlineVpnFlow) create(message *legacy.Message, bot legacy.IBot) error {
-	flow.state[message.Chat.ID] = OutlineVpnState{"create", message.ID}
+func (flow *VpnFlow) create(message *legacy.Message, bot legacy.IBot) error {
+	flow.state[message.Chat.ID] = VpnState{"create", message.ID}
 	keyboard := legacy.Keyboard{[]*legacy.Button{{ID: "vpn_back", Text: flow.loc.I18n(message.Sender.LanguageCode, "vpn_button_back")}}}
 
 	_, err := bot.Edit(message, flow.loc.I18n(message.Sender.LanguageCode, "vpn_enter_create_key_name"), keyboard)
 	return err
 }
 
-func (flow *OutlineVpnFlow) manage(message *legacy.Message, bot legacy.IBot) error {
+func (flow *VpnFlow) manage(message *legacy.Message, bot legacy.IBot) error {
 	keys, err := flow.api.GetKeys(message.Chat.ID)
 	if err != nil {
 		flow.l.Error(err)
@@ -112,7 +146,7 @@ func (flow *OutlineVpnFlow) manage(message *legacy.Message, bot legacy.IBot) err
 	return err
 }
 
-func (flow *OutlineVpnFlow) back(message *legacy.Message, bot legacy.IBot) error {
+func (flow *VpnFlow) back(message *legacy.Message, bot legacy.IBot) error {
 	keys, err := flow.api.GetKeys(message.Chat.ID)
 	if err != nil {
 		flow.l.Error(err)
@@ -125,14 +159,14 @@ func (flow *OutlineVpnFlow) back(message *legacy.Message, bot legacy.IBot) error
 	return err
 }
 
-func (flow *OutlineVpnFlow) delete(message *legacy.Message, bot legacy.IBot) error {
+func (flow *VpnFlow) delete(message *legacy.Message, bot legacy.IBot) error {
 	keys, err := flow.api.GetKeys(message.Chat.ID)
 	if err != nil {
 		flow.l.Error(err)
 		return err
 	}
 
-	flow.state[message.Chat.ID] = OutlineVpnState{"delete", message.ID}
+	flow.state[message.Chat.ID] = VpnState{"delete", message.ID}
 
 	text := []string{flow.loc.I18n(message.Sender.LanguageCode, "vpn_enter_delete_key_name_top")}
 
@@ -147,11 +181,11 @@ func (flow *OutlineVpnFlow) delete(message *legacy.Message, bot legacy.IBot) err
 	return err
 }
 
-func (flow *OutlineVpnFlow) cancel(message *legacy.Message, bot legacy.IBot) error {
+func (flow *VpnFlow) cancel(message *legacy.Message, bot legacy.IBot) error {
 	return flow.back(message, bot)
 }
 
-func (flow *OutlineVpnFlow) getKeyboard(message *legacy.Message, keys []*legacy.VpnKey) legacy.Keyboard {
+func (flow *VpnFlow) getKeyboard(message *legacy.Message, keys []*legacy.VpnKey) legacy.Keyboard {
 	keyboard := legacy.Keyboard{}
 
 	if len(keys) < 10 {
@@ -165,7 +199,7 @@ func (flow *OutlineVpnFlow) getKeyboard(message *legacy.Message, keys []*legacy.
 	return keyboard
 }
 
-func (flow *OutlineVpnFlow) handleAction(state OutlineVpnState, message *legacy.Message, bot legacy.IBot) error {
+func (flow *VpnFlow) handleAction(state VpnState, message *legacy.Message, bot legacy.IBot) error {
 	if state.action == "create" {
 		if len(message.Text) > 64 {
 			_, err := bot.SendText(flow.loc.I18n(message.Sender.LanguageCode, "vpn_enter_create_key_name_too_long"))

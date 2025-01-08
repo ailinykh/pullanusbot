@@ -8,6 +8,7 @@ import (
 func CreateCommonLocalizer() *CommonLocalizer {
 	return &CommonLocalizer{
 		map[string]map[string]string{"ru": {
+			"start_vpn":     "🎉 Поздравляем! Вам открыт доступ к VPN!\n\nДля продолжения нажмите /vpnhelp",
 			"start_welcome": "Привет!",
 			"help": `Вот что я могу:
 			
@@ -21,6 +22,7 @@ func CreateCommonLocalizer() *CommonLocalizer {
 - если прислать мне картинку, я загружу её на внешний хостинг и отправлю ссылку в ответ
 - функционал постоянно добавляется`,
 		}, "en": {
+			"start_vpn":     "🎉 Congratulations! Now you got access to free VPN service!\n\nPress /vpnhelp to continue",
 			"start_welcome": "Welcome!",
 			"help": `Here is what i can do:
 

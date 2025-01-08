@@ -11,6 +11,7 @@ import (
 
 	"github.com/ailinykh/pullanusbot/v2/internal/api/image_uploader"
 	"github.com/ailinykh/pullanusbot/v2/internal/api/logger"
+	"github.com/ailinykh/pullanusbot/v2/internal/api/xui"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/api"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 	"github.com/ailinykh/pullanusbot/v2/internal/legacy/helpers"
@@ -164,6 +165,19 @@ func main() {
 		telebot.AddHandler(removeInstaSourceDecorator)
 	} else {
 		logger.Info("instagram logic disabled")
+	}
+
+	{
+		baseUrl := os.Getenv("XUI_BASE_URL")
+		cookie := os.Getenv("XUI_COOKIE")
+		if len(baseUrl) > 0 && len(cookie) > 0 {
+			api := xui.NewClient(logger, baseUrl, cookie)
+			localizer := infrastructure.CreateVpnLocalizer()
+			flow := usecases.CreateVpnFlow(logger, localizer, api, settingsProvider)
+			telebot.AddHandler(flow)
+		} else {
+			logger.Info("xui vpn logic disabled")
+		}
 	}
 
 	commonLocalizer := infrastructure.CreateCommonLocalizer()

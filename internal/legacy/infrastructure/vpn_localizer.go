@@ -23,7 +23,8 @@ func CreateVpnLocalizer() *VpnLocalizer {
 			"vpn_key_list_top":                   "🔑 Активные ключи:\n",
 			"vpn_key_list_item":                  "<b>%d.</b> %s\n<code>%s</code>\n",
 			"vpn_key_list_bottom":                "\nВсего ключей: <b>%d</b>",
-			"vpn_welcome":                        "🌏 <b>VPN всего за 3 простых шага</b>\n\n1️⃣ Установите клиент <a href='https://getoutline.org/'>outline</a> на ваше устройство:\n\n📱 <a href='https://itunes.apple.com/us/app/outline-app/id1356177741'>iOS / iPhone / iPad</a>\n📱 <a href='https://play.google.com/store/apps/details?id=org.outline.android.client'>Android</a>\n\n🖥 <a href='https://itunes.apple.com/us/app/outline-app/id1356178125'>macOS</a>\n🪟 <a href='https://raw.githubusercontent.com/Jigsaw-Code/outline-releases/master/client/stable/Outline-Client.exe'>Windows</a>\n🐧 <a href='https://raw.githubusercontent.com/Jigsaw-Code/outline-releases/master/client/stable/Outline-Client.AppImage'>Linux</a>\n\n2️⃣ Нажмите на кнопку <i>\"Создать новый ключ\"</i>\n\n3️⃣ Скопируйте полученный ключ в клиент",
+			"vpn_mislead":                        "неизвестная команда",
+			"vpn_welcome":                        "🌏 <b>VPN всего за 3 простых шага</b>\n\n1️⃣ Установите любой vless-совместимый клиент на ваше устройство, например:\n\n🍏 <a href='https://apps.apple.com/ru/app/streisand/id6450534064?l=ru-RU'>Streisand</a> для iOS\n🤖 <a href='https://play.google.com/store/apps/details?id=moe.nb4a'>NekoBox for Android</a> для Android\n\n2️⃣ Нажмите на кнопку <i>\"Создать новый ключ\"</i>\n\n3️⃣ Скопируйте полученный ключ в клиент",
 		}},
 	}
 }

@@ -9,6 +9,6 @@ type VpnKey struct {
 
 type IVpnAPI interface {
 	GetKeys(ChatID) ([]*VpnKey, error)
-	CreateKey(ChatID, string) (*VpnKey, error)
+	CreateKey(string, ChatID, *User) (*VpnKey, error)
 	DeleteKey(*VpnKey) error
 }

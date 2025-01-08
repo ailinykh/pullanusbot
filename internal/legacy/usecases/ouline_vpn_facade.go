@@ -50,14 +50,8 @@ func (facade *OutlineVpnFacade) GetKeys(chatID int64) ([]*legacy.VpnKey, error) 
 }
 
 // CreateKey is a core.IVpnAPI interface implementation
-func (facade *OutlineVpnFacade) CreateKey(chatID int64, title string) (*legacy.VpnKey, error) {
+func (facade *OutlineVpnFacade) CreateKey(title string, chatID int64, user *legacy.User) (*legacy.VpnKey, error) {
 	keys, err := facade.outlineStorage.GetKeys(chatID)
-	if err != nil {
-		facade.l.Error(err)
-		return nil, err
-	}
-
-	user, err := facade.userStorage.GetUserById(chatID) // should exist
 	if err != nil {
 		facade.l.Error(err)
 		return nil, err
