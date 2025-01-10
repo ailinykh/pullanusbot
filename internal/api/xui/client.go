@@ -112,10 +112,11 @@ func (c *Client) GetKeys(chatId int64) ([]*legacy.VpnKey, error) {
 func (c *Client) CreateKey(keyName string, chatId int64, user *legacy.User) (*legacy.VpnKey, error) {
 	settings := InboundSettings{
 		Clients: []InboundClient{{
-			ID:    uuid.NewString(),
-			Flow:  "",
-			Email: fmt.Sprintf("%d|%s|%s", chatId, user.DisplayName(), keyName),
-			TgId:  user.Username,
+			ID:     uuid.NewString(),
+			Flow:   "",
+			Email:  fmt.Sprintf("%d|%s|%s", chatId, user.DisplayName(), keyName),
+			Enable: true,
+			TgId:   user.Username,
 		}},
 	}
 

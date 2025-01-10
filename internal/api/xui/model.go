@@ -20,10 +20,11 @@ type InboundSettings struct {
 }
 
 type InboundClient struct {
-	ID    string `json:"id"`
-	Flow  string `json:"flow"`
-	Email string `json:"email"`
-	TgId  string `json:"tgId"`
+	ID     string `json:"id"`
+	Flow   string `json:"flow"`
+	Email  string `json:"email"`
+	Enable bool   `json:"enable"`
+	TgId   string `json:"tgId"`
 }
 
 type InboundStreamSettings struct {
