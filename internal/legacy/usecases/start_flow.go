@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/ailinykh/pullanusbot/v2/internal/core"
 	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
@@ -36,11 +35,9 @@ func (flow *StartFlow) Start(message *legacy.Message, bot legacy.IBot) error {
 			}
 
 			if payload == "vpnhelp" {
-				go func() {
-					// Delay to send it after "welcome" message
-					time.Sleep(time.Millisecond * 400)
-					bot.SendText(flow.loc.I18n(message.Sender.LanguageCode, "start_vpn"))
-				}()
+				// do not show default greeting message in case of VPN workflow
+				_, err = bot.SendText(flow.loc.I18n(message.Sender.LanguageCode, "start_vpn"))
+				return err
 			}
 		}
 
