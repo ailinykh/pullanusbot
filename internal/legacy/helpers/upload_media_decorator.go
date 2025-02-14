@@ -26,8 +26,15 @@ type UploadMediaDecorator struct {
 func (decorator *UploadMediaDecorator) SendMedia(media []*legacy.Media, bot legacy.IBot) error {
 	err := decorator.decoratee.SendMedia(media, bot)
 	if err != nil {
-		if strings.Contains(err.Error(), "failed to get HTTP URL content") || strings.Contains(err.Error(), "wrong file identifier/HTTP URL specified") {
-			return decorator.fallbackToUploading(media[0], bot)
+		fallbackErrors := []string{
+			"failed to get HTTP URL content",
+			"wrong file identifier/HTTP URL specified",
+			"wrong type of the web page content",
+		}
+		for _, e := range fallbackErrors {
+			if strings.Contains(err.Error(), e) {
+				return decorator.fallbackToUploading(media[0], bot)
+			}
 		}
 	}
 
