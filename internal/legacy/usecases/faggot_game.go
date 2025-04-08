@@ -3,7 +3,6 @@ package usecases
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"os"
 	"regexp"
 	"sort"
@@ -131,7 +130,7 @@ func (flow *GameFlow) Play(message *legacy.Message, bot legacy.IBot) error {
 		}
 	}
 
-	winner := players[rand.Intn(len(players))]
+	winner := players[flow.r.GetRand(len(players))]
 
 	if !bot.IsUserMemberOfChat(winner, message.Chat.ID) {
 		_, err := bot.SendText(flow.t.I18n(message.Sender.LanguageCode, "faggot_winner_left"))
@@ -161,7 +160,7 @@ func (flow *GameFlow) Play(message *legacy.Message, bot legacy.IBot) error {
 				templates = append(templates, key)
 			}
 		}
-		template := templates[rand.Intn(len(templates))]
+		template := templates[flow.r.GetRand(len(templates))]
 		phrase := flow.t.I18n(message.Sender.LanguageCode, template)
 
 		if i == 3 {
@@ -179,7 +178,7 @@ func (flow *GameFlow) Play(message *legacy.Message, bot legacy.IBot) error {
 		}
 
 		if os.Getenv("GO_ENV") != "testing" {
-			r := rand.Intn(3) + 1
+			r := flow.r.GetRand(3) + 1
 			time.Sleep(time.Duration(r) * time.Second)
 		}
 	}
