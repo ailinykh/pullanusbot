@@ -79,9 +79,15 @@ func main() {
 	sendVideoStrategySplitDecorator := helpers.CreateSendVideoStrategySplitDecorator(logger, sendVideoStrategy, converter)
 	localMediaSender := helpers.CreateUploadMediaDecorator(logger, remoteMediaSender, fileDownloader, converter, sendVideoStrategySplitDecorator)
 
-	rabbit, close := infrastructure.CreateRabbitFactory(logger, config.GetAmqpUrl())
-	defer close()
-	task := rabbit.NewTask("twitter_queue")
+	var task core.ITask
+	amqpUrl := config.GetAmqpUrl()
+	if len(amqpUrl) > 0 {
+		rabbit, close := infrastructure.CreateRabbitFactory(logger, config.GetAmqpUrl())
+		defer close()
+		task = rabbit.NewTask("twitter_queue")
+	} else {
+		task = core.TaskMock{}
+	}
 
 	twitterMediaFactory := api.CreateTwitterMediaFactory(logger, task)
 	twitterFlow := usecases.CreateTwitterFlow(logger, twitterMediaFactory, localMediaSender)
