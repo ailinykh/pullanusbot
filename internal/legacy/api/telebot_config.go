@@ -1,5 +1,7 @@
 package api
 
+import "net/http"
+
 type TelebotConfigOption func(*TelebotConfig)
 
 func WithBotToken(token string) TelebotConfigOption {
@@ -20,8 +22,15 @@ func WithBotAPIUrl(url string) TelebotConfigOption {
 	}
 }
 
+func WithClient(client *http.Client) TelebotConfigOption {
+	return func(cfg *TelebotConfig) {
+		cfg.Client = client
+	}
+}
+
 type TelebotConfig struct {
 	BotToken     string
 	BotAPIUrl    string
 	ReportChatId int64
+	Client       *http.Client
 }

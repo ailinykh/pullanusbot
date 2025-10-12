@@ -3,12 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"path"
 	"strconv"
 	"syscall"
+	"time"
 
+	"github.com/ailinykh/pullanusbot/v2/internal/api/http_logger"
 	"github.com/ailinykh/pullanusbot/v2/internal/api/image_uploader"
 	"github.com/ailinykh/pullanusbot/v2/internal/api/logger"
 	"github.com/ailinykh/pullanusbot/v2/internal/api/xui"
@@ -49,10 +52,26 @@ func main() {
 		chatID = *config.GetReportChatId()
 		logger.Info("using report", "chat_id", chatID)
 	}
+
+	transport := http.DefaultTransport
+	if _, ok := os.LookupEnv("EXTENDED_LOGGING_ENABLED"); ok {
+		logger.Info("extended logging enabled")
+		transport = http_logger.NewLoggingRoundTripper(
+			http.DefaultTransport,
+			infrastructure.NewLogStorage(dbFile, logger),
+			logger,
+		)
+	}
+	client := &http.Client{
+		Transport: transport,
+		Timeout:   time.Minute,
+	}
+
 	telebot := api.CreateTelebot(
 		logger,
 		api.WithBotToken(config.GetBotToken()),
 		api.WithReportChatId(chatID),
+		api.WithClient(client),
 	)
 	telebot.SetupInfo()
 

@@ -44,6 +44,7 @@ func CreateTelebot(logger core.Logger, opts ...TelebotConfigOption) *Telebot {
 	bot, err := tb.NewBot(tb.Settings{
 		Token:  config.BotToken,
 		Poller: poller,
+		Client: config.Client,
 	})
 
 	if err != nil {
