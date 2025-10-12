@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -24,12 +23,12 @@ import (
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
-	config, err := NewBotConfig(os.Getenv("BOT_CONFIG_FILE"))
-	if err != nil {
-		panic(fmt.Sprintf("failed to load config: %v %s", err, os.Getenv("BOT_CONFIG_FILE")))
+	workingDir := "."
+	if wd, ok := os.LookupEnv("WORKING_DIR"); ok {
+		workingDir = wd
 	}
-	logger := logger.NewGoogleLogger(ctx, config.GetWorkingDir())
-	logger.Info("config loaded", "working_dir", config.GetWorkingDir())
+	logger := logger.NewGoogleLogger(ctx, workingDir)
+	logger.Info("config loaded", "working_dir", workingDir)
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -39,7 +38,7 @@ func main() {
 		cancel()
 	}()
 
-	dbFile := path.Join(config.GetWorkingDir(), "pullanusbot.db")
+	dbFile := path.Join(workingDir, "pullanusbot.db")
 
 	settingsProvider := infrastructure.CreateSettingsStorage(dbFile)
 	boolSettingProvider := helpers.CreateBoolSettingProvider(settingsProvider)
@@ -47,9 +46,10 @@ func main() {
 	inMemoryChatStorage := infrastructure.CreateInMemoryChatStorage()
 	chatStorageDecorator := usecases.CreateChatStorageDecorator(inMemoryChatStorage, databaseChatStorage)
 
-	var chatID int64 = 0
-	if config.GetReportChatId() != nil {
-		chatID = *config.GetReportChatId()
+	chatID, err := strconv.ParseInt(os.Getenv("REPORT_CHAT_ID"), 10, 64)
+	if err != nil {
+		logger.Info("report to chat disabled", "error", err)
+	} else {
 		logger.Info("using report", "chat_id", chatID)
 	}
 
@@ -69,7 +69,7 @@ func main() {
 
 	telebot := api.CreateTelebot(
 		logger,
-		api.WithBotToken(config.GetBotToken()),
+		api.WithBotToken(os.Getenv("TELEGRAM_BOT_TOKEN")),
 		api.WithReportChatId(chatID),
 		api.WithClient(client),
 	)
@@ -98,14 +98,11 @@ func main() {
 	sendVideoStrategySplitDecorator := helpers.CreateSendVideoStrategySplitDecorator(logger, sendVideoStrategy, converter)
 	localMediaSender := helpers.CreateUploadMediaDecorator(logger, remoteMediaSender, fileDownloader, converter, sendVideoStrategySplitDecorator)
 
-	var task core.ITask
-	amqpUrl := config.GetAmqpUrl()
-	if len(amqpUrl) > 0 {
-		rabbit, close := infrastructure.CreateRabbitFactory(logger, config.GetAmqpUrl())
+	var task core.ITask = core.TaskMock{}
+	if amqpUrl, ok := os.LookupEnv("AMQP_URL"); ok {
+		rabbit, close := infrastructure.CreateRabbitFactory(logger, amqpUrl)
 		defer close()
 		task = rabbit.NewTask("twitter_queue")
-	} else {
-		task = core.TaskMock{}
 	}
 
 	twitterMediaFactory := api.CreateTwitterMediaFactory(logger, task)
@@ -183,7 +180,7 @@ func main() {
 
 	if cookiesFilePath := os.Getenv("INSTAGRAM_COOKIES_FILE_PATH"); len(cookiesFilePath) > 0 {
 		logger.Info("instagram logic enabled. Cookies file: %s", cookiesFilePath)
-		cookies := path.Join(config.GetWorkingDir(), cookiesFilePath)
+		cookies := path.Join(workingDir, cookiesFilePath)
 		instaAPI := api.CreateYtDlpApi([]string{"--cookies", cookies}, logger)
 		instaFlow := usecases.CreateInstagramFlow(logger, instaAPI, localMediaSender)
 		removeInstaSourceDecorator := usecases.CreateRemoveSourceDecorator(logger, instaFlow, core.SInstagramFlowRemoveSource, boolSettingProvider)
