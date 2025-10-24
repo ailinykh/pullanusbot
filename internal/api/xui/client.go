@@ -6,39 +6,111 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/ailinykh/pullanusbot/v2/internal/core"
+	"github.com/ailinykh/pullanusbot/v2/internal/helpers"
 	legacy "github.com/ailinykh/pullanusbot/v2/internal/legacy/core"
 	"github.com/google/uuid"
 )
 
 const inboundId = 4
 
-func NewClient(l core.Logger, baseUrl, cookie string) *Client {
-	headers := map[string]string{
-		"Cookie": fmt.Sprintf("x-ui=%s;", cookie),
+func NewClient(l core.Logger, baseUrl, login, password string) *Client {
+	// headers := map[string]string{
+	// 	"Cookie": fmt.Sprintf("x-ui=%s;", cookie),
+	// }
+	// // client := &http.Client{Transport: NewAddHeaderTransport(nil, headers)}
+	return &Client{
+		l:       l,
+		baseUrl: strings.TrimSuffix(baseUrl, "/"),
+		credentials: Credentials{
+			login:    login,
+			password: password,
+		},
 	}
-	client := &http.Client{Transport: NewAddHeaderTransport(nil, headers)}
-	return &Client{l, strings.TrimSuffix(baseUrl, "/"), client}
+}
+
+type Credentials struct {
+	login    string
+	password string
 }
 
 type Client struct {
-	l       core.Logger
-	baseUrl string
-	client  *http.Client
+	l           core.Logger
+	baseUrl     string
+	credentials Credentials
+	cookie      *http.Cookie
+}
+
+func (c *Client) Authorize() error {
+	c.l.Info("performing authorization")
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	params := map[string]io.Reader{
+		"username": strings.NewReader(c.credentials.login),
+		"password": strings.NewReader(c.credentials.password),
+	}
+
+	err := helpers.MultipartFrom(params, writer)
+	if err != nil {
+		return fmt.Errorf("failed to create muiltipart/form data: %s", err)
+	}
+	writer.Close()
+
+	urlString := fmt.Sprintf("%s/login", c.baseUrl)
+	r, _ := http.NewRequest("POST", urlString, body)
+	r.Header.Add("Content-Type", writer.FormDataContentType())
+	res, err := http.DefaultClient.Do(r)
+	if err != nil {
+		c.l.Error(err)
+		return err
+	}
+	defer res.Body.Close()
+
+	for _, cookie := range res.Cookies() {
+		c.l.Info("cookie", "name", cookie.Name, "value", cookie.Value)
+		if cookie.Name == "x-ui" {
+			c.cookie = cookie
+		}
+	}
+	return nil
 }
 
 // GetKeys is a core.IVpnAPI interface implementation
 func (c *Client) GetKeys(chatId int64) ([]*legacy.VpnKey, error) {
+	if c.cookie == nil {
+		err := c.Authorize()
+		if err != nil {
+			c.l.Error("failed to authorize", "error", err)
+			return nil, err
+		}
+	}
+
 	urlString := fmt.Sprintf("%s/xui/API/inbounds/get/%d", c.baseUrl, inboundId)
-	resp, err := c.client.Get(urlString)
+	req, err := http.NewRequest("GET", urlString, nil)
 	if err != nil {
 		c.l.Error(err)
 		return nil, err
+	}
+
+	req.AddCookie(c.cookie)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		c.l.Error(err)
+		return nil, err
+	}
+
+	if len(resp.Header["Content-Type"]) > 0 {
+		if resp.Header["Content-Type"][0] != "application/json; charset=utf-8" {
+			c.cookie = nil
+			return c.GetKeys(chatId)
+		}
 	}
 
 	defer resp.Body.Close()
@@ -110,6 +182,14 @@ func (c *Client) GetKeys(chatId int64) ([]*legacy.VpnKey, error) {
 
 // CreateKey is a core.IVpnAPI interface implementation
 func (c *Client) CreateKey(keyName string, chatId int64, user *legacy.User) (*legacy.VpnKey, error) {
+	if c.cookie == nil {
+		err := c.Authorize()
+		if err != nil {
+			c.l.Error("failed to authorize", "error", err)
+			return nil, err
+		}
+	}
+
 	settings := InboundSettings{
 		Clients: []InboundClient{{
 			ID:     uuid.NewString(),
@@ -138,10 +218,26 @@ func (c *Client) CreateKey(keyName string, chatId int64, user *legacy.User) (*le
 	}
 
 	urlString := fmt.Sprintf("%s/xui/API/inbounds/addClient", c.baseUrl)
-	resp, err := c.client.Post(urlString, "application/json", bytes.NewBuffer(reqData))
+	req, err := http.NewRequest("POST", urlString, nil)
+	if err != nil {
+		c.l.Error(err)
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Body = io.NopCloser(bytes.NewBuffer(reqData))
+	req.AddCookie(c.cookie)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		c.l.Error("failed create client", "error", err)
 		return nil, err
+	}
+
+	if len(resp.Header["Content-Type"]) > 0 {
+		if resp.Header["Content-Type"][0] != "application/json; charset=utf-8" {
+			c.cookie = nil
+			return c.CreateKey(keyName, chatId, user)
+		}
 	}
 
 	defer resp.Body.Close()
@@ -181,13 +277,35 @@ func (c *Client) CreateKey(keyName string, chatId int64, user *legacy.User) (*le
 
 // DeleteKey is a core.IVpnAPI interface implementation
 func (c *Client) DeleteKey(key *legacy.VpnKey) error {
+	if c.cookie == nil {
+		err := c.Authorize()
+		if err != nil {
+			c.l.Error("failed to authorize", "error", err)
+			return err
+		}
+	}
+
 	urlString := fmt.Sprintf("%s/xui/API/inbounds/%d/delClient/%s", c.baseUrl, inboundId, key.ID)
-	// content-type doesn't make sense
-	// https://github.com/alireza0/x-ui/blob/3a7c00fc5feafdc8cd15b023113d489794bdbdcd/web/controller/inbound.go#L168
-	_, err := c.client.Post(urlString, "application/json", nil)
+	req, err := http.NewRequest("POST", urlString, nil)
+	if err != nil {
+		c.l.Error(err)
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(c.cookie)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		c.l.Error("failed to delete key", "error", err)
 		return err
 	}
+
+	if len(resp.Header["Content-Type"]) > 0 {
+		if resp.Header["Content-Type"][0] != "application/json; charset=utf-8" {
+			c.cookie = nil
+			return c.DeleteKey(key)
+		}
+	}
+
 	return nil
 }
