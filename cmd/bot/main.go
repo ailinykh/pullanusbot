@@ -156,25 +156,6 @@ func main() {
 		return err
 	})
 
-	if serverConfigsPath, ok := os.LookupEnv("REBOOT_SERVER_CONFIG_FILE"); ok {
-		configs, err := NewServerConfigList(serverConfigsPath)
-		if err != nil {
-			panic(err)
-		}
-		for _, config := range configs {
-			logger.Info("server reboot logic enabled", "chats", config.GetChatIds(), "command", config.GetCommand())
-			lightsailApi := api.NewLightsailAPI(logger, config.GetKeyID(), config.GetSecretKey())
-			opts := &usecases.RebootServerOptions{
-				ChatIds: config.GetChatIds(),
-				Command: config.GetCommand(),
-			}
-			rebootFlow := usecases.NewRebootServerFlow(lightsailApi, commandService, logger, opts)
-			telebot.AddHandler(rebootFlow)
-		}
-	} else {
-		logger.Info("server reboot logic disabled")
-	}
-
 	iDoNotCare := usecases.CreateIDoNotCare()
 	telebot.AddHandler(iDoNotCare)
 
