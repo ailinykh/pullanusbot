@@ -1,4 +1,7 @@
--include .env
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
 
 .PHONY: all serve kill run test build clean restart
 
