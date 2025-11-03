@@ -4,49 +4,56 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/ailinykh/pullanusbot)](https://goreportcard.com/report/github.com/ailinykh/pullanusbot)
 ![GitHub](https://img.shields.io/github/license/ailinykh/pullanusbot.svg)
 
-This bot helps your telegram chat to consume content in more native way
+This bot helps your telegram chat consume content in a more native way.
 
-Let's say somebody sends a link to the webm video:
+For example, if someone sends a link to a webm video:
 
 ![bot-webm-video](https://user-images.githubusercontent.com/939390/95298451-c7757100-0884-11eb-9140-4c6474959720.gif)
 
-Or a video file as a document:
+
+Or sends a video file as a document:
 
 ![bot-video-convert](https://user-images.githubusercontent.com/939390/95298623-07d4ef00-0885-11eb-92e4-b3c2015f7ecc.gif)
 
-It's even support links to twitter videos
+
+It even supports links to Twitter videos:
 
 ![bot-twitter-video](https://user-images.githubusercontent.com/939390/95298730-3783f700-0885-11eb-9650-b0c04e40aa2f.gif)
 
-... and images!
+... and images as well!
 
 ![bot-twitter-images](https://user-images.githubusercontent.com/939390/95298790-4cf92100-0885-11eb-8bb2-8adbc91f5b23.gif)
 
-## how to run
+## How to Run
 
-Setup environment
+Set up the environment:
 
 ```shell
 brew install go ffmpeg yt-dlp
 ```
-clone repo
+
+Clone the repository:
 
 ```shell
 git clone https://github.com/ailinykh/pullanusbot.git
 cd pullanusbot
 ```
 
-install go dependencies
+Install Go dependencies:
+
 ```shell
 go mod download
 ```
-obtain bot token from [@BotFather](https://t.me/BotFather) and your telegram ID via `/info` command from [@pullanusbot](https://t.me/pullanusbot)
+
+Obtain your bot token from [@BotFather](https://t.me/BotFather) and your Telegram ID using the `/info` command from [@pullanusbot](https://t.me/pullanusbot).
+
+Copy the example environment file:
 
 ```shell
-echo "export BOT_TOKEN:=12345678:XXXXXXXXxxxxxxxxXXXXXXXXxxxxxxxxXXX" > .env
+cp .env.example .env
 ```
 
-and run!
+Specify the required secrets in the `.env` file, then run:
 
 ```shell
 make
